@@ -1,0 +1,17 @@
+# https://docs.stirlingpdf.com/Installation/Docker%20Install/
+
+services:
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest-fat
+    container_name: stirling-pdf
+    ports:
+      - '8080:8080'
+    volumes:
+      - .data/stirling-pdf/tessdata:/usr/share/tessdata  # OCR language files
+      - .data/stirling-pdf/configs:/configs              # Settings & database
+      - .data/stirling-pdf/logs:/logs                    # Application logs
+      - .data/stirling-pdf/pipeline:/pipeline            # Automation configs
+    environment:
+      - SECURITY_ENABLELOGIN=false    # Set true to enable user authentication
+      - LANGS=en_GB                   # Interface language
+    restart: unless-stopped

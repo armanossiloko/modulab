@@ -1,0 +1,11 @@
+# Ignore OS and editor files
+*.log
+*.tmp
+node_modules/
+
+# Keep VS Code launch and tasks in repo
+# .vscode/
+
+secrets/
+data/
+media/

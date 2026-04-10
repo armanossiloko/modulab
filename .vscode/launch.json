@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Stirling PDF up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: stirling-pdf up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.stirling-pdf.yml"
+    },
+    {
+      "name": "Jellyfin up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: jellyfin up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.jellyfin.yml"
+    },
+    {
+      "name": "n8n up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: n8n up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.n8n.yml"
+    },
+    {
+      "name": "Seerr up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: seerr up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.seerr.yml"
+    },
+    {
+      "name": "IT-Tools up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: it-tools up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.it-tools.yml"
+    }
+  ]
+}

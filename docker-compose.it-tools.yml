@@ -1,0 +1,11 @@
+# https://github.com/CorentinTh/it-tools — developer utilities (Vue SPA, nginx on :80 in container)
+# Self-host: docker run -d --name it-tools --restart unless-stopped -p 8080:80 corentinth/it-tools:latest
+# Compose uses 8081 on the host so it does not conflict with stirling-pdf (8080) in this repo.
+
+services:
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: it-tools
+    ports:
+      - "8081:80"
+    restart: unless-stopped

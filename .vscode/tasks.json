@@ -1,0 +1,60 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "docker-compose: stirling-pdf up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.stirling-pdf.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: jellyfin up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.jellyfin.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: n8n up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.n8n.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: seerr up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.seerr.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: it-tools up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.it-tools.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
