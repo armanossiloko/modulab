@@ -8,6 +8,8 @@ alwaysApply: false
 
 When you add a new `docker-compose*.yml` file at the workspace root (a stack this repo runs with `-f`), **in the same change** update:
 
+**Odysseus** is a git submodule: `docker-compose.odysseus.yml` uses `include` for `odysseus/docker-compose.yml`. Do not duplicate the full stack at the root—only add the wrapper + task + launch entry.
+
 1. **`.vscode/tasks.json`** — append a shell task:
    - `label`: `docker-compose: <short-name> up` where `<short-name>` matches the filename stem after `docker-compose.` (e.g. `n8n` for `docker-compose.n8n.yml`).
    - `command`: `docker-compose -f docker-compose.<short-name>.yml up -d`

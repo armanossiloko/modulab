@@ -5,7 +5,7 @@ services:
     image: stirlingtools/stirling-pdf:latest-fat
     container_name: stirling-pdf
     ports:
-      - '8080:8080'
+      - '8082:8080'
     volumes:
       - .data/stirling-pdf/tessdata:/usr/share/tessdata  # OCR language files
       - .data/stirling-pdf/configs:/configs              # Settings & database

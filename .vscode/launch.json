@@ -35,6 +35,13 @@
       "request": "launch",
       "preLaunchTask": "docker-compose: it-tools up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.it-tools.yml"
+    },
+    {
+      "name": "Odysseus up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: odysseus up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.odysseus.yml"
     }
   ]
 }

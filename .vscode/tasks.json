@@ -55,6 +55,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "docker-compose: odysseus up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.odysseus.yml up -d --build",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }
