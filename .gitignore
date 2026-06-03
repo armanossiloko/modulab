@@ -23,9 +23,6 @@ secrets/
 !.env.*.example
 !.env.example
 
-# Gogs: local copy may contain SECRET_KEY and DB password overrides
-gogs/app.ini
-
 # Optional per-machine Compose overrides (Linux: docker compose merges these automatically)
 docker-compose.override.yml
 docker-compose.*.override.yml

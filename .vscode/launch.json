@@ -42,6 +42,13 @@
       "request": "launch",
       "preLaunchTask": "docker-compose: odysseus up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.odysseus.yml"
+    },
+    {
+      "name": "Postgres up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: postgres up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.postgres.yml"
     }
   ]
 }

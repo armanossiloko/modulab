@@ -66,6 +66,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "docker-compose: postgres up",
+      "type": "shell",
+      "command": "docker-compose -f docker-compose.postgres.yml up -d",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

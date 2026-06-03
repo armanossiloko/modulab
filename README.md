@@ -45,6 +45,7 @@ For Odysseus, `down` uses the same `-f docker-compose.odysseus.yml` file.
 | **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery for Plex/Jellyfin ([Seerr](https://docs.seerr.dev/)) |
 | **IT-Tools** | `docker-compose.it-tools.yml` | http://localhost:8083 | Browser-based dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
 | **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
+| **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 (`modulab-db` network) |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | Self-hosted AI workspace; git submodule in `odysseus/` |
 
 Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run together: Odysseus SearXNG (8080, loopback), Stirling PDF (8082), IT-Tools (8083).
@@ -62,8 +63,28 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 | 8091 | Odysseus ntfy (loopback) | `odysseus/docker-compose.yml` |
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
 | 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
+| 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
 
-Containers from other projects (for example **postgres** on **5432**) are not part of this repo.
+### Postgres
+
+```bash
+docker compose -f docker-compose.postgres.yml up -d
+```
+
+- Host: `127.0.0.1:5432` · in-network hostname: `postgres` on `modulab-db`
+- Data: `data/postgres/` (ignored by git)
+- Defaults: user/database `modulab` / password `modulab` — override via `.env.postgres` from `.env.postgres.example`
+- **First boot:** `postgres/init/<NN>-<app>.sql` (empty data dir only)
+- **Every `up`:** idempotent `postgres/bootstrap.sql` via `db-bootstrap` (see `postgres/README.md`)
+
+Other containers join the same database:
+
+```yaml
+networks:
+  modulab-db:
+    external: true
+    name: modulab-db
+```
 
 **Odysseus + Cookbook:** ChromaDB is published on host **8100**. Cookbook’s diffusion server also defaults to port **8100** when serving on the host—use another port in the serve command if both are active.
 
