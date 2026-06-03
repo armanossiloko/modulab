@@ -1,7 +1,6 @@
 # https://docs.immich.app/install/docker-compose
 # Self-hosted photos/videos — bundled Postgres (vector) + Valkey, not shared modulab-db.
-# Copy .env.immich.example → .env.immich, then:
-#   docker compose --env-file .env.immich -f docker-compose.immich.yml up -d
+# setup.sh → .env.immich, then: bash scripts/start.sh immich
 # UI: http://127.0.0.1:2283 (loopback; change ports if you need LAN access)
 # ML service is commented out (lower RAM). Enable smart search/faces: uncomment
 # immich-machine-learning and disable unused jobs in Admin → Machine Learning.

@@ -6,8 +6,10 @@ services:
     init: true
     container_name: seerr
     environment:
-      - LOG_LEVEL=debug
-      - TZ=Europe/Berlin
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - TZ=${TZ:-Europe/Berlin}
+    env_file:
+      - .env.seerr
     ports:
       - 5055:5055
     volumes:

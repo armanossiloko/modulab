@@ -12,6 +12,8 @@ services:
       - .data/stirling-pdf/logs:/logs                    # Application logs
       - .data/stirling-pdf/pipeline:/pipeline            # Automation configs
     environment:
-      - SECURITY_ENABLELOGIN=false    # Set true to enable user authentication
-      - LANGS=en_GB                   # Interface language
+      - SECURITY_ENABLELOGIN=${SECURITY_ENABLELOGIN:-false}
+      - LANGS=${LANGS:-en_GB}
+    env_file:
+      - .env.stirling-pdf
     restart: unless-stopped

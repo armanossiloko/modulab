@@ -11,4 +11,8 @@ services:
       - ./data/jellyfin/config:/config
       - ./data/jellyfin/cache:/cache
       - ./media:/media
+    env_file:
+      - .env.jellyfin
+    environment:
+      - TZ=${TZ:-Etc/UTC}
     restart: unless-stopped

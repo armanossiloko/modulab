@@ -2,9 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "lab: setup",
+      "type": "shell",
+      "command": "bash scripts/setup.sh",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: stirling-pdf up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.stirling-pdf.yml up -d",
+      "command": "bash scripts/start.sh stirling-pdf",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -15,7 +26,7 @@
     {
       "label": "docker-compose: jellyfin up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.jellyfin.yml up -d",
+      "command": "bash scripts/start.sh jellyfin",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -26,7 +37,7 @@
     {
       "label": "docker-compose: n8n up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.n8n.yml up -d",
+      "command": "bash scripts/start.sh n8n",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -37,7 +48,7 @@
     {
       "label": "docker-compose: seerr up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.seerr.yml up -d",
+      "command": "bash scripts/start.sh seerr",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -48,7 +59,7 @@
     {
       "label": "docker-compose: it-tools up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.it-tools.yml up -d",
+      "command": "bash scripts/start.sh it-tools",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -59,7 +70,7 @@
     {
       "label": "docker-compose: odysseus up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.odysseus.yml up -d --build",
+      "command": "bash scripts/start.sh odysseus",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -70,7 +81,7 @@
     {
       "label": "docker-compose: postgres up",
       "type": "shell",
-      "command": "docker-compose -f docker-compose.postgres.yml up -d",
+      "command": "bash scripts/start.sh postgres",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -81,7 +92,7 @@
     {
       "label": "docker-compose: immich up",
       "type": "shell",
-      "command": "bash scripts/up-immich.sh",
+      "command": "bash scripts/start.sh immich",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -92,7 +103,7 @@
     {
       "label": "docker-compose: pihole up",
       "type": "shell",
-      "command": "bash scripts/up-pihole.sh",
+      "command": "bash scripts/start.sh pihole",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

@@ -5,28 +5,31 @@ Small, independent [Docker Compose](https://docs.docker.com/compose/) stacks you
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose (v2: `docker compose`, or the classic `docker-compose` CLI used by this repo’s VS Code tasks)
-- **Odysseus:** after cloning, initialize the submodule:
+- **Odysseus:** after cloning, initialize the submodule: `git submodule update --init --recursive`
+
+## Setup (once)
+
+Copy example env files to local `.env.*` (never overwrites files you already have):
 
 ```bash
-git submodule update --init --recursive
-cp odysseus/.env.example odysseus/.env   # optional; recommended on first Odysseus run
+bash scripts/setup.sh
 ```
+
+Edit the generated files — at minimum set passwords in `.env.immich`, `.env.pihole`, and `.env.postgres`. Odysseus config lives in `odysseus/.env`.
+
+VS Code: run task **lab: setup**.
 
 ## Quick start
 
-From the repository root:
+Start one stack (after setup):
 
 ```bash
-docker compose -f docker-compose.<stack>.yml up -d
+bash scripts/start.sh jellyfin
+bash scripts/start.sh n8n
+bash scripts/start.sh odysseus
 ```
 
-Examples:
-
-```bash
-docker compose -f docker-compose.jellyfin.yml up -d
-docker compose -f docker-compose.n8n.yml up -d
-docker compose -f docker-compose.odysseus.yml up -d --build
-```
+Or use **Run and Debug** → **&lt;Stack&gt; up** in VS Code.
 
 Stop a stack:
 
@@ -73,7 +76,7 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 ### Postgres
 
 ```bash
-docker compose -f docker-compose.postgres.yml up -d
+bash scripts/start.sh postgres
 ```
 
 - Host: `127.0.0.1:5432` · in-network hostname: `postgres` on `modulab-db`
@@ -96,9 +99,8 @@ networks:
 ### Immich
 
 ```bash
-cp .env.immich.example .env.immich   # set DB_PASSWORD (A-Za-z0-9 only)
-bash scripts/up-immich.sh
-# or: docker compose --env-file .env.immich -f docker-compose.immich.yml up -d
+bash scripts/setup.sh   # once — creates .env.immich from example
+bash scripts/start.sh immich
 ```
 
 - UI: http://127.0.0.1:2283 (first visit creates the admin user)
@@ -111,8 +113,8 @@ bash scripts/up-immich.sh
 ### Pi-hole
 
 ```bash
-cp .env.pihole.example .env.pihole   # set PIHOLE_PASSWORD
-bash scripts/up-pihole.sh
+bash scripts/setup.sh   # once — creates .env.pihole from example
+bash scripts/start.sh pihole
 ```
 
 - Admin: http://127.0.0.1:5080/admin
@@ -130,7 +132,7 @@ Odysseus lives in [`odysseus/`](odysseus/) as a [git submodule](https://git-scm.
 `docker-compose.odysseus.yml` at the repo root includes the submodule’s compose file so you can start it like the other stacks. Build context, `.env`, and runtime data stay under `odysseus/`.
 
 ```bash
-docker compose -f docker-compose.odysseus.yml up -d --build
+bash scripts/start.sh odysseus
 ```
 
 - UI: http://localhost:7000
@@ -161,13 +163,7 @@ Create directories as needed before first run, or let Docker create them when mo
 
 ### n8n environment (optional)
 
-`docker-compose.n8n.yml` uses inline defaults (`N8N_HOST`, `WEBHOOK_URL`, `GENERIC_TIMEZONE`, etc.). For a reverse-proxy or custom domain setup, you can set variables in your shell or a `.env` file in the same directory as the compose file.
-
-`.env.n8n` in the repo is an example with placeholders (`DOMAIN_NAME`, `SUBDOMAIN`, `GENERIC_TIMEZONE`, `SSL_EMAIL`) for TLS/domain-oriented deployments; wire it in explicitly if you use it, for example:
-
-```bash
-docker compose --env-file .env.n8n -f docker-compose.n8n.yml up -d
-```
+Defaults live in `.env.n8n.example` (created by `setup.sh`). Adjust `N8N_HOST`, `WEBHOOK_URL`, `GENERIC_TIMEZONE`, etc. for reverse-proxy or custom domain setups.
 
 n8n volumes:
 
@@ -180,9 +176,21 @@ The container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin
 
 ## VS Code / Cursor
 
-`.vscode/tasks.json` defines tasks named `docker-compose: <name> up` (for example `docker-compose: jellyfin up` or `docker-compose: odysseus up`). `.vscode/launch.json` provides **Docker** launch configs that run the matching task. Use **Run and Debug** to start a stack from the editor.
+| Task | Script | Purpose |
+|------|--------|---------|
+| **lab: setup** | `scripts/setup.sh` | Copy all `.env.*.example` → `.env.*` (once) |
+| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start that stack (requires setup) |
 
-When you add a new `docker-compose.*.yml` at the repo root, follow the same pattern: one task + one launch entry per stack (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
+Launch profiles run the matching **up** task. **`start.sh` does not create env files** — run setup first.
+
+| Stack | Env file |
+|-------|----------|
+| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, Immich, Pi-hole, Postgres | `.env.<stack>` at repo root |
+| Odysseus | `odysseus/.env` (submodule) |
+
+All `.env.*` files are gitignored except `*.example`.
+
+When you add a new `docker-compose.*.yml`, add `.env.<name>.example`, register the stack in `scripts/start.sh` / `scripts/setup.sh` (via glob), and add a task + launch entry (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
 
 ## License
 

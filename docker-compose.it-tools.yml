@@ -6,4 +6,6 @@ services:
     container_name: it-tools
     ports:
       - "8083:80"
+    env_file:
+      - .env.it-tools
     restart: unless-stopped

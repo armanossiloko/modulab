@@ -27,7 +27,7 @@ On the host that runs Pi-hole (often your Raspberry Pi):
          - "127.0.0.1:5080:80/tcp"
    ```
 
-2. Start Pi-hole: `bash scripts/up-pihole.sh`
+2. Start Pi-hole: `bash scripts/start.sh pihole`
 
 3. Router **DHCP DNS** → `192.168.1.10` (your Pi-hole host IP), or set DNS manually on each device.
 
