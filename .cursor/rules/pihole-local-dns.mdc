@@ -1,0 +1,25 @@
+---
+description: Add Pi-hole local DNS when adding a new docker-compose stack
+globs: docker-compose*.yml
+alwaysApply: false
+---
+
+# Pi-hole local DNS for new stacks
+
+When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU overlays in `odysseus/`), add a matching local DNS name.
+
+## Checklist
+
+1. **`pihole/dns-hosts.conf`** — append one DNS-safe host **label** (one line).
+2. **`docker-compose.pihole.yml`** — add a matching line under `FTLCONF_dns_hosts`:
+   ```yaml
+   ${LAB_HOST_IP:-192.168.1.10} myservice.${PIHOLE_LOCAL_DOMAIN:-network.lan}
+   ```
+3. **`README.md`** — stack table + port map if the stack has a web UI or host port.
+4. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
+
+Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`). Odysseus sidecars get their own labels (`searxng`, `ntfy`).
+
+User sets **`LAB_HOST_IP`** and **`PIHOLE_LOCAL_DOMAIN`** in `.env.pihole` (from `.env.pihole.example`). Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
+
+See [pihole/LOCAL-DNS.md](../pihole/LOCAL-DNS.md).

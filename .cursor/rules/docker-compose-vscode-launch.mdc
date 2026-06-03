@@ -25,6 +25,8 @@ When you add a new `docker-compose*.yml` file at the workspace root (a stack thi
 
 **Do not** add per-stack `up-*.sh` files. All stacks use `scripts/setup.sh` (env) and `scripts/start.sh <name>` (start). Extend `scripts/common.sh` only if the stack needs special startup (see `postgres`, `odysseus` in `start.sh`).
 
+When adding a root stack, also update **`pihole/dns-hosts.conf`** per `.cursor/rules/pihole-local-dns.mdc`.
+
 Keep JSON valid (commas between array entries).
 
 Do **not** skip this when adding or splitting compose files: one dedicated launch profile (and its preLaunch task) per new stack file.
