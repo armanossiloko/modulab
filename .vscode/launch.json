@@ -49,6 +49,13 @@
       "request": "launch",
       "preLaunchTask": "docker-compose: postgres up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.postgres.yml"
+    },
+    {
+      "name": "Immich up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: immich up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.immich.yml"
     }
   ]
 }

@@ -77,6 +77,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "docker-compose: immich up",
+      "type": "shell",
+      "command": "bash scripts/up-immich.sh",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

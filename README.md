@@ -46,6 +46,7 @@ For Odysseus, `down` uses the same `-f docker-compose.odysseus.yml` file.
 | **IT-Tools** | `docker-compose.it-tools.yml` | http://localhost:8083 | Browser-based dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
 | **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
 | **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 (`modulab-db` network) |
+| **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photo/video backup ([Immich](https://immich.app/)); loopback only |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | Self-hosted AI workspace; git submodule in `odysseus/` |
 
 Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run together: Odysseus SearXNG (8080, loopback), Stirling PDF (8082), IT-Tools (8083).
@@ -63,6 +64,7 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 | 8091 | Odysseus ntfy (loopback) | `odysseus/docker-compose.yml` |
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
 | 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
+| 2283 | Immich (loopback) | `docker-compose.immich.yml` |
 | 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
 
 ### Postgres
@@ -87,6 +89,21 @@ networks:
 ```
 
 **Odysseus + Cookbook:** ChromaDB is published on host **8100**. Cookbook’s diffusion server also defaults to port **8100** when serving on the host—use another port in the serve command if both are active.
+
+### Immich
+
+```bash
+cp .env.immich.example .env.immich   # set DB_PASSWORD (A-Za-z0-9 only)
+bash scripts/up-immich.sh
+# or: docker compose --env-file .env.immich -f docker-compose.immich.yml up -d
+```
+
+- UI: http://127.0.0.1:2283 (first visit creates the admin user)
+- Data: `data/immich/library/` (uploads), `data/immich/postgres/` (Immich DB)
+- Machine learning container is **commented out** by default (backup/gallery only). Uncomment `immich-machine-learning` in `docker-compose.immich.yml` for smart search and facial recognition; turn off unused ML jobs in **Admin → Machine Learning** if the service is not running
+- Uses its **own** Postgres 14 image with vector extensions and Valkey — **not** the shared `modulab-db` Postgres stack
+- Pin versions via `IMMICH_VERSION` in `.env.immich` ([releases](https://github.com/immich-app/immich/releases))
+- Hardware transcoding: uncomment `extends` on `immich-server` and add upstream `hwaccel.*.yml` from the [Immich docker folder](https://github.com/immich-app/immich/tree/main/docker) if needed
 
 ### Odysseus (submodule)
 
@@ -116,7 +133,7 @@ Upstream docs (GPU overlays, macOS native run, etc.): see `odysseus/README.md`.
 
 Git ignores runtime data so it is not committed (see `.gitignore`):
 
-- `data/` — used by n8n, Jellyfin, Seerr (under stack-specific subpaths).
+- `data/` — used by n8n, Jellyfin, Seerr, Immich (under stack-specific subpaths).
 - `media/` — Jellyfin library mount.
 - `secrets/` — optional place for sensitive files.
 - **Stirling PDF** uses **`.data/stirling-pdf/`** at the repo root for tessdata, configs, logs, and pipeline.
