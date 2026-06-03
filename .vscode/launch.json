@@ -2,11 +2,44 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "All stacks up",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: all up",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "All stacks down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: all down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Stirling PDF up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: stirling-pdf up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.stirling-pdf.yml"
+    },
+    {
+      "name": "Stirling PDF down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: stirling-pdf down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Jellyfin up",
@@ -16,11 +49,33 @@
       "dockerComposeFile": "${workspaceFolder}/docker-compose.jellyfin.yml"
     },
     {
+      "name": "Jellyfin down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: jellyfin down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "n8n up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: n8n up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.n8n.yml"
+    },
+    {
+      "name": "n8n down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: n8n down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Seerr up",
@@ -30,11 +85,33 @@
       "dockerComposeFile": "${workspaceFolder}/docker-compose.seerr.yml"
     },
     {
+      "name": "Seerr down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: seerr down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "IT-Tools up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: it-tools up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.it-tools.yml"
+    },
+    {
+      "name": "IT-Tools down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: it-tools down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Odysseus up",
@@ -44,11 +121,33 @@
       "dockerComposeFile": "${workspaceFolder}/docker-compose.odysseus.yml"
     },
     {
+      "name": "Odysseus down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: odysseus down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Postgres up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: postgres up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.postgres.yml"
+    },
+    {
+      "name": "Postgres down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: postgres down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Immich up",
@@ -58,6 +157,17 @@
       "dockerComposeFile": "${workspaceFolder}/docker-compose.immich.yml"
     },
     {
+      "name": "Immich down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: immich down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Pi-hole up",
       "type": "docker",
       "request": "launch",
@@ -65,11 +175,33 @@
       "dockerComposeFile": "${workspaceFolder}/docker-compose.pihole.yml"
     },
     {
+      "name": "Pi-hole down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: pihole down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Caddy up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: caddy up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.caddy.yml"
+    },
+    {
+      "name": "Caddy down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: caddy down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
   ]
 }

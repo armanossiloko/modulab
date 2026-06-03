@@ -1,0 +1,12 @@
+[
+  { "label": "jellyfin", "name": "Jellyfin", "description": "Movies, TV, and music", "port": 8096 },
+  { "label": "n8n", "name": "n8n", "description": "Workflow automation", "port": 5678 },
+  { "label": "seerr", "name": "Seerr", "description": "Media requests", "port": 5055 },
+  { "label": "it-tools", "name": "IT-Tools", "description": "Developer utilities", "port": 8083 },
+  { "label": "stirling", "name": "Stirling PDF", "description": "PDF toolkit", "port": 8082 },
+  { "label": "immich", "name": "Immich", "description": "Photos and videos", "port": 2283 },
+  { "label": "odysseus", "name": "Odysseus", "description": "AI workspace", "port": 7000 },
+  { "label": "searxng", "name": "SearXNG", "description": "Private search", "port": 8080 },
+  { "label": "ntfy", "name": "ntfy", "description": "Push notifications", "port": 8091 },
+  { "label": "pihole", "name": "Pi-hole", "description": "DNS admin", "port": 5080, "path": "/admin" }
+]

@@ -1,8 +1,10 @@
-Pi-hole answers **DNS**: hostname → IP. **Caddy** on port **80** removes the need for `:8096`, `:5678`, etc. on every stack.
+# Local names for lab stacks (optional)
 
-## All lab URLs
+Pi-hole is optional. The dashboard is **http://127.0.0.1:8888** via Caddy. Set **`ENABLE_LAN_PROXY=true`** in `.env.caddy` (and run Pi-hole) only for network.lan URLs on port 80.
 
-Start Pi-hole and Caddy, then any stacks you use:
+Use this when you want portless **`http://<label>.<domain>`** URLs on your LAN.
+
+## network.lan URLs (Pi-hole + Caddy)
 
 ```bash
 bash scripts/start.sh pihole
@@ -24,7 +26,7 @@ bash scripts/start.sh jellyfin   # example — repeat per stack
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP only) |
 
-Replace `network.lan` with your **`PIHOLE_LOCAL_DOMAIN`**. Routes: **`caddy/Caddyfile`**.
+Replace `network.lan` with your **`PIHOLE_LOCAL_DOMAIN`**. Routes: **`caddy/proxy.caddy`** (requires `ENABLE_LAN_PROXY=true`).
 
 ## Configuration
 
@@ -35,7 +37,7 @@ Set in **`.env.pihole`** (from `.env.pihole.example`):
 | `LAB_HOST_IP` | `192.168.1.10` | LAN IP of the Docker host — all local names point here |
 | `PIHOLE_LOCAL_DOMAIN` | `network.lan` | Private zone suffix |
 
-DNS records are defined in **`docker-compose.pihole.yml`** under `FTLCONF_dns_hosts` (substituted at container start). Keep **`pihole/dns-hosts.conf`** in sync — same host labels, one per line.
+DNS records are defined in **`docker-compose.pihole.yml`** under `FTLCONF_dns_hosts`. Keep **`pihole/dns-hosts.conf`** in sync — same host labels, one per line.
 
 After changing IP, domain, or host list:
 
@@ -43,21 +45,21 @@ After changing IP, domain, or host list:
 bash scripts/start.sh pihole
 ```
 
-### Direct port access (without Caddy)
+### Direct port access (no Caddy)
 
 | Label | Stack / service | URL |
 |-------|-----------------|-----|
-| `jellyfin` | Jellyfin | http://jellyfin.network.lan:8096 |
-| `n8n` | n8n | http://n8n.network.lan:5678 |
-| `seerr` | Seerr | http://seerr.network.lan:5055 |
-| `it-tools` | IT-Tools | http://it-tools.network.lan:8083 |
-| `stirling` | Stirling PDF | http://stirling.network.lan:8082 |
-| `immich` | Immich | http://immich.network.lan:2283 |
-| `odysseus` | Odysseus UI | http://odysseus.network.lan:7000 |
-| `searxng` | Odysseus SearXNG | http://searxng.network.lan:8080 |
-| `ntfy` | Odysseus ntfy | http://ntfy.network.lan:8091 |
-| `postgres` | Shared Postgres | `postgres.network.lan:5432` |
-| `pihole` | Pi-hole admin | http://pihole.network.lan:5080/admin |
+| `jellyfin` | Jellyfin | http://127.0.0.1:8096 |
+| `n8n` | n8n | http://127.0.0.1:5678 |
+| `seerr` | Seerr | http://127.0.0.1:5055 |
+| `it-tools` | IT-Tools | http://127.0.0.1:8083 |
+| `stirling` | Stirling PDF | http://127.0.0.1:8082 |
+| `immich` | Immich | http://127.0.0.1:2283 |
+| `odysseus` | Odysseus UI | http://127.0.0.1:7000 |
+| `searxng` | Odysseus SearXNG | http://127.0.0.1:8080 |
+| `ntfy` | Odysseus ntfy | http://127.0.0.1:8091 |
+| `postgres` | Shared Postgres | `127.0.0.1:5432` |
+| `pihole` | Pi-hole admin | http://127.0.0.1:5080/admin |
 
 ## LAN DNS
 
@@ -75,10 +77,6 @@ services:
       - "53:53/udp"
       - "127.0.0.1:5080:80/tcp"
 ```
-
-## Loopback-only stacks
-
-n8n, Immich, Postgres, etc. bind `127.0.0.1` by default. **Caddy uses host network** and reaches them on localhost. LAN clients still need Pi-hole DNS and a reachable host (Caddy on `:80` is on all interfaces via host network).
 
 ## Related
 

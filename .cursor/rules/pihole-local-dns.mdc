@@ -15,9 +15,9 @@ When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU 
    ```yaml
    ${LAB_HOST_IP} myservice.${PIHOLE_LOCAL_DOMAIN:-network.lan}
    ```
-3. **`caddy/Caddyfile`** — add a site block if the stack has a web UI (portless URLs on :80).
-4. **`README.md`** — stack table + port map if the stack has a web UI or host port.
-4. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
+3. **`home/services.json`** — add an entry with `port` (and optional `path`); dashboard probes localhost.
+4. **`caddy/proxy.caddy`** — add a site block if you use optional network.lan proxy (`ENABLE_LAN_PROXY=true`).
+5. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
 
 Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`). Odysseus sidecars get their own labels (`searxng`, `ntfy`).
 

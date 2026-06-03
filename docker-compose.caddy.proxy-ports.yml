@@ -1,0 +1,6 @@
+# Extra port when ENABLE_LAN_PROXY=true (merged by scripts/start.sh / stop.sh).
+
+services:
+  caddy:
+    ports:
+      - "127.0.0.1:80:80"

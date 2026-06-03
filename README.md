@@ -15,20 +15,49 @@ Copy example env files to local `.env.*` (never overwrites files you already hav
 bash scripts/setup.sh
 ```
 
-Edit the generated files — at minimum set passwords in `.env.immich`, `.env.pihole`, and `.env.postgres`. Set **`LAB_HOST_IP`** and **`PIHOLE_LOCAL_DOMAIN`** in `.env.pihole` (same domain in `.env.caddy`). Odysseus config lives in `odysseus/.env`.
+Edit the generated files — at minimum set passwords in `.env.immich` and `.env.postgres`. Odysseus config lives in `odysseus/.env`.
 
 VS Code: run task **lab: setup**.
 
-## Local URLs (all stacks)
+## Dashboard
 
-After setup, start **Pi-hole** and **Caddy** once (DNS + reverse proxy on port 80):
+The **caddy** stack serves the home dashboard on loopback. A **network.lan** reverse proxy is optional — off by default.
+
+```bash
+bash scripts/start.sh caddy
+```
+
+Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). Cards show running stacks; links use `127.0.0.1:<port>`. No Pi-hole, no port 80.
+
+Skip Caddy entirely if you prefer — open each stack on its own port (see [port map](#port-map-host-bindings)).
+
+### Why Caddy (not nginx)?
+
+Both work. This repo uses **Caddy** because one config file handles the dashboard and optional per-host reverse proxy with less boilerplate than nginx (`server_name` blocks, manual upstream headers). nginx would be fine for the dashboard alone; Caddy keeps both modes in one container when you opt in to the proxy.
+
+### Access modes
+
+| Mode | What to run | How you reach services |
+|------|-------------|-------------------------|
+| **Direct** (default) | App stacks only | `http://127.0.0.1:8096`, `:5678`, … |
+| **Dashboard** | `caddy` (`ENABLE_LAN_PROXY=false`) | Dashboard at **http://127.0.0.1:8888** → links to localhost ports |
+| **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
+
+## Optional: network.lan URLs
+
+Enable only if you want portless LAN hostnames. In **`.env.caddy`**:
+
+```env
+ENABLE_LAN_PROXY=true
+PIHOLE_LOCAL_DOMAIN=network.lan
+```
+
+Set **`LAB_HOST_IP`** in **`.env.pihole`**, then:
 
 ```bash
 bash scripts/start.sh pihole
 bash scripts/start.sh caddy
 ```
-
-Then start whichever stacks you need. Every web UI is **`http://<label>.<domain>`** with no port (domain defaults to `network.lan`):
 
 | URL | Stack |
 |-----|-------|
@@ -56,30 +85,38 @@ bash scripts/start.sh n8n
 bash scripts/start.sh odysseus
 ```
 
-Or use **Run and Debug** → **&lt;Stack&gt; up** in VS Code.
-
-Stop a stack:
+Start **default lab stacks** (Caddy dashboard, Postgres, all apps — skips Odysseus if the submodule is not initialized). **Pi-hole is not included** — start it separately if you use network.lan DNS:
 
 ```bash
-docker compose -f docker-compose.<stack>.yml down
+bash scripts/start.sh all
+bash scripts/start.sh pihole   # optional — only for network.lan
 ```
 
-For Odysseus, `down` uses the same `-f docker-compose.odysseus.yml` file.
+Or use **Run and Debug** → **All stacks up** (or **&lt;Stack&gt; up**) in VS Code.
+
+Stop a stack (containers removed, **volumes kept**):
+
+```bash
+bash scripts/stop.sh jellyfin
+bash scripts/stop.sh all
+```
+
+Or **Run and Debug** → **&lt;Stack&gt; down** / **All stacks down** in VS Code.
 
 ## Stacks
 
-| Stack | Compose file | URL (Pi-hole + Caddy) | Role |
-|--------|----------------|------------------------|------|
-| **n8n** | `docker-compose.n8n.yml` | http://n8n.network.lan | Workflow automation ([n8n](https://n8n.io/)) |
-| **Jellyfin** | `docker-compose.jellyfin.yml` | http://jellyfin.network.lan | Media server ([Jellyfin](https://jellyfin.org/)) |
-| **Seerr** | `docker-compose.seerr.yml` | http://seerr.network.lan | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
-| **IT-Tools** | `docker-compose.it-tools.yml` | http://it-tools.network.lan | Dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
-| **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://stirling.network.lan | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
-| **Postgres** | `docker-compose.postgres.yml` | `postgres.network.lan:5432` | Shared PostgreSQL 18 |
-| **Immich** | `docker-compose.immich.yml` | http://immich.network.lan | Photo/video backup ([Immich](https://immich.app/)) |
-| **Pi-hole** | `docker-compose.pihole.yml` | http://pihole.network.lan/admin | DNS ([Pi-hole](https://pi-hole.net/)) |
-| **Caddy** | `docker-compose.caddy.yml` | port **80** (all rows above) | Reverse proxy ([Caddy](https://caddyserver.com/)) |
-| **Odysseus** | `docker-compose.odysseus.yml` | http://odysseus.network.lan | AI workspace; submodule in `odysseus/` |
+| Stack | Compose file | Default URL | Role |
+|--------|----------------|-------------|------|
+| **Caddy** | `docker-compose.caddy.yml` | http://127.0.0.1:8888 (dashboard) | Dashboard; optional network.lan proxy |
+| **n8n** | `docker-compose.n8n.yml` | http://127.0.0.1:5678 | Workflow automation ([n8n](https://n8n.io/)) |
+| **Jellyfin** | `docker-compose.jellyfin.yml` | http://localhost:8096 | Media server ([Jellyfin](https://jellyfin.org/)) |
+| **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
+| **IT-Tools** | `docker-compose.it-tools.yml` | http://localhost:8083 | Dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
+| **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
+| **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 |
+| **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photo/video backup ([Immich](https://immich.app/)) |
+| **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
+| **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | AI workspace; submodule in `odysseus/` |
 
 Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run together: Odysseus SearXNG (8080, loopback), Stirling PDF (8082), IT-Tools (8083).
 
@@ -87,6 +124,8 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 
 | Port | Stack / service | Compose file |
 |------|-----------------|--------------|
+| 8888 | Dashboard via Caddy (loopback) | `docker-compose.caddy.yml` |
+| 80 | Caddy LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
 | 5055 | Seerr | `docker-compose.seerr.yml` |
 | 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
 | 7000 | Odysseus UI | `docker-compose.odysseus.yml` → `odysseus/` |
@@ -99,7 +138,6 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 | 2283 | Immich (loopback) | `docker-compose.immich.yml` |
 | 5080 | Pi-hole admin (loopback) | `docker-compose.pihole.yml` |
 | 53 | Pi-hole DNS (loopback tcp/udp) | `docker-compose.pihole.yml` |
-| 80 | Caddy reverse proxy (host network) | `docker-compose.caddy.yml` |
 | 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
 
 ### Postgres
@@ -132,14 +170,24 @@ bash scripts/setup.sh   # once — creates .env.immich from example
 bash scripts/start.sh immich
 ```
 
-- UI: http://immich.network.lan (first visit creates the admin user)
+- UI: http://127.0.0.1:2283 (first visit creates the admin user)
 - Data: `data/immich/library/` (uploads), `data/immich/postgres/` (Immich DB)
 - Machine learning container is **commented out** by default (backup/gallery only). Uncomment `immich-machine-learning` in `docker-compose.immich.yml` for smart search and facial recognition; turn off unused ML jobs in **Admin → Machine Learning** if the service is not running
 - Bundled Postgres 14 (vector extensions) and Valkey
 - Pin versions via `IMMICH_VERSION` in `.env.immich` ([releases](https://github.com/immich-app/immich/releases))
 - Hardware transcoding: uncomment `extends` on `immich-server` and add upstream `hwaccel.*.yml` from the [Immich docker folder](https://github.com/immich-app/immich/tree/main/docker) if needed
 
-### Pi-hole
+### Caddy (dashboard + optional proxy)
+
+```bash
+bash scripts/start.sh caddy
+```
+
+- **Dashboard:** http://127.0.0.1:8888 (`HOME_PORT`) — [home/services.json](home/services.json)
+- **LAN proxy (off by default):** `ENABLE_LAN_PROXY=true` + Pi-hole — port 80, routes in [caddy/proxy.caddy](caddy/proxy.caddy)
+- Uses bridge networking with published ports (works on Docker Desktop for Windows)
+
+### Pi-hole (optional)
 
 ```bash
 bash scripts/setup.sh   # once — creates .env.pihole from example
@@ -153,18 +201,6 @@ bash scripts/start.sh pihole
 - Set **`LAB_HOST_IP`** in `.env.pihole` ([pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md))
 - **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then set your router DHCP DNS to the Pi’s IP
 
-### Caddy
-
-```bash
-bash scripts/start.sh caddy
-```
-
-- Proxies **every** web stack in [caddy/Caddyfile](caddy/Caddyfile) on port **80** (host network)
-- **`PIHOLE_LOCAL_DOMAIN`** in `.env.caddy` must match `.env.pihole`
-- Target stacks must be running; Caddy forwards to their localhost ports
-- Port **80** must be free on the host
-- Some apps need their public URL set in-app or in `.env.*` (n8n, Immich, Jellyfin)
-
 ### Odysseus (submodule)
 
 Odysseus lives in [`odysseus/`](odysseus/) as a [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) pointing at [pewdiepie-archdaemon/odysseus](https://github.com/pewdiepie-archdaemon/odysseus).
@@ -175,10 +211,9 @@ Odysseus lives in [`odysseus/`](odysseus/) as a [git submodule](https://git-scm.
 bash scripts/start.sh odysseus
 ```
 
-- UI: http://odysseus.network.lan
+- UI: http://localhost:7000 · SearXNG: http://127.0.0.1:8080 · ntfy: http://127.0.0.1:8091 · ChromaDB `127.0.0.1:8100` (loopback)
 - First admin password: `docker compose -f docker-compose.odysseus.yml logs odysseus`
 - Data: `odysseus/data/` · logs: `odysseus/logs/` (ignored by the submodule’s git, not under lab `data/`)
-- UI: http://odysseus.network.lan · SearXNG: http://searxng.network.lan · ntfy: http://ntfy.network.lan · ChromaDB `127.0.0.1:8100` (loopback)
 
 Update the submodule to latest upstream:
 
@@ -219,13 +254,16 @@ The container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin
 | Task | Script | Purpose |
 |------|--------|---------|
 | **lab: setup** | `scripts/setup.sh` | Copy all `.env.*.example` → `.env.*` (once) |
-| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start that stack (requires setup) |
+| **docker-compose: all up** | `scripts/start.sh all` | Start every stack |
+| **docker-compose: all down** | `scripts/stop.sh all` | Stop every stack (keeps volumes) |
+| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start one stack (requires setup) |
+| **docker-compose: &lt;name&gt; down** | `scripts/stop.sh <name>` | Stop one stack (keeps volumes) |
 
-Launch profiles run the matching **up** task. **`start.sh` does not create env files** — run setup first.
+Launch profiles run the matching **up** or **down** task. Use **All stacks up** / **All stacks down** for the full lab. **`start.sh` does not create env files** — run setup first.
 
 | Stack | Env file |
 |-------|----------|
-| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, Immich, Pi-hole, Postgres, Caddy | `.env.<stack>` at repo root |
+| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, Immich, Caddy, Pi-hole, Postgres | `.env.<stack>` at repo root |
 | Odysseus | `odysseus/.env` (submodule) |
 
 All `.env.*` files are gitignored except `*.example`.

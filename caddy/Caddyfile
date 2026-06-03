@@ -1,47 +1,10 @@
-# All lab web stacks — hostname → host port on :80 via Caddy (host network).
-# Domain: LOCAL_DOMAIN from .env.caddy (match PIHOLE_LOCAL_DOMAIN in .env.pihole).
-# Keep labels in sync with pihole/dns-hosts.conf. Postgres is not HTTP-proxied.
+# Dashboard — listen on :8888 in container; host publishes 127.0.0.1:HOME_PORT.
 
 {
 	auto_https off
 }
 
-jellyfin.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:8096
-}
-
-n8n.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:5678
-}
-
-seerr.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:5055
-}
-
-it-tools.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:8083
-}
-
-stirling.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:8082
-}
-
-immich.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:2283
-}
-
-odysseus.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:7000
-}
-
-searxng.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:8080
-}
-
-ntfy.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:8091
-}
-
-pihole.{$LOCAL_DOMAIN} {
-	reverse_proxy 127.0.0.1:5080
+:8888 {
+	root * /srv/home
+	file_server
 }

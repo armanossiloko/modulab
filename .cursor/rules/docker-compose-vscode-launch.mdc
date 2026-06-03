@@ -12,21 +12,19 @@ When you add a new `docker-compose*.yml` file at the workspace root (a stack thi
 
 1. **`.env.<short-name>.example`** at the repo root (setup copies it to `.env.<short-name>`).
 
-2. **`.vscode/tasks.json`** — append a shell task:
-   - `label`: `docker-compose: <short-name> up`
-   - `command`: `bash scripts/start.sh <short-name>`
+2. **`.vscode/tasks.json`** — append shell tasks:
+   - `label`: `docker-compose: <short-name> up` → `bash scripts/start.sh <short-name>`
+   - `label`: `docker-compose: <short-name> down` → `bash scripts/stop.sh <short-name>`
    - Same `problemMatcher`, `group`, and `presentation` as existing compose tasks.
 
-3. **`.vscode/launch.json`** — append a **Docker** configuration:
-   - `name`: human-readable title + ` up` (e.g. `n8n up`)
-   - `type`: `docker`, `request`: `launch`
-   - `preLaunchTask`: must exactly match the new task `label`
-   - `dockerComposeFile`: `${workspaceFolder}/docker-compose.<short-name>.yml`
+3. **`.vscode/launch.json`** — append launch configurations:
+   - **Up:** `name` `<Title> up`, `type` `docker`, `request` `launch`, `preLaunchTask` matches up task, `dockerComposeFile` `${workspaceFolder}/docker-compose.<short-name>.yml`
+   - **Down:** `name` `<Title> down`, `type` `node`, `preLaunchTask` matches down task, `runtimeExecutable` `node`, `runtimeArgs` `["-e", "process.exit(0)"]`, `console` `integratedTerminal` (same pattern as **All stacks down**)
 
-**Do not** add per-stack `up-*.sh` files. All stacks use `scripts/setup.sh` (env) and `scripts/start.sh <name>` (start). Extend `scripts/common.sh` only if the stack needs special startup (see `postgres`, `odysseus` in `start.sh`).
+**Do not** add per-stack `up-*.sh` / `down-*.sh` files. Use `scripts/setup.sh`, `scripts/start.sh`, and `scripts/stop.sh`. Extend `scripts/common.sh` only if the stack needs special startup (see `postgres`, `odysseus` in `start.sh`). Add new default stacks to `LAB_STACKS` in `common.sh` when they belong in `start.sh all` / `stop.sh all`.
 
 When adding a root stack, also update **`pihole/dns-hosts.conf`** per `.cursor/rules/pihole-local-dns.mdc`.
 
 Keep JSON valid (commas between array entries).
 
-Do **not** skip this when adding or splitting compose files: one dedicated launch profile (and its preLaunch task) per new stack file.
+Do **not** skip this when adding or splitting compose files: one **up** and one **down** launch profile (and tasks) per new stack file. **`stop.sh` uses `docker compose down` without `-v`** — volumes are kept.

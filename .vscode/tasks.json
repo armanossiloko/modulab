@@ -13,6 +13,17 @@
       }
     },
     {
+      "label": "docker-compose: all up",
+      "type": "shell",
+      "command": "bash scripts/start.sh all",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: stirling-pdf up",
       "type": "shell",
       "command": "bash scripts/start.sh stirling-pdf",
@@ -115,6 +126,127 @@
       "label": "docker-compose: caddy up",
       "type": "shell",
       "command": "bash scripts/start.sh caddy",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: all down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh all",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: stirling-pdf down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh stirling-pdf",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: jellyfin down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh jellyfin",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: n8n down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh n8n",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: seerr down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh seerr",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: it-tools down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh it-tools",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: odysseus down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh odysseus",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: postgres down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh postgres",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: immich down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh immich",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: pihole down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh pihole",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: caddy down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh caddy",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

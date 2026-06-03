@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">modulab</p>
+      <h1>Home network</h1>
+      <p class="lede">Only stacks that are running on this host appear here. Start one with <code>bash scripts/start.sh &lt;name&gt;</code>, then refresh.</p>
+      <label class="search-wrap">
+        <span class="search-label">Search</span>
+        <input type="search" id="search" class="search" placeholder="Filter by name, port, URL…" autocomplete="off" spellcheck="false">
+      </label>
+    </header>
+    <ul id="grid" class="grid" role="list"></ul>
+    <footer class="foot">
+      <span id="domain-label"></span>
+      <button type="button" id="refresh" class="refresh">Refresh status</button>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

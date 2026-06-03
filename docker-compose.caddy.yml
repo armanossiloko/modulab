@@ -1,18 +1,35 @@
-# Reverse proxy on :80 for every lab web UI (see caddy/Caddyfile).
-# Host network reaches 127.0.0.1 backends (n8n, Immich, Odysseus, etc.).
-# setup.sh → .env.caddy, then: bash scripts/start.sh caddy
+# Dashboard (127.0.0.1:8888) + optional network.lan reverse proxy (ENABLE_LAN_PROXY).
+# Bridge + published ports (works on Docker Desktop). setup.sh → .env.caddy
 
 services:
   caddy:
     container_name: caddy
     image: caddy:${CADDY_TAG:-2-alpine}
     restart: unless-stopped
-    network_mode: host
     env_file:
       - .env.caddy
     environment:
       LOCAL_DOMAIN: ${PIHOLE_LOCAL_DOMAIN}
+      HOME_PORT: ${HOME_PORT:-8888}
+      ENABLE_LAN_PROXY: ${ENABLE_LAN_PROXY:-false}
+      UPSTREAM_HOST: ${UPSTREAM_HOST:-host.docker.internal}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${HOME_PORT:-8888}:8888"
+    command:
+      - sh
+      - -c
+      - |
+        if [ "$${ENABLE_LAN_PROXY}" = "true" ]; then
+          cat /etc/caddy/Caddyfile /etc/caddy/proxy.caddy > /tmp/Caddyfile
+          exec caddy run --config /tmp/Caddyfile
+        else
+          exec caddy run --config /etc/caddy/Caddyfile
+        fi
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/proxy.caddy:/etc/caddy/proxy.caddy:ro
+      - ./home:/srv/home:ro
       - ./data/caddy/data:/data
       - ./data/caddy/config:/config
