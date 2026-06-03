@@ -1,0 +1,18 @@
+# Reverse proxy on :80 for every lab web UI (see caddy/Caddyfile).
+# Host network reaches 127.0.0.1 backends (n8n, Immich, Odysseus, etc.).
+# setup.sh → .env.caddy, then: bash scripts/start.sh caddy
+
+services:
+  caddy:
+    container_name: caddy
+    image: caddy:${CADDY_TAG:-2-alpine}
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env.caddy
+    environment:
+      LOCAL_DOMAIN: ${PIHOLE_LOCAL_DOMAIN}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config

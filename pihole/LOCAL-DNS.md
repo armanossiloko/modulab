@@ -1,137 +1,86 @@
-# Local names for lab stacks (Pi-hole)
+Pi-hole answers **DNS**: hostname → IP. **Caddy** on port **80** removes the need for `:8096`, `:5678`, etc. on every stack.
 
-Pi-hole answers **DNS**: it turns a hostname into an IP address. It does **not** route HTTP paths like `/jellyfin` on a single site—that needs a **reverse proxy** (Caddy, nginx, Traefik).
+## All lab URLs
 
-Pick one pattern:
+Start Pi-hole and Caddy, then any stacks you use:
 
-| Pattern | Example | Pi-hole | Also need |
-|---------|---------|---------|-----------|
-| **Subdomain** (recommended) | `http://jellyfin.network.lan:8096` | A record `jellyfin.network.lan` → `192.168.1.10` | Port in URL, unless you add a proxy |
-| **Subdomain + proxy** | `http://jellyfin.network.lan` | Same A record (or CNAME to host) | Reverse proxy on `:80`/`:443` |
-| **Path on one hostname** | `http://network.lan/jellyfin` | A record `network.lan` → proxy host | Reverse proxy with path rules |
+```bash
+bash scripts/start.sh pihole
+bash scripts/start.sh caddy
+bash scripts/start.sh jellyfin   # example — repeat per stack
+```
 
-Below uses **`network.lan`** as your private zone and **`192.168.1.10`** as the machine running Docker (replace with your Pi/homelab IP).
+| URL | Stack |
+|-----|-------|
+| http://jellyfin.network.lan | Jellyfin |
+| http://n8n.network.lan | n8n |
+| http://seerr.network.lan | Seerr |
+| http://it-tools.network.lan | IT-Tools |
+| http://stirling.network.lan | Stirling PDF |
+| http://immich.network.lan | Immich |
+| http://odysseus.network.lan | Odysseus |
+| http://searxng.network.lan | SearXNG |
+| http://ntfy.network.lan | ntfy |
+| http://pihole.network.lan/admin | Pi-hole admin |
+| `postgres.network.lan:5432` | Shared Postgres (TCP only) |
 
-## 1. Make Pi-hole your LAN DNS
+Replace `network.lan` with your **`PIHOLE_LOCAL_DOMAIN`**. Routes: **`caddy/Caddyfile`**.
 
-On the host that runs Pi-hole (often your Raspberry Pi):
+## Configuration
 
-1. Publish DNS on the LAN — in `docker-compose.override.yml` at the repo root:
+Set in **`.env.pihole`** (from `.env.pihole.example`):
 
-   ```yaml
-   services:
-     pihole:
-       ports:
-         - "53:53/tcp"
-         - "53:53/udp"
-         - "127.0.0.1:5080:80/tcp"
-   ```
+| Variable | Example | Purpose |
+|----------|---------|---------|
+| `LAB_HOST_IP` | `192.168.1.10` | LAN IP of the Docker host — all local names point here |
+| `PIHOLE_LOCAL_DOMAIN` | `network.lan` | Private zone suffix |
 
-2. Start Pi-hole: `bash scripts/start.sh pihole`
+DNS records are defined in **`docker-compose.pihole.yml`** under `FTLCONF_dns_hosts` (substituted at container start). Keep **`pihole/dns-hosts.conf`** in sync — same host labels, one per line.
 
-3. Router **DHCP DNS** → `192.168.1.10` (your Pi-hole host IP), or set DNS manually on each device.
+After changing IP, domain, or host list:
 
-Clients must use Pi-hole for lookups; otherwise local names will not resolve.
+```bash
+bash scripts/start.sh pihole
+```
 
-## 2. Add local DNS records (Pi-hole admin)
+### Direct port access (without Caddy)
 
-1. Open http://192.168.1.10:5080/admin (or your Pi-hole admin URL).
-2. **Local DNS** → **DNS Records** (Pi-hole v6).
-3. Add an **A** record per service (domain → IP of the Docker host):
+| Label | Stack / service | URL |
+|-------|-----------------|-----|
+| `jellyfin` | Jellyfin | http://jellyfin.network.lan:8096 |
+| `n8n` | n8n | http://n8n.network.lan:5678 |
+| `seerr` | Seerr | http://seerr.network.lan:5055 |
+| `it-tools` | IT-Tools | http://it-tools.network.lan:8083 |
+| `stirling` | Stirling PDF | http://stirling.network.lan:8082 |
+| `immich` | Immich | http://immich.network.lan:2283 |
+| `odysseus` | Odysseus UI | http://odysseus.network.lan:7000 |
+| `searxng` | Odysseus SearXNG | http://searxng.network.lan:8080 |
+| `ntfy` | Odysseus ntfy | http://ntfy.network.lan:8091 |
+| `postgres` | Shared Postgres | `postgres.network.lan:5432` |
+| `pihole` | Pi-hole admin | http://pihole.network.lan:5080/admin |
 
-   | Domain | IP | Opens (with default modulab ports) |
-   |--------|-----|-------------------------------------|
-   | `jellyfin.network.lan` | `192.168.1.10` | http://jellyfin.network.lan:8096 |
-   | `n8n.network.lan` | `192.168.1.10` | http://n8n.network.lan:5678 |
-   | `seerr.network.lan` | `192.168.1.10` | http://seerr.network.lan:5055 |
-   | `immich.network.lan` | `192.168.1.10` | http://immich.network.lan:2283 |
-   | `odysseus.network.lan` | `192.168.1.10` | http://odysseus.network.lan:7000 |
-   | `it-tools.network.lan` | `192.168.1.10` | http://it-tools.network.lan:8083 |
-   | `stirling.network.lan` | `192.168.1.10` | http://stirling.network.lan:8082 |
+## LAN DNS
 
-   Optional apex record for a future reverse proxy:
-
-   | Domain | IP |
-   |--------|-----|
-   | `network.lan` | `192.168.1.10` |
-
-4. Save. Test from a LAN client:
-
-   ```bash
-   nslookup jellyfin.network.lan
-   # should return 192.168.1.10
-   ```
-
-Records persist under `data/pihole/etc-pihole/` (gitignored).
-
-### Example: Jellyfin only
-
-1. Jellyfin compose publishes **8096** on all interfaces (`docker-compose.jellyfin.yml`).
-2. Pi-hole: `jellyfin.network.lan` → `192.168.1.10`.
-3. Browser: **http://jellyfin.network.lan:8096**
-
-## 3. LAN access vs loopback-only stacks
-
-Several modulab stacks bind **127.0.0.1** only (n8n, Immich, Postgres, etc.). DNS can point to the host IP, but **other devices on the LAN still cannot reach those ports** until you publish them on the host.
-
-For LAN use, change the compose port mapping, e.g. n8n:
+1. Set **`LAB_HOST_IP`** to this machine’s address.
+2. On a Pi/homelab, publish port 53 on the LAN via `docker-compose.override.yml` (see below).
+3. Point router DHCP DNS at that host.
+4. `bash scripts/start.sh pihole`
 
 ```yaml
-ports:
-  - "5678:5678"   # was 127.0.0.1:5678:5678
+# docker-compose.override.yml (example)
+services:
+  pihole:
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "127.0.0.1:5080:80/tcp"
 ```
 
-Or bind a specific LAN IP: `"192.168.1.10:5678:5678"`.
+## Loopback-only stacks
 
-Use `docker-compose.override.yml` on the Pi so you do not have to edit tracked compose files.
-
-## 4. Pretty URLs without `:8096` (reverse proxy)
-
-To open **http://jellyfin.network.lan** with no port (or **http://network.lan/jellyfin**), run a reverse proxy on the same host listening on **80** / **443**.
-
-Minimal **Caddy** idea (not included in this repo):
-
-```text
-jellyfin.network.lan {
-    reverse_proxy 127.0.0.1:8096
-}
-
-n8n.network.lan {
-    reverse_proxy 127.0.0.1:5678
-}
-```
-
-Path-based on one hostname:
-
-```text
-network.lan {
-    handle_path /jellyfin/* {
-        reverse_proxy 127.0.0.1:8096
-    }
-    handle_path /n8n/* {
-        reverse_proxy 127.0.0.1:5678
-    }
-}
-```
-
-Pi-hole still only provides **`network.lan` → 192.168.1.10**; Caddy does the `/jellyfin` routing.
-
-Some apps (n8n, Immich) also need **`WEBHOOK_URL` / `ROOT_URL`** updated to the public hostname when behind a proxy.
-
-## 5. Optional: records via env (Git-friendly)
-
-For a small set of names you can version in git, add to `docker-compose.pihole.yml` (comma-separated `IP hostname` pairs):
-
-```yaml
-environment:
-  FTLCONF_dns_hosts: |-
-    192.168.1.10 jellyfin.network.lan
-    192.168.1.10 n8n.network.lan
-```
-
-Env-defined settings are **read-only** in the Pi-hole UI until removed from compose. Prefer the UI or `FTLCONF_dns_hosts` for one source of truth, not both fighting each other.
+n8n, Immich, Postgres, etc. bind `127.0.0.1` by default. **Caddy uses host network** and reaches them on localhost. LAN clients still need Pi-hole DNS and a reachable host (Caddy on `:80` is on all interfaces via host network).
 
 ## Related
 
 - [Pi-hole Docker configuration](https://docs.pi-hole.net/docker/configuration/)
-- Modulab port map: [README.md](../README.md#port-map-host-bindings)
+- [README.md](../README.md#port-map-host-bindings)

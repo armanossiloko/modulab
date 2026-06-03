@@ -35,9 +35,10 @@ Setup finished.
 
 Next:
   1. Edit .env.* at the repo root (passwords, timezone, paths).
-  2. Edit odysseus/.env if you use Odysseus.
-  3. Start a stack: bash scripts/start.sh <stack>
-     or use Run and Debug → "<Stack> up" in VS Code.
+  2. Set LAB_HOST_IP and PIHOLE_LOCAL_DOMAIN in .env.pihole (match .env.caddy).
+  3. Edit odysseus/.env if you use Odysseus.
+  4. bash scripts/start.sh pihole && bash scripts/start.sh caddy  (all stacks on http://<label>.<domain>)
+  5. Start stacks: bash scripts/start.sh <stack>
 
-Stacks: jellyfin n8n seerr it-tools stirling-pdf postgres immich pihole odysseus
+Stacks: jellyfin n8n seerr it-tools stirling-pdf postgres immich pihole caddy odysseus
 EOF

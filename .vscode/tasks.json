@@ -110,6 +110,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "docker-compose: caddy up",
+      "type": "shell",
+      "command": "bash scripts/start.sh caddy",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

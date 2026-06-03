@@ -63,6 +63,13 @@
       "request": "launch",
       "preLaunchTask": "docker-compose: pihole up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.pihole.yml"
+    },
+    {
+      "name": "Caddy up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: caddy up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.caddy.yml"
     }
   ]
 }

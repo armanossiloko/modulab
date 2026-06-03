@@ -13,7 +13,7 @@ shift
 compose="${root}/docker-compose.${name}.yml"
 if [[ ! -f "$compose" ]]; then
   echo "Unknown stack '${name}'. No ${compose}" >&2
-  echo "Stacks: jellyfin n8n seerr it-tools stirling-pdf postgres immich pihole odysseus" >&2
+  echo "Stacks: jellyfin n8n seerr it-tools stirling-pdf postgres immich pihole caddy odysseus" >&2
   exit 1
 fi
 

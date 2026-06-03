@@ -43,21 +43,66 @@ require_odysseus_env() {
   fi
 }
 
+lab_domain() {
+  local f key line
+  for f in "${root}/.env.caddy" "${root}/.env.pihole"; do
+    [[ -f "$f" ]] || continue
+    line="$(grep -E '^PIHOLE_LOCAL_DOMAIN=' "$f" | head -1 || true)"
+    if [[ -n "$line" ]]; then
+      echo "${line#PIHOLE_LOCAL_DOMAIN=}" | tr -d '\r'
+      return 0
+    fi
+  done
+  echo "network.lan"
+}
+
+lab_url() {
+  local label="$1"
+  local path="${2:-}"
+  echo "http://${label}.$(lab_domain)${path}"
+}
+
+print_lab_urls() {
+  local domain
+  domain="$(lab_domain)"
+  cat <<EOF
+Lab URLs (Pi-hole + Caddy on port 80, domain ${domain}):
+  $(lab_url jellyfin)
+  $(lab_url n8n)
+  $(lab_url seerr)
+  $(lab_url it-tools)
+  $(lab_url stirling)
+  $(lab_url immich)
+  $(lab_url odysseus)
+  $(lab_url searxng)
+  $(lab_url ntfy)
+  $(lab_url pihole /admin)
+  postgres.${domain}:5432
+EOF
+}
+
 print_stack_url() {
   local name="$1"
+  local domain
+  domain="$(lab_domain)"
   case "$name" in
-    jellyfin) echo "Jellyfin: http://localhost:8096" ;;
-    n8n) echo "n8n: http://127.0.0.1:5678" ;;
-    seerr) echo "Seerr: http://localhost:5055" ;;
-    it-tools) echo "IT-Tools: http://localhost:8083" ;;
-    stirling-pdf) echo "Stirling PDF: http://localhost:8082" ;;
-    immich) echo "Immich: http://127.0.0.1:2283" ;;
+    jellyfin) echo "Jellyfin: $(lab_url jellyfin)" ;;
+    n8n) echo "n8n: $(lab_url n8n)" ;;
+    seerr) echo "Seerr: $(lab_url seerr)" ;;
+    it-tools) echo "IT-Tools: $(lab_url it-tools)" ;;
+    stirling-pdf) echo "Stirling PDF: $(lab_url stirling)" ;;
+    immich) echo "Immich: $(lab_url immich)" ;;
     pihole)
-      echo "Pi-hole admin: http://127.0.0.1:5080/admin"
+      echo "Pi-hole admin: $(lab_url pihole /admin)"
       echo "DNS (loopback): 127.0.0.1:53"
       ;;
-    postgres) echo "Postgres: 127.0.0.1:5432 (modulab-db / hostname postgres)" ;;
-    odysseus) echo "Odysseus: http://localhost:7000" ;;
+    caddy) print_lab_urls ;;
+    postgres) echo "Postgres: postgres.${domain}:5432" ;;
+    odysseus)
+      echo "Odysseus: $(lab_url odysseus)"
+      echo "SearXNG: $(lab_url searxng)"
+      echo "ntfy: $(lab_url ntfy)"
+      ;;
     *) echo "Started ${name}" ;;
   esac
 }
