@@ -121,6 +121,7 @@ bash scripts/up-pihole.sh
 - **Standalone** — no Postgres, no `modulab-db`
 - Port **53** must be free on the host (stop other DNS listeners first)
 - **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then set your router DHCP DNS to the Pi’s IP
+- **Local hostnames** (e.g. `jellyfin.network.lan` → `192.168.1.10`): [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md) — Pi-hole does DNS only; path URLs like `network.lan/jellyfin` need a reverse proxy
 
 ### Odysseus (submodule)
 

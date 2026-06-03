@@ -4,6 +4,7 @@
 # bash scripts/up-pihole.sh
 # Admin: http://127.0.0.1:5080/admin
 # DNS (loopback): 127.0.0.1:53 — on a Pi, use docker-compose.override.yml to bind 53:53 for LAN
+# Local names (jellyfin.network.lan → host IP): see pihole/LOCAL-DNS.md
 
 services:
   pihole:
