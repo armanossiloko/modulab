@@ -1,11 +1,35 @@
-# Ignore OS and editor files
-*.log
-*.tmp
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+
+# Dependencies
 node_modules/
 
-# Keep VS Code launch and tasks in repo
+# VS Code launch and tasks are tracked intentionally
 # .vscode/
 
-secrets/
+# Runtime / bind-mounted data (Docker stacks)
 data/
 media/
+.data/
+
+# Secrets and local env (never commit passwords or generated keys)
+secrets/
+.env
+.env.*
+!.env.*.example
+!.env.example
+
+# Gogs: local copy may contain SECRET_KEY and DB password overrides
+gogs/app.ini
+
+# Optional per-machine Compose overrides (Linux: docker compose merges these automatically)
+docker-compose.override.yml
+docker-compose.*.override.yml
+
+# Logs and temp files
+*.log
+*.tmp

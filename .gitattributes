@@ -1,0 +1,2 @@
+# Shell scripts: LF line endings for Linux (and Git Bash on Windows)
+*.sh text eol=lf
