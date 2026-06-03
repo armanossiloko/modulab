@@ -47,6 +47,7 @@ For Odysseus, `down` uses the same `-f docker-compose.odysseus.yml` file.
 | **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
 | **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 (`modulab-db` network) |
 | **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photo/video backup ([Immich](https://immich.app/)); loopback only |
+| **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ad blocker ([Pi-hole](https://pi-hole.net/)); loopback DNS on port 53 |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | Self-hosted AI workspace; git submodule in `odysseus/` |
 
 Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run together: Odysseus SearXNG (8080, loopback), Stirling PDF (8082), IT-Tools (8083).
@@ -65,6 +66,8 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
 | 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
 | 2283 | Immich (loopback) | `docker-compose.immich.yml` |
+| 5080 | Pi-hole admin (loopback) | `docker-compose.pihole.yml` |
+| 53 | Pi-hole DNS (loopback tcp/udp) | `docker-compose.pihole.yml` |
 | 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
 
 ### Postgres
@@ -104,6 +107,20 @@ bash scripts/up-immich.sh
 - Uses its **own** Postgres 14 image with vector extensions and Valkey — **not** the shared `modulab-db` Postgres stack
 - Pin versions via `IMMICH_VERSION` in `.env.immich` ([releases](https://github.com/immich-app/immich/releases))
 - Hardware transcoding: uncomment `extends` on `immich-server` and add upstream `hwaccel.*.yml` from the [Immich docker folder](https://github.com/immich-app/immich/tree/main/docker) if needed
+
+### Pi-hole
+
+```bash
+cp .env.pihole.example .env.pihole   # set PIHOLE_PASSWORD
+bash scripts/up-pihole.sh
+```
+
+- Admin: http://127.0.0.1:5080/admin
+- DNS: `127.0.0.1:53` (tcp + udp on loopback)
+- Data: `data/pihole/etc-pihole/`
+- **Standalone** — no Postgres, no `modulab-db`
+- Port **53** must be free on the host (stop other DNS listeners first)
+- **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then set your router DHCP DNS to the Pi’s IP
 
 ### Odysseus (submodule)
 

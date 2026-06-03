@@ -88,6 +88,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "docker-compose: pihole up",
+      "type": "shell",
+      "command": "bash scripts/up-pihole.sh",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     }
   ]
 }

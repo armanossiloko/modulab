@@ -56,6 +56,13 @@
       "request": "launch",
       "preLaunchTask": "docker-compose: immich up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.immich.yml"
+    },
+    {
+      "name": "Pi-hole up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: pihole up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.pihole.yml"
     }
   ]
 }
