@@ -1,15 +1,15 @@
 # Lab — modular homelab stacks
 
-Small, independent [Docker Compose](https://docs.docker.com/compose/) stacks you can run one at a time or together on a single host. Each service lives in its own `docker-compose.<name>.yml` at the repo root (or a wrapper that includes the [Odysseus](https://github.com/pewdiepie-archdaemon/odysseus) submodule).
+Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can run alone or together on one host. Each stack has a `docker-compose.<name>.yml` at the repo root; [Odysseus](https://github.com/pewdiepie-archdaemon/odysseus) is included as a submodule.
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with Compose (v2: `docker compose`, or the classic `docker-compose` CLI used by this repo’s VS Code tasks)
-- **Odysseus:** after cloning, initialize the submodule: `git submodule update --init --recursive`
+- [Docker](https://docs.docker.com/get-docker/) with Compose (v2: `docker compose`, or classic `docker-compose` used by VS Code tasks)
+- **Odysseus:** after cloning, run `git submodule update --init --recursive`
 
-## Setup (once)
+## Setup
 
-Copy example env files to local `.env.*` (never overwrites files you already have):
+Copy example env files to local `.env.*` (never overwrites existing files):
 
 ```bash
 bash scripts/setup.sh
@@ -19,23 +19,41 @@ Edit the generated files — at minimum set passwords in `.env.immich` and `.env
 
 VS Code: run task **lab: setup**.
 
+## Quick start
+
+Start one stack:
+
+```bash
+bash scripts/start.sh jellyfin
+bash scripts/start.sh n8n
+bash scripts/start.sh odysseus
+```
+
+Start the default lab (Caddy dashboard, Postgres, all apps — skips Odysseus if the submodule is not initialized). Pi-hole is not included:
+
+```bash
+bash scripts/start.sh all
+bash scripts/start.sh pihole   # optional — only for network.lan DNS
+```
+
+Stop a stack (containers removed, volumes kept):
+
+```bash
+bash scripts/stop.sh jellyfin
+bash scripts/stop.sh all
+```
+
+Or use **Run and Debug** → **All stacks up** / **&lt;Stack&gt; up** (and matching **down** tasks) in VS Code.
+
 ## Dashboard
 
-The **caddy** stack serves the home dashboard on loopback. A **network.lan** reverse proxy is optional — off by default.
+The **caddy** stack serves a home dashboard on loopback. An optional **network.lan** reverse proxy is off by default.
 
 ```bash
 bash scripts/start.sh caddy
 ```
 
-Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). Cards show running stacks; links use `127.0.0.1:<port>`. No Pi-hole, no port 80.
-
-Skip Caddy entirely if you prefer — open each stack on its own port (see [port map](#port-map-host-bindings)).
-
-### Why Caddy (not nginx)?
-
-Both work. This repo uses **Caddy** because one config file handles the dashboard and optional per-host reverse proxy with less boilerplate than nginx (`server_name` blocks, manual upstream headers). nginx would be fine for the dashboard alone; Caddy keeps both modes in one container when you opt in to the proxy.
-
-### Access modes
+Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). Cards show running stacks; links use `127.0.0.1:<port>`. You can skip Caddy and open each stack on its own port instead — see the [port map](#port-map).
 
 | Mode | What to run | How you reach services |
 |------|-------------|-------------------------|
@@ -43,7 +61,9 @@ Both work. This repo uses **Caddy** because one config file handles the dashboar
 | **Dashboard** | `caddy` (`ENABLE_LAN_PROXY=false`) | Dashboard at **http://127.0.0.1:8888** → links to localhost ports |
 | **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
 
-## Optional: network.lan URLs
+Config: [home/services.json](home/services.json) · routes: [caddy/Caddyfile](caddy/Caddyfile) · LAN proxy: [caddy/proxy.caddy](caddy/proxy.caddy)
+
+### Optional: network.lan URLs
 
 Enable only if you want portless LAN hostnames. In **`.env.caddy`**:
 
@@ -73,41 +93,13 @@ bash scripts/start.sh caddy
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP, not HTTP) |
 
-Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md) · routes: [caddy/Caddyfile](caddy/Caddyfile)
-
-## Quick start
-
-Start one stack (after setup):
-
-```bash
-bash scripts/start.sh jellyfin
-bash scripts/start.sh n8n
-bash scripts/start.sh odysseus
-```
-
-Start **default lab stacks** (Caddy dashboard, Postgres, all apps — skips Odysseus if the submodule is not initialized). **Pi-hole is not included** — start it separately if you use network.lan DNS:
-
-```bash
-bash scripts/start.sh all
-bash scripts/start.sh pihole   # optional — only for network.lan
-```
-
-Or use **Run and Debug** → **All stacks up** (or **&lt;Stack&gt; up**) in VS Code.
-
-Stop a stack (containers removed, **volumes kept**):
-
-```bash
-bash scripts/stop.sh jellyfin
-bash scripts/stop.sh all
-```
-
-Or **Run and Debug** → **&lt;Stack&gt; down** / **All stacks down** in VS Code.
+Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 
 ## Stacks
 
 | Stack | Compose file | Default URL | Role |
 |--------|----------------|-------------|------|
-| **Caddy** | `docker-compose.caddy.yml` | http://127.0.0.1:8888 (dashboard) | Dashboard; optional network.lan proxy |
+| **Caddy** | `docker-compose.caddy.yml` | http://127.0.0.1:8888 | Dashboard; optional network.lan proxy |
 | **n8n** | `docker-compose.n8n.yml` | http://127.0.0.1:5678 | Workflow automation ([n8n](https://n8n.io/)) |
 | **Jellyfin** | `docker-compose.jellyfin.yml` | http://localhost:8096 | Media server ([Jellyfin](https://jellyfin.org/)) |
 | **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
@@ -118,14 +110,14 @@ Or **Run and Debug** → **&lt;Stack&gt; down** / **All stacks down** in VS Code
 | **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | AI workspace; submodule in `odysseus/` |
 
-Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run together: Odysseus SearXNG (8080, loopback), Stirling PDF (8082), IT-Tools (8083).
+Ports **8080**, **8082**, and **8083** are chosen so stacks can run together: Odysseus SearXNG (8080), Stirling PDF (8082), IT-Tools (8083).
 
-### Port map (host bindings)
+### Port map
 
 | Port | Stack / service | Compose file |
 |------|-----------------|--------------|
-| 8888 | Dashboard via Caddy (loopback) | `docker-compose.caddy.yml` |
-| 80 | Caddy LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
+| 8888 | Dashboard (loopback) | `docker-compose.caddy.yml` |
+| 80 | LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
 | 5055 | Seerr | `docker-compose.seerr.yml` |
 | 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
 | 7000 | Odysseus UI | `docker-compose.odysseus.yml` → `odysseus/` |
@@ -140,6 +132,8 @@ Host ports **8080**, **8082**, and **8083** are assigned so these stacks can run
 | 53 | Pi-hole DNS (loopback tcp/udp) | `docker-compose.pihole.yml` |
 | 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
 
+## Stack notes
+
 ### Postgres
 
 ```bash
@@ -147,12 +141,12 @@ bash scripts/start.sh postgres
 ```
 
 - Host: `127.0.0.1:5432` · in-network hostname: `postgres` on `modulab-db`
-- Data: `data/postgres/` (ignored by git)
-- Defaults: user/database `modulab` / password `modulab` — override via `.env.postgres` from `.env.postgres.example`
+- Data: `data/postgres/`
+- Defaults: user/database `modulab` / password `modulab` — override via `.env.postgres`
 - **First boot:** `postgres/init/<NN>-<app>.sql` (empty data dir only)
-- **Every `up`:** idempotent `postgres/bootstrap.sql` via `db-bootstrap` (see `postgres/README.md`)
+- **Every `up`:** idempotent `postgres/bootstrap.sql` via `db-bootstrap` — see [postgres/README.md](postgres/README.md)
 
-Other containers join the same database:
+Other containers join the shared database:
 
 ```yaml
 networks:
@@ -161,114 +155,99 @@ networks:
     name: modulab-db
 ```
 
-**Odysseus + Cookbook:** ChromaDB is published on host **8100**. Cookbook’s diffusion server also defaults to port **8100** when serving on the host—use another port in the serve command if both are active.
+**Odysseus + Cookbook:** ChromaDB uses host port **8100**. Cookbook’s diffusion server also defaults to **8100** — pick another port in the serve command if both are active.
 
 ### Immich
 
 ```bash
-bash scripts/setup.sh   # once — creates .env.immich from example
+bash scripts/setup.sh   # once
 bash scripts/start.sh immich
 ```
 
 - UI: http://127.0.0.1:2283 (first visit creates the admin user)
-- Data: `data/immich/library/` (uploads), `data/immich/postgres/` (Immich DB)
-- Machine learning container is **commented out** by default (backup/gallery only). Uncomment `immich-machine-learning` in `docker-compose.immich.yml` for smart search and facial recognition; turn off unused ML jobs in **Admin → Machine Learning** if the service is not running
-- Bundled Postgres 14 (vector extensions) and Valkey
+- Data: `data/immich/library/`, `data/immich/postgres/`
+- Machine learning container is **commented out** by default. Uncomment `immich-machine-learning` in `docker-compose.immich.yml` for smart search and facial recognition
 - Pin versions via `IMMICH_VERSION` in `.env.immich` ([releases](https://github.com/immich-app/immich/releases))
 - Hardware transcoding: uncomment `extends` on `immich-server` and add upstream `hwaccel.*.yml` from the [Immich docker folder](https://github.com/immich-app/immich/tree/main/docker) if needed
 
-### Caddy (dashboard + optional proxy)
+### Pi-hole
 
 ```bash
-bash scripts/start.sh caddy
-```
-
-- **Dashboard:** http://127.0.0.1:8888 (`HOME_PORT`) — [home/services.json](home/services.json)
-- **LAN proxy (off by default):** `ENABLE_LAN_PROXY=true` + Pi-hole — port 80, routes in [caddy/proxy.caddy](caddy/proxy.caddy)
-- Uses bridge networking with published ports (works on Docker Desktop for Windows)
-
-### Pi-hole (optional)
-
-```bash
-bash scripts/setup.sh   # once — creates .env.pihole from example
+bash scripts/setup.sh   # once
 bash scripts/start.sh pihole
 ```
 
-- Admin: http://pihole.network.lan/admin
-- DNS: `127.0.0.1:53` on the host (tcp + udp; publish on LAN via override if needed)
+- Admin: http://pihole.network.lan/admin (with network.lan DNS) or http://127.0.0.1:5080/admin
+- DNS: `127.0.0.1:53` on the host (tcp + udp)
 - Data: `data/pihole/etc-pihole/`
-- Port **53** must be free on the host (stop other DNS listeners first)
-- Set **`LAB_HOST_IP`** in `.env.pihole` ([pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md))
-- **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then set your router DHCP DNS to the Pi’s IP
+- Port **53** must be free on the host
+- Set **`LAB_HOST_IP`** in `.env.pihole` — see [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
+- **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then point router DHCP DNS at the host IP
 
-### Odysseus (submodule)
+### Odysseus
 
-Odysseus lives in [`odysseus/`](odysseus/) as a [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) pointing at [pewdiepie-archdaemon/odysseus](https://github.com/pewdiepie-archdaemon/odysseus).
-
-`docker-compose.odysseus.yml` at the repo root includes the submodule’s compose file so you can start it like the other stacks. Build context, `.env`, and runtime data stay under `odysseus/`.
+Submodule at [`odysseus/`](odysseus/) → [pewdiepie-archdaemon/odysseus](https://github.com/pewdiepie-archdaemon/odysseus). Root `docker-compose.odysseus.yml` includes the submodule compose file; build context, `.env`, and data stay under `odysseus/`.
 
 ```bash
 bash scripts/start.sh odysseus
 ```
 
-- UI: http://localhost:7000 · SearXNG: http://127.0.0.1:8080 · ntfy: http://127.0.0.1:8091 · ChromaDB `127.0.0.1:8100` (loopback)
+- UI: http://localhost:7000 · SearXNG: http://127.0.0.1:8080 · ntfy: http://127.0.0.1:8091 · ChromaDB: `127.0.0.1:8100`
 - First admin password: `docker compose -f docker-compose.odysseus.yml logs odysseus`
-- Data: `odysseus/data/` · logs: `odysseus/logs/` (ignored by the submodule’s git, not under lab `data/`)
+- Data: `odysseus/data/` · logs: `odysseus/logs/`
 
-Update the submodule to latest upstream:
+Update submodule:
 
 ```bash
 git submodule update --remote odysseus
-# commit the updated gitlink in lab when you want to pin a new revision
 ```
 
-Upstream docs (GPU overlays, macOS native run, etc.): see `odysseus/README.md`.
+GPU overlays, macOS native run, etc.: [odysseus/README.md](odysseus/README.md)
 
-### Persistence and local data
+### Jellyfin
 
-Git ignores runtime data so it is not committed (see `.gitignore`):
+Container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin/*` and `./media` with that UID/GID if you hit permission errors.
 
-- `data/` — used by n8n, Jellyfin, Seerr, Immich (under stack-specific subpaths).
-- `media/` — Jellyfin library mount.
-- `secrets/` — optional place for sensitive files.
-- **Stirling PDF** uses **`.data/stirling-pdf/`** at the repo root for tessdata, configs, logs, and pipeline.
-- **Odysseus** uses **`odysseus/data/`** and **`odysseus/logs/`** inside the submodule checkout.
+### n8n
 
-Create directories as needed before first run, or let Docker create them when mounting.
+Defaults in `.env.n8n.example` (created by `setup.sh`). Adjust `N8N_HOST`, `WEBHOOK_URL`, `GENERIC_TIMEZONE`, etc. for reverse-proxy setups.
 
-### n8n environment (optional)
+Volumes: `./data/n8n` (app data), `./data/n8n-local-files` (mounted at `/files` in the container).
 
-Defaults live in `.env.n8n.example` (created by `setup.sh`). Adjust `N8N_HOST`, `WEBHOOK_URL`, `GENERIC_TIMEZONE`, etc. for reverse-proxy or custom domain setups.
+### Local data
 
-n8n volumes:
+Git ignores runtime data (see `.gitignore`):
 
-- `./data/n8n` — application data
-- `./data/n8n-local-files` — local/binary files mount at `/files` in the container
+| Path | Used by |
+|------|---------|
+| `data/` | n8n, Jellyfin, Seerr, Immich, Postgres, Pi-hole, … |
+| `media/` | Jellyfin library |
+| `secrets/` | Optional sensitive files |
+| `.data/stirling-pdf/` | Stirling PDF (tessdata, configs, logs) |
+| `odysseus/data/`, `odysseus/logs/` | Odysseus (inside submodule) |
 
-### Jellyfin notes
-
-The container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin/*` and `./media` with that UID/GID if you hit permission issues.
+Create directories before first run, or let Docker create them on mount.
 
 ## VS Code / Cursor
 
 | Task | Script | Purpose |
 |------|--------|---------|
-| **lab: setup** | `scripts/setup.sh` | Copy all `.env.*.example` → `.env.*` (once) |
+| **lab: setup** | `scripts/setup.sh` | Copy all `.env.*.example` → `.env.*` |
 | **docker-compose: all up** | `scripts/start.sh all` | Start every stack |
 | **docker-compose: all down** | `scripts/stop.sh all` | Stop every stack (keeps volumes) |
-| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start one stack (requires setup) |
-| **docker-compose: &lt;name&gt; down** | `scripts/stop.sh <name>` | Stop one stack (keeps volumes) |
+| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start one stack |
+| **docker-compose: &lt;name&gt; down** | `scripts/stop.sh <name>` | Stop one stack |
 
-Launch profiles run the matching **up** or **down** task. Use **All stacks up** / **All stacks down** for the full lab. **`start.sh` does not create env files** — run setup first.
+Launch profiles run the matching **up** or **down** task. **`start.sh` does not create env files** — run setup first.
 
 | Stack | Env file |
 |-------|----------|
 | Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, Immich, Caddy, Pi-hole, Postgres | `.env.<stack>` at repo root |
-| Odysseus | `odysseus/.env` (submodule) |
+| Odysseus | `odysseus/.env` |
 
 All `.env.*` files are gitignored except `*.example`.
 
-When you add a new `docker-compose.*.yml`, add `.env.<name>.example`, register the stack in `scripts/start.sh` / `scripts/setup.sh` (via glob), and add a task + launch entry (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
+When adding a new `docker-compose.*.yml`, add `.env.<name>.example`, register the stack in `scripts/start.sh` / `scripts/setup.sh`, and add a task + launch entry (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
 
 ## License
 
