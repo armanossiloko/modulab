@@ -40,7 +40,7 @@ require_stack_env() {
   local envfile="${root}/.env.${name}"
 
   if [[ ! -f "$envfile" ]]; then
-    echo "Missing ${envfile}. Run: bash scripts/setup.sh" >&2
+    echo "Missing ${envfile}. Run: bash scripts/setup.sh  (or: bash scripts/render-config.sh)" >&2
     exit 1
   fi
 }

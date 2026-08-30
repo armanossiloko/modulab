@@ -18,6 +18,7 @@ media/
 
 # Secrets and local env (never commit passwords or generated keys)
 secrets/
+lab.config.json
 .env
 .env.*
 !.env.*.example

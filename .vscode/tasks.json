@@ -13,6 +13,17 @@
       }
     },
     {
+      "label": "lab: render config",
+      "type": "shell",
+      "command": "bash scripts/render-config.sh",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: all up",
       "type": "shell",
       "command": "bash scripts/start.sh all",

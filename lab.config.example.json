@@ -1,0 +1,56 @@
+{
+  "_comment": "Copy to lab.config.json and edit once. Run: bash scripts/render-config.sh. Use \"$secret:filename\" to load values from secrets/filename (gitignored).",
+  "lab": {
+    "domain": "network.lan",
+    "hostIp": "192.168.1.10",
+    "timezone": "Europe/Berlin",
+    "postgresUser": "modulab",
+    "postgresPassword": "modulab",
+    "postgresDb": "modulab",
+    "immichDbPassword": "immich",
+    "piholePassword": "change-me",
+    "picoshareAdminSecret": "change-me"
+  },
+  "caddy": {
+    "HOME_PORT": 8888,
+    "ENABLE_LAN_PROXY": false,
+    "UPSTREAM_HOST": "host.docker.internal",
+    "CADDY_TAG": "2-alpine"
+  },
+  "postgres": {},
+  "pihole": {
+    "PIHOLE_UPSTREAM_DNS": "1.1.1.1;1.0.0.1",
+    "PIHOLE_TAG": "latest"
+  },
+  "n8n": {
+    "N8N_PROTOCOL": "http",
+    "N8N_SECURE_COOKIE": false
+  },
+  "jellyfin": {},
+  "seerr": {
+    "LOG_LEVEL": "debug"
+  },
+  "it-tools": {},
+  "stirling-pdf": {
+    "SECURITY_ENABLELOGIN": false,
+    "LANGS": "en_GB"
+  },
+  "bentopdf": {
+    "DISABLE_IPV6": false
+  },
+  "picoshare": {
+    "PORT": 4001,
+    "PS_BEHIND_PROXY": false
+  },
+  "immich": {
+    "IMMICH_VERSION": "v2",
+    "UPLOAD_LOCATION": "./data/immich/library",
+    "DB_DATA_LOCATION": "./data/immich/postgres",
+    "DB_USERNAME": "postgres",
+    "DB_DATABASE_NAME": "immich"
+  },
+  "odysseus": {
+    "LLM_HOST": "localhost",
+    "SEARXNG_INSTANCE": "http://localhost:8080"
+  }
+}

@@ -9,15 +9,50 @@ Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can ru
 
 ## Setup
 
-Copy example env files to local `.env.*` (never overwrites existing files):
+Configure everything from one file — **`lab.config.json`** — instead of editing a dozen `.env.*` files:
 
 ```bash
 bash scripts/setup.sh
 ```
 
-Edit the generated files — at minimum set passwords in `.env.immich` and `.env.postgres`. Odysseus config lives in `odysseus/.env`.
+This copies `lab.config.example.json` → `lab.config.json` (if missing) and renders all stack env files. Edit **`lab.config.json`** once (domain, host IP, timezone, passwords), then re-render after changes:
 
-VS Code: run task **lab: setup**.
+```bash
+bash scripts/render-config.sh
+```
+
+### Configuration
+
+| File | Purpose |
+|------|---------|
+| **`lab.config.json`** | Your local config (gitignored) — one JSON object per stack |
+| **`lab.config.example.json`** | Tracked template with defaults |
+| **`secrets/`** | Optional secret files (gitignored); reference as `"$secret:filename"` in JSON |
+
+Shared settings live under **`lab`** and propagate automatically (e.g. `domain` → Pi-hole/Caddy/n8n hostnames, `timezone` → service `TZ` values):
+
+```json
+{
+  "lab": {
+    "domain": "network.lan",
+    "hostIp": "192.168.1.10",
+    "timezone": "Europe/Berlin",
+    "postgresPassword": "modulab",
+    "immichDbPassword": "immich",
+    "piholePassword": "change-me",
+    "picoshareAdminSecret": "change-me"
+  },
+  "picoshare": { "PORT": 4001 },
+  "jellyfin": {},
+  "bentopdf": {}
+}
+```
+
+For sensitive values, put the secret in `secrets/picoshare-admin` and reference `"picoshareAdminSecret": "$secret:picoshare-admin"` under `lab`, or set `"PS_SHARED_SECRET": "$secret:picoshare-admin"` under `picoshare`.
+
+Generated `.env.*` files are overwritten on each render — edit **`lab.config.json`**, not the env files directly.
+
+VS Code: run task **lab: setup** or **lab: render config**.
 
 ## Quick start
 
@@ -238,20 +273,21 @@ Create directories before first run, or let Docker create them on mount.
 
 | Task | Script | Purpose |
 |------|--------|---------|
-| **lab: setup** | `scripts/setup.sh` | Copy all `.env.*.example` → `.env.*` |
+| **lab: setup** | `scripts/setup.sh` | Create `lab.config.json` and render all `.env.*` |
+| **lab: render config** | `scripts/render-config.sh` | Re-render `.env.*` from `lab.config.json` |
 | **docker-compose: all up** | `scripts/start.sh all` | Start every stack |
 | **docker-compose: all down** | `scripts/stop.sh all` | Stop every stack (keeps volumes) |
 | **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start one stack |
 | **docker-compose: &lt;name&gt; down** | `scripts/stop.sh <name>` | Stop one stack |
 
-Launch profiles run the matching **up** or **down** task. **`start.sh` does not create env files** — run setup first.
+Launch profiles run the matching **up** or **down** task. **`start.sh` does not create env files** — run setup or render-config first.
 
-| Stack | Env file |
-|-------|----------|
-| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, BentoPDF, PicoShare, Immich, Caddy, Pi-hole, Postgres | `.env.<stack>` at repo root |
-| Odysseus | `odysseus/.env` |
+| Stack | Config source |
+|-------|---------------|
+| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, BentoPDF, PicoShare, Immich, Caddy, Pi-hole, Postgres | `lab.config.json` → `.env.<stack>` |
+| Odysseus | `lab.config.json` → `odysseus/.env` (patches existing file; submodule must be initialized) |
 
-All `.env.*` files are gitignored except `*.example`.
+`lab.config.json`, `secrets/`, and generated `.env.*` files are gitignored. Tracked templates: `lab.config.example.json`, `.env.*.example`.
 
 When adding a new `docker-compose.*.yml`, add `.env.<name>.example`, register the stack in `scripts/start.sh` / `scripts/setup.sh`, and add a task + launch entry (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
 
