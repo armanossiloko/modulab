@@ -30,6 +30,6 @@ services:
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/proxy.caddy:/etc/caddy/proxy.caddy:ro
-      - ./home:/srv/home:ro
+      - ./dashboard:/srv/dashboard:ro
       - ./data/caddy/data:/data
       - ./data/caddy/config:/config

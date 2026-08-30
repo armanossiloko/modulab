@@ -88,7 +88,7 @@ The **caddy** stack serves a home dashboard on loopback. An optional **network.l
 bash scripts/start.sh caddy
 ```
 
-Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). Cards show running stacks; links use `127.0.0.1:<port>`. You can skip Caddy and open each stack on its own port instead — see the [port map](#port-map).
+Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). The dashboard lists running stacks by category; links use `127.0.0.1:<port>`. Services are discovered from `docker-compose.*.yml` files (auto-added when you add a new stack). Edit [dashboard/services.manifest.json](dashboard/services.manifest.json) for display names and categories, then run `bash scripts/render-config.sh`.
 
 | Mode | What to run | How you reach services |
 |------|-------------|-------------------------|
@@ -96,7 +96,7 @@ Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). Cards show running
 | **Dashboard** | `caddy` (`ENABLE_LAN_PROXY=false`) | Dashboard at **http://127.0.0.1:8888** → links to localhost ports |
 | **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
 
-Config: [home/services.json](home/services.json) · routes: [caddy/Caddyfile](caddy/Caddyfile) · LAN proxy: [caddy/proxy.caddy](caddy/proxy.caddy)
+Config: [dashboard/services.manifest.json](dashboard/services.manifest.json) (generates `services.json`) · routes: [caddy/Caddyfile](caddy/Caddyfile) · LAN proxy: [caddy/proxy.caddy](caddy/proxy.caddy)
 
 ### Optional: network.lan URLs
 

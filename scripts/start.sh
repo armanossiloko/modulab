@@ -47,6 +47,7 @@ start_stack() {
       wait_for_postgres
       ;;
     caddy)
+      python3 "${root}/dashboard/render-services.py" >/dev/null 2>&1 || true
       caddy_compose up -d "$@"
       ;;
     *)

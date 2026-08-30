@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>modulab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar-left">
+      <div class="sidebar-top">
+        <span class="logo" aria-hidden="true">☺</span>
+        <a class="home-tab is-active" href="#">Home</a>
+      </div>
+      <div id="sidebar-categories" class="sidebar-categories"></div>
+    </aside>
+
+    <div class="body-grid">
+      <header class="topbar">
+        <div class="search-wrap">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-3.5-3.5"></path>
+          </svg>
+          <input type="search" id="search" class="search" placeholder="Type here to search.." autocomplete="off" spellcheck="false">
+        </div>
+      </header>
+
+      <main class="center">
+        <div id="center-widgets" class="center-widgets"></div>
+      </main>
+
+      <aside class="sidebar-right">
+        <div class="widget widget--compact">
+          <div class="widget-head">
+            <span class="widget-title">Year progress</span>
+            <span id="year-pct" class="widget-badge"></span>
+          </div>
+          <div class="progress-track progress-track--thin">
+            <div id="year-bar" class="progress-fill progress-fill--blue"></div>
+          </div>
+          <p id="year-label" class="widget-caption"></p>
+        </div>
+
+        <div class="widget widget--compact">
+          <div class="widget-head">
+            <span class="widget-title">Stack usage</span>
+            <button type="button" id="refresh" class="icon-btn" title="Refresh" aria-label="Refresh">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                <path d="M21 3v6h-6"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="storage-labels">
+            <span id="storage-used-label">USED —</span>
+            <span id="storage-left-label">— LEFT</span>
+          </div>
+          <div class="progress-track progress-track--storage">
+            <div id="storage-bar" class="progress-fill progress-fill--orange"></div>
+          </div>
+          <p id="storage-caption" class="widget-caption"></p>
+        </div>
+
+        <div class="widget widget--compact">
+          <div class="widget-head"><span class="widget-title">System</span></div>
+          <div id="system-icons" class="icon-grid"></div>
+        </div>
+
+        <div class="widget widget--compact">
+          <div class="widget-head"><span class="widget-title">Network</span></div>
+          <div id="network-stats" class="network-stats"></div>
+        </div>
+
+        <div class="widget widget--compact">
+          <div class="widget-head"><span class="widget-title">Services</span></div>
+          <ul id="admin-links" class="admin-list"></ul>
+        </div>
+
+        <div class="widget widget--compact widget--now-playing">
+          <div class="widget-head"><span class="widget-title">Now running</span></div>
+          <div id="now-playing" class="now-playing"></div>
+        </div>
+      </aside>
+
+      <footer class="status-bar">
+        <div class="status-track">
+          <div id="day-bar" class="status-fill"></div>
+        </div>
+        <p id="status-text" class="status-text"></p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

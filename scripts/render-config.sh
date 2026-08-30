@@ -19,3 +19,4 @@ if [[ ! -f "$config" ]]; then
 fi
 
 python3 "${root}/scripts/render-config.py" "$config"
+python3 "${root}/dashboard/render-services.py"

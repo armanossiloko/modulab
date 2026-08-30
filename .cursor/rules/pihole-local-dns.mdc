@@ -15,7 +15,7 @@ When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU 
    ```yaml
    ${LAB_HOST_IP} myservice.${PIHOLE_LOCAL_DOMAIN:-network.lan}
    ```
-3. **`home/services.json`** — add an entry with `port` (and optional `path`); dashboard probes localhost.
+3. **`dashboard/services.manifest.json`** — add an entry with `port` (and optional `path`, `category`); run `bash scripts/render-config.sh` or start caddy to regenerate `services.json`.
 4. **`caddy/proxy.caddy`** — add a site block if you use optional network.lan proxy (`ENABLE_LAN_PROXY=true`).
 5. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
 

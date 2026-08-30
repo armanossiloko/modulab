@@ -1,0 +1,87 @@
+[
+  {
+    "label": "pihole",
+    "name": "Pi-hole",
+    "description": "DNS admin",
+    "category": "infrastructure",
+    "port": 5080,
+    "path": "/admin"
+  },
+  {
+    "label": "immich",
+    "name": "Immich",
+    "description": "Photos and videos",
+    "category": "media",
+    "port": 2283
+  },
+  {
+    "label": "jellyfin",
+    "name": "Jellyfin",
+    "description": "Movies, TV, and music",
+    "category": "media",
+    "port": 8096
+  },
+  {
+    "label": "seerr",
+    "name": "Seerr",
+    "description": "Media requests",
+    "category": "media",
+    "port": 5055
+  },
+  {
+    "label": "bentopdf",
+    "name": "BentoPDF",
+    "description": "Privacy-first PDF toolkit",
+    "category": "productivity",
+    "port": 8084
+  },
+  {
+    "label": "odysseus",
+    "name": "Odysseus",
+    "description": "AI workspace",
+    "category": "productivity",
+    "port": 7000
+  },
+  {
+    "label": "stirling-pdf",
+    "name": "Stirling PDF",
+    "description": "PDF toolkit",
+    "category": "productivity",
+    "port": 8082
+  },
+  {
+    "label": "n8n",
+    "name": "n8n",
+    "description": "Workflow automation",
+    "category": "productivity",
+    "port": 5678
+  },
+  {
+    "label": "it-tools",
+    "name": "IT-Tools",
+    "description": "Developer utilities",
+    "category": "tools",
+    "port": 8083
+  },
+  {
+    "label": "picoshare",
+    "name": "PicoShare",
+    "description": "File sharing",
+    "category": "tools",
+    "port": 4001
+  },
+  {
+    "label": "searxng",
+    "name": "SearXNG",
+    "description": "Private search",
+    "category": "tools",
+    "port": 8080
+  },
+  {
+    "label": "ntfy",
+    "name": "ntfy",
+    "description": "Push notifications",
+    "category": "tools",
+    "port": 8091
+  }
+]
