@@ -21,6 +21,8 @@ services:
         ${LAB_HOST_IP} seerr.${PIHOLE_LOCAL_DOMAIN:-network.lan}
         ${LAB_HOST_IP} it-tools.${PIHOLE_LOCAL_DOMAIN:-network.lan}
         ${LAB_HOST_IP} stirling.${PIHOLE_LOCAL_DOMAIN:-network.lan}
+        ${LAB_HOST_IP} bentopdf.${PIHOLE_LOCAL_DOMAIN:-network.lan}
+        ${LAB_HOST_IP} picoshare.${PIHOLE_LOCAL_DOMAIN:-network.lan}
         ${LAB_HOST_IP} immich.${PIHOLE_LOCAL_DOMAIN:-network.lan}
         ${LAB_HOST_IP} odysseus.${PIHOLE_LOCAL_DOMAIN:-network.lan}
         ${LAB_HOST_IP} searxng.${PIHOLE_LOCAL_DOMAIN:-network.lan}

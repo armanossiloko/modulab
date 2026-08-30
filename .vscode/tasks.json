@@ -79,6 +79,28 @@
       }
     },
     {
+      "label": "docker-compose: bentopdf up",
+      "type": "shell",
+      "command": "bash scripts/start.sh bentopdf",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: picoshare up",
+      "type": "shell",
+      "command": "bash scripts/start.sh picoshare",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: odysseus up",
       "type": "shell",
       "command": "bash scripts/start.sh odysseus",
@@ -192,6 +214,28 @@
       "label": "docker-compose: it-tools down",
       "type": "shell",
       "command": "bash scripts/stop.sh it-tools",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: bentopdf down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh bentopdf",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: picoshare down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh picoshare",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

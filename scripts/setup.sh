@@ -40,5 +40,5 @@ Next:
   4. bash scripts/start.sh caddy  (dashboard at http://127.0.0.1:8888)
   5. bash scripts/start.sh all  or  bash scripts/start.sh <stack>
 
-Stacks: caddy postgres jellyfin n8n seerr it-tools stirling-pdf immich pihole odysseus
+Stacks: caddy postgres jellyfin n8n seerr it-tools stirling-pdf bentopdf picoshare immich pihole odysseus
 EOF

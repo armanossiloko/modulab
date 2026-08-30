@@ -19,6 +19,8 @@ bash scripts/start.sh jellyfin   # example — repeat per stack
 | http://seerr.network.lan | Seerr |
 | http://it-tools.network.lan | IT-Tools |
 | http://stirling.network.lan | Stirling PDF |
+| http://bentopdf.network.lan | BentoPDF |
+| http://picoshare.network.lan | PicoShare |
 | http://immich.network.lan | Immich |
 | http://odysseus.network.lan | Odysseus |
 | http://searxng.network.lan | SearXNG |
@@ -54,6 +56,8 @@ bash scripts/start.sh pihole
 | `seerr` | Seerr | http://127.0.0.1:5055 |
 | `it-tools` | IT-Tools | http://127.0.0.1:8083 |
 | `stirling` | Stirling PDF | http://127.0.0.1:8082 |
+| `bentopdf` | BentoPDF | http://127.0.0.1:8084 |
+| `picoshare` | PicoShare | http://127.0.0.1:4001 |
 | `immich` | Immich | http://127.0.0.1:2283 |
 | `odysseus` | Odysseus UI | http://127.0.0.1:7000 |
 | `searxng` | Odysseus SearXNG | http://127.0.0.1:8080 |

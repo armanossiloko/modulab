@@ -86,6 +86,8 @@ bash scripts/start.sh caddy
 | http://seerr.network.lan | Seerr |
 | http://it-tools.network.lan | IT-Tools |
 | http://stirling.network.lan | Stirling PDF |
+| http://bentopdf.network.lan | BentoPDF |
+| http://picoshare.network.lan | PicoShare |
 | http://immich.network.lan | Immich |
 | http://odysseus.network.lan | Odysseus |
 | http://searxng.network.lan | SearXNG (Odysseus) |
@@ -105,12 +107,14 @@ Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 | **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
 | **IT-Tools** | `docker-compose.it-tools.yml` | http://localhost:8083 | Dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
 | **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
+| **BentoPDF** | `docker-compose.bentopdf.yml` | http://localhost:8084 | PDF toolkit ([BentoPDF](https://github.com/alam00000/bentopdf)) |
+| **PicoShare** | `docker-compose.picoshare.yml` | http://localhost:4001 | File sharing ([PicoShare](https://github.com/mtlynch/picoshare)) |
 | **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 |
 | **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photo/video backup ([Immich](https://immich.app/)) |
 | **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | AI workspace; submodule in `odysseus/` |
 
-Ports **8080**, **8082**, and **8083** are chosen so stacks can run together: Odysseus SearXNG (8080), Stirling PDF (8082), IT-Tools (8083).
+Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run together: Odysseus SearXNG (8080), Stirling PDF (8082), IT-Tools (8083), BentoPDF (8084).
 
 ### Port map
 
@@ -124,6 +128,8 @@ Ports **8080**, **8082**, and **8083** are chosen so stacks can run together: Od
 | 8080 | Odysseus SearXNG (loopback) | `odysseus/docker-compose.yml` |
 | 8082 | Stirling PDF | `docker-compose.stirling-pdf.yml` |
 | 8083 | IT-Tools | `docker-compose.it-tools.yml` |
+| 8084 | BentoPDF | `docker-compose.bentopdf.yml` |
+| 4001 | PicoShare | `docker-compose.picoshare.yml` |
 | 8091 | Odysseus ntfy (loopback) | `odysseus/docker-compose.yml` |
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
 | 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
@@ -220,7 +226,7 @@ Git ignores runtime data (see `.gitignore`):
 
 | Path | Used by |
 |------|---------|
-| `data/` | n8n, Jellyfin, Seerr, Immich, Postgres, Pi-hole, … |
+| `data/` | n8n, Jellyfin, Seerr, Immich, PicoShare, Postgres, Pi-hole, … |
 | `media/` | Jellyfin library |
 | `secrets/` | Optional sensitive files |
 | `.data/stirling-pdf/` | Stirling PDF (tessdata, configs, logs) |
@@ -242,7 +248,7 @@ Launch profiles run the matching **up** or **down** task. **`start.sh` does not 
 
 | Stack | Env file |
 |-------|----------|
-| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, Immich, Caddy, Pi-hole, Postgres | `.env.<stack>` at repo root |
+| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, BentoPDF, PicoShare, Immich, Caddy, Pi-hole, Postgres | `.env.<stack>` at repo root |
 | Odysseus | `odysseus/.env` |
 
 All `.env.*` files are gitignored except `*.example`.

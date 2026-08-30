@@ -22,6 +22,14 @@ stirling.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8082
 }
 
+bentopdf.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8084
+}
+
+picoshare.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:4001
+}
+
 immich.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:2283
 }

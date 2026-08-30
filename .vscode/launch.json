@@ -114,6 +114,42 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "BentoPDF up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: bentopdf up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.bentopdf.yml"
+    },
+    {
+      "name": "BentoPDF down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: bentopdf down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "PicoShare up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: picoshare up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.picoshare.yml"
+    },
+    {
+      "name": "PicoShare down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: picoshare down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Odysseus up",
       "type": "docker",
       "request": "launch",

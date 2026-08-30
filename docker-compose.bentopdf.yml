@@ -1,0 +1,13 @@
+# https://github.com/alam00000/bentopdf
+
+services:
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf-simple:latest
+    container_name: bentopdf
+    ports:
+      - "8084:8080"
+    environment:
+      - DISABLE_IPV6=${DISABLE_IPV6:-false}
+    env_file:
+      - .env.bentopdf
+    restart: unless-stopped

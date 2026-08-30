@@ -10,6 +10,8 @@ LAB_STACKS=(
   seerr
   it-tools
   stirling-pdf
+  bentopdf
+  picoshare
   immich
   odysseus
 )
@@ -130,6 +132,8 @@ Optional network.lan URLs (requires Pi-hole + Caddy, domain ${domain}):
   $(lab_url seerr)
   $(lab_url it-tools)
   $(lab_url stirling)
+  $(lab_url bentopdf)
+  $(lab_url picoshare)
   $(lab_url immich)
   $(lab_url odysseus)
   $(lab_url searxng)
@@ -149,6 +153,8 @@ print_stack_url() {
     seerr) echo "Seerr: $(lab_url seerr)" ;;
     it-tools) echo "IT-Tools: $(lab_url it-tools)" ;;
     stirling-pdf) echo "Stirling PDF: $(lab_url stirling)" ;;
+    bentopdf) echo "BentoPDF: $(lab_url bentopdf)" ;;
+    picoshare) echo "PicoShare: $(lab_url picoshare)" ;;
     immich) echo "Immich: $(lab_url immich)" ;;
     pihole)
       echo "Pi-hole admin: $(lab_url pihole /admin)"
