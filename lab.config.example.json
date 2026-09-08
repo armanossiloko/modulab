@@ -43,7 +43,7 @@
     "PS_BEHIND_PROXY": false
   },
   "immich": {
-    "IMMICH_VERSION": "v2",
+    "IMMICH_VERSION": "v3",
     "UPLOAD_LOCATION": "./data/immich/library",
     "DB_DATA_LOCATION": "./data/immich/postgres",
     "DB_USERNAME": "postgres",
