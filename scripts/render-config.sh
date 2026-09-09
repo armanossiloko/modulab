@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Render .env.* from lab.config.json
+# Render generated lab files from lab.config.json (.env, edge, wwwroot seed).
 
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"

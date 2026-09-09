@@ -8,8 +8,7 @@
     "prebuild": "npm run generate:api",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "publish": "bash ../../scripts/publish-ui.sh",
-    "test": "ng test"
+    "publish": "bash ../../scripts/publish-ui.sh"
   },
   "private": true,
   "packageManager": "npm@12.0.2",

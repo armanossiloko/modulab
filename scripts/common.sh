@@ -97,9 +97,6 @@ if not isinstance(enabled, list):
     raise SystemExit(0)
 
 stacks = [str(x) for x in enabled if isinstance(x, str)]
-# Migrate legacy stack ids
-alias = {"lab-api": "control-center", "admin": "control-center", "home": "control-center"}
-stacks = [alias.get(x, x) for x in stacks]
 ordered: list[str] = []
 for name in ("control-center", "postgres", "redis"):
     if name in stacks and name not in ordered:
@@ -201,7 +198,7 @@ print_stack_url() {
     futo-notes) echo "FUTO Notes: $(lab_url notes) (also http://127.0.0.1:3005)" ;;
     immich) echo "Immich: $(lab_url immich)" ;;
     redis) echo "Redis: redis:6379 (Docker network modulab)" ;;
-    lab-api|admin|control-center|home) echo "Control Center: $(lab_control_center_url)" ;;
+    control-center) echo "Control Center: $(lab_control_center_url)" ;;
     pihole)
       echo "Pi-hole admin: $(lab_url pihole /admin)"
       echo "DNS (loopback): 127.0.0.1:53"

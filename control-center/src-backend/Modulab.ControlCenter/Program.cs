@@ -507,8 +507,7 @@ app.MapPut("/api/dashboard", (JsonNode? body) =>
 
 // Prefer control-center/wwwroot (dev + Docker mount); fall back to wwwroot beside the binary.
 EnsureDashboardJson(labRoot);
-if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT"))
-    && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ADMIN_WWWROOT")))
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT")))
 {
     var uiRoot = Path.Combine(labRoot, "control-center", "wwwroot");
     if (Directory.Exists(uiRoot))

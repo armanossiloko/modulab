@@ -32,11 +32,6 @@ stop_stack() {
 name="${1:?Usage: bash scripts/stop.sh <stack>|all}"
 shift
 
-if [[ "$name" == home || "$name" == lab-api || "$name" == admin ]]; then
-  echo "note: stopping control-center" >&2
-  name=control-center
-fi
-
 if [[ "$name" == all ]]; then
   mapfile -t stacks < <(enabled_stacks | tr -d '\r')
   for ((i = ${#stacks[@]} - 1; i >= 0; i--)); do

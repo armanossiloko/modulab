@@ -11,7 +11,7 @@ When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU 
 ## Checklist
 
 1. **`catalog/<name>/recipe.json`** — set `dns` labels and optional `proxy` (`host` + `port`).
-2. Run **`bash scripts/render-config.sh`** — regenerates DNS/proxy/`control-center/wwwroot/services.json`.
+2. Run **`bash scripts/render-config.sh`** — regenerates DNS/proxy config.
 3. Add the stack to **`lab.config.json` → `enabled`** (or install via Control Center Library / `scripts/install.sh`).
 4. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
 

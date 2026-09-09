@@ -3,8 +3,8 @@ namespace Modulab.ControlCenter.Extensions;
 public static class SpaExtensions
 {
     /// <summary>
-    /// Serves Control Center static UI (Angular build or legacy wwwroot).
-    /// Order: CONTROL_CENTER_ANGULAR_DIST → CONTROL_CENTER_WWWROOT / ADMIN_WWWROOT → ContentRoot/wwwroot.
+    /// Serves Control Center static UI.
+    /// Order: CONTROL_CENTER_ANGULAR_DIST → CONTROL_CENTER_WWWROOT → ContentRoot/wwwroot.
     /// </summary>
     public static WebApplication UseControlCenterSpa(this WebApplication app)
     {
@@ -17,8 +17,7 @@ public static class SpaExtensions
         }
         else
         {
-            var alt = Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT")
-                ?? Environment.GetEnvironmentVariable("ADMIN_WWWROOT");
+            var alt = Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT");
             if (!string.IsNullOrWhiteSpace(alt) && Directory.Exists(alt))
                 wwwroot = Path.GetFullPath(alt);
         }

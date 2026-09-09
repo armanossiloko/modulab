@@ -18,15 +18,6 @@ start_stack() {
     return 0
   fi
 
-  if [[ "$name" == control-center ]]; then
-    for legacy in lab-api admin home; do
-      if docker ps -a --format '{{.Names}}' | grep -qx "$legacy"; then
-        echo "Removing legacy ${legacy} container..." >&2
-        docker rm -f "$legacy" >/dev/null 2>&1 || true
-      fi
-    done
-  fi
-
   if [[ "$name" == odysseus ]]; then
     if [[ ! -f "${root}/odysseus/.env" ]]; then
       echo "skip odysseus: missing odysseus/.env (run render-config after enabling odysseus)" >&2
@@ -86,11 +77,6 @@ start_stack() {
 
 name="${1:?Usage: bash scripts/start.sh <stack>|all}"
 shift
-
-if [[ "$name" == home || "$name" == lab-api || "$name" == admin ]]; then
-  echo "note: starting control-center" >&2
-  name=control-center
-fi
 
 if [[ "$name" == all ]]; then
   mapfile -t stacks < <(enabled_stacks | tr -d '\r')

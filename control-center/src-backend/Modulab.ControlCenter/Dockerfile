@@ -37,7 +37,7 @@ COPY --from=dockercli /usr/local/libexec/docker/cli-plugins /usr/local/libexec/d
 
 WORKDIR /app
 COPY --from=build /app/publish/Modulab.ControlCenter /app/Modulab.ControlCenter
-# Angular SPA + seeded dashboard; services.json is generated at runtime on the mounted lab root
+# Angular SPA + seeded default dashboard
 COPY --from=ui /build/ui/dist/control-center/browser/ /app/wwwroot/
 COPY control-center/defaults/dashboard.json /app/wwwroot/dashboard.json
 

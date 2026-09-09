@@ -6,7 +6,6 @@ control-center/
   defaults/                             # tracked dashboard templates
   wwwroot/                              # generated (gitignored) — dashboard + published assets
   src-backend/Modulab.ControlCenter/    # .NET 10 host (serves SPA + /api)
-  render-services.py                    # → wwwroot/services.json
 ```
 
 `wwwroot/` is **not** in git. Create it with:
@@ -17,7 +16,7 @@ bash scripts/publish-ui.sh     # optional local SPA publish; Docker builds UI in
 ```
 
 Open `Modulab.slnx` in Visual Studio.
-Regenerate services: `bash scripts/render-config.sh`
+Regenerate env/edge: `bash scripts/render-config.sh`
 
 ## Routes
 

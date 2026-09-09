@@ -6,7 +6,7 @@ Each subdirectory is a **recipe**: catalog metadata, install form, proxy/DNS, an
 catalog/<id>/recipe.json
 ```
 
-Hand-edit **`lab.config.json` only**. `bash scripts/render-config.sh` generates root `.env`, `postgres/bootstrap.sql`, edge proxy/DNS, and `control-center/wwwroot/services.json`.
+Hand-edit **`lab.config.json` only**. `bash scripts/render-config.sh` generates root `.env`, `postgres/bootstrap.sql`, and edge proxy/DNS.
 
 ## Important fields
 
