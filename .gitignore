@@ -39,3 +39,9 @@ docker-compose.*.override.yml
 # Logs and temp files
 *.log
 *.tmp
+
+# Angular UI distribution (build with `npm run build` / `scripts/publish-ui.sh`)
+control-center/ui/dist/
+# Published SPA assets under wwwroot — keep only JSON configs in git
+control-center/wwwroot/*
+!control-center/wwwroot/*.json
