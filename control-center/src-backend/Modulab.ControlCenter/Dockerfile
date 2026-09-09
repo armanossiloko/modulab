@@ -2,6 +2,15 @@
 # Build from repo root:
 #   docker build -f control-center/src-backend/Modulab.ControlCenter/Dockerfile .
 
+FROM node:22-bookworm-slim AS ui
+WORKDIR /build
+COPY control-center/openapi/openapi.json openapi/openapi.json
+COPY control-center/ui/package.json control-center/ui/package-lock.json ui/
+WORKDIR /build/ui
+RUN npm ci
+COPY control-center/ui/ ./
+RUN npm run build
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 RUN apt-get update \
     && apt-get install -y --no-install-recommends clang zlib1g-dev \
@@ -28,7 +37,9 @@ COPY --from=dockercli /usr/local/libexec/docker/cli-plugins /usr/local/libexec/d
 
 WORKDIR /app
 COPY --from=build /app/publish/Modulab.ControlCenter /app/Modulab.ControlCenter
-COPY control-center/wwwroot/ /app/wwwroot/
+# Angular SPA + seeded dashboard; services.json is generated at runtime on the mounted lab root
+COPY --from=ui /build/ui/dist/control-center/browser/ /app/wwwroot/
+COPY control-center/defaults/dashboard.json /app/wwwroot/dashboard.json
 
 ENV LAB_ROOT=/lab \
     HOME_PORT=8888 \

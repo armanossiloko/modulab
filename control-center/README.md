@@ -2,9 +2,18 @@
 
 ```text
 control-center/
-  wwwroot/                              # static UI + dashboard.json
-  src-backend/Modulab.ControlCenter/    # .NET 10 host (serves wwwroot + /api)
-  render-services.py
+  ui/                                   # Angular 21 SPA source
+  defaults/                             # tracked dashboard templates
+  wwwroot/                              # generated (gitignored) — dashboard + published assets
+  src-backend/Modulab.ControlCenter/    # .NET 10 host (serves SPA + /api)
+  render-services.py                    # → wwwroot/services.json
+```
+
+`wwwroot/` is **not** in git. Create it with:
+
+```bash
+bash scripts/setup.sh          # or: bash scripts/ensure-wwwroot.sh
+bash scripts/publish-ui.sh     # optional local SPA publish; Docker builds UI into the image
 ```
 
 Open `Modulab.slnx` in Visual Studio.
@@ -25,7 +34,7 @@ Deep links are served by the SPA fallback (`index.html`).
 
 ## Configure the UI
 
-Edit **`wwwroot/dashboard.json`** (see `dashboard.example.json` for a full template), or use the **Settings** page in Control Center (saves the same file). Hard-refresh after manual edits.
+Defaults live in **`defaults/dashboard.json`** (seeded into `wwwroot/` on first setup). Edit the runtime file under `wwwroot/dashboard.json`, or use the **Settings** page in Control Center. Hard-refresh after manual edits.
 
 | Section | What it controls |
 |---|---|

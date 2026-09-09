@@ -20,4 +20,4 @@ fi
 
 python3 "${root}/scripts/render-config.py" "$config"
 python3 "${root}/scripts/generate-edge.py"
-python3 "${root}/control-center/render-services.py"
+bash "${root}/scripts/ensure-wwwroot.sh"

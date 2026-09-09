@@ -240,5 +240,112 @@
       "calendar"
     ]
   },
-  "_comment": "Control Center UI config. Edit this file, then hard-refresh. See dashboard.example.json for the full schema."
+  "pages": [
+    {
+      "id": "home",
+      "title": "Home",
+      "items": [
+        {
+          "id": "stacks-0-0",
+          "type": "stacks",
+          "x": 0,
+          "y": 0,
+          "w": 5,
+          "h": 4,
+          "config": {}
+        },
+        {
+          "id": "community-5-0",
+          "type": "community",
+          "x": 5,
+          "y": 0,
+          "w": 4,
+          "h": 4,
+          "config": {}
+        },
+        {
+          "id": "hackerNews-0-4",
+          "type": "hackerNews",
+          "x": 0,
+          "y": 4,
+          "w": 5,
+          "h": 4,
+          "config": {}
+        },
+        {
+          "id": "media-5-4",
+          "type": "media",
+          "x": 5,
+          "y": 4,
+          "w": 4,
+          "h": 4,
+          "config": {}
+        },
+        {
+          "id": "clock-9-0",
+          "type": "clock",
+          "x": 9,
+          "y": 0,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "weather-9-2",
+          "type": "weather",
+          "x": 9,
+          "y": 2,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "yearProgress-9-4",
+          "type": "yearProgress",
+          "x": 9,
+          "y": 4,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "stackUsage-9-6",
+          "type": "stackUsage",
+          "x": 9,
+          "y": 6,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "network-9-8",
+          "type": "network",
+          "x": 9,
+          "y": 8,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "nowRunning-9-10",
+          "type": "nowRunning",
+          "x": 9,
+          "y": 10,
+          "w": 3,
+          "h": 2,
+          "config": {}
+        },
+        {
+          "id": "calendar-9-12",
+          "type": "calendar",
+          "x": 9,
+          "y": 12,
+          "w": 3,
+          "h": 3,
+          "config": {}
+        }
+      ]
+    }
+  ],
+  "_comment": "pages[] mirrors the pre-Angular home: 2-col main grid \u002B narrow right rail (from layout.center/right). Row unit \u2248 56px."
 }

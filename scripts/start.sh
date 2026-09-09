@@ -75,7 +75,7 @@ start_stack() {
       ;;
     control-center)
       python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
-      python3 "${root}/control-center/render-services.py" >/dev/null 2>&1 || true
+      bash "${root}/scripts/ensure-wwwroot.sh" >/dev/null 2>&1 || true
       stack_compose control-center up -d --build "$@"
       ;;
     *)
