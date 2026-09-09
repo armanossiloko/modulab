@@ -2,11 +2,11 @@
 # Build Angular UI and publish into control-center/wwwroot (keeps *.json config).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-UI="$ROOT/control-center/ui"
-WWW="$ROOT/control-center/wwwroot"
-DIST="$UI/dist/control-center/browser"
+CC="$ROOT/control-center"
+WWW="$CC/wwwroot"
+DIST="$CC/dist/control-center/browser"
 
-cd "$UI"
+cd "$CC"
 npm ci --prefer-offline
 npm run build
 

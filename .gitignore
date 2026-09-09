@@ -37,4 +37,5 @@ docker-compose.*.override.yml
 
 # Generated Control Center UI + runtime configs (seeded by scripts/ensure-wwwroot.sh)
 control-center/wwwroot/
-control-center/ui/dist/
+control-center/dist/
+control-center/node_modules/

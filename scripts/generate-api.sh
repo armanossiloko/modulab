@@ -13,7 +13,7 @@ if [[ ! -f "$OPENAPI" ]]; then
 fi
 
 echo "==> Angular client (@hey-api/openapi-ts)"
-cd "$ROOT/control-center/ui"
+cd "$ROOT/control-center"
 npm run generate:api
 
-echo "Done: $OPENAPI → control-center/ui/src/app/api/generated/"
+echo "Done: $OPENAPI → control-center/src/app/api/generated/"

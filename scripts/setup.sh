@@ -22,5 +22,5 @@ Next:
   4. Open http://127.0.0.1:8888  (Control Center)
 
 Open Modulab.slnx in Visual Studio → control-center/src-backend/Modulab.ControlCenter
-UI is generated under control-center/wwwroot/ (and/or ui/dist) by setup / publish-ui.
+UI is generated under control-center/wwwroot/ (and/or dist/) by setup / publish-ui.
 EOF

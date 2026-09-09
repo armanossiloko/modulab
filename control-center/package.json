@@ -1,5 +1,5 @@
 {
-  "name": "ui",
+  "name": "control-center",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -8,7 +8,7 @@
     "prebuild": "npm run generate:api",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "publish": "bash ../../scripts/publish-ui.sh"
+    "publish": "bash ../scripts/publish-ui.sh"
   },
   "private": true,
   "packageManager": "npm@12.0.2",
