@@ -528,6 +528,161 @@
         ]
       }
     },
+    "/api/updates": {
+      "get": {
+        "tags": [
+          "Apps"
+        ],
+        "operationId": "GetUpdates",
+        "parameters": [
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatesResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { }
+        ]
+      }
+    },
+    "/api/apps/{id}/updates": {
+      "get": {
+        "tags": [
+          "Apps"
+        ],
+        "operationId": "GetAppUpdates",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppUpdateStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { }
+        ]
+      }
+    },
+    "/api/apps/{id}/update": {
+      "post": {
+        "tags": [
+          "Apps"
+        ],
+        "operationId": "UpdateApp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          { }
+        ]
+      }
+    },
     "/api/dashboard/bookmarks": {
       "post": {
         "tags": [
@@ -748,6 +903,32 @@
           }
         }
       },
+      "AppUpdateStatus": {
+        "required": [
+          "id",
+          "name",
+          "updateAvailable",
+          "images"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "updateAvailable": {
+            "type": "boolean"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageUpdateStatus"
+            }
+          }
+        }
+      },
       "BookmarkGroupDto": {
         "required": [
           "title",
@@ -946,6 +1127,56 @@
           }
         }
       },
+      "ImageUpdateStatus": {
+        "required": [
+          "image",
+          "localDigest",
+          "remoteDigest",
+          "localId",
+          "updateAvailable",
+          "reason",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string"
+          },
+          "localDigest": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "remoteDigest": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "localId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "updateAvailable": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ImportBookmarksRequest": {
         "required": [
           "groups",
@@ -1034,6 +1265,29 @@
               "null",
               "boolean"
             ]
+          }
+        }
+      },
+      "UpdatesResponse": {
+        "required": [
+          "apps",
+          "checkedAt",
+          "fromCache"
+        ],
+        "type": "object",
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppUpdateStatus"
+            }
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fromCache": {
+            "type": "boolean"
           }
         }
       },

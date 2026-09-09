@@ -8,6 +8,13 @@ export type ApiMessage = {
     message: string;
 };
 
+export type AppUpdateStatus = {
+    id: string;
+    name: string;
+    updateAvailable: boolean;
+    images: Array<ImageUpdateStatus>;
+};
+
 export type BookmarkGroupDto = {
     title: string;
     color: null | string;
@@ -58,6 +65,16 @@ export type HealthResponse = {
     labRoot: string;
 };
 
+export type ImageUpdateStatus = {
+    image: string;
+    localDigest: null | string;
+    remoteDigest: null | string;
+    localId: null | string;
+    updateAvailable: boolean;
+    reason: null | string;
+    error: null | string;
+};
+
 export type ImportBookmarksRequest = {
     groups: Array<BookmarkGroupDto>;
     mergeByTitle: null | boolean;
@@ -85,6 +102,12 @@ export type RecipeField = {
 export type ReplaceBookmarksRequest = {
     groups: Array<BookmarkGroupDto>;
     showInstalledApps: null | boolean;
+};
+
+export type UpdatesResponse = {
+    apps: Array<AppUpdateStatus>;
+    checkedAt: string;
+    fromCache: boolean;
 };
 
 export type WeatherResponse = {
@@ -383,6 +406,97 @@ export type StopAppResponses = {
 };
 
 export type StopAppResponse = StopAppResponses[keyof StopAppResponses];
+
+export type GetUpdatesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        refresh?: boolean;
+    };
+    url: '/api/updates';
+};
+
+export type GetUpdatesErrors = {
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type GetUpdatesError = GetUpdatesErrors[keyof GetUpdatesErrors];
+
+export type GetUpdatesResponses = {
+    /**
+     * OK
+     */
+    200: UpdatesResponse;
+};
+
+export type GetUpdatesResponse = GetUpdatesResponses[keyof GetUpdatesResponses];
+
+export type GetAppUpdatesData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        refresh?: boolean;
+    };
+    url: '/api/apps/{id}/updates';
+};
+
+export type GetAppUpdatesErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type GetAppUpdatesError = GetAppUpdatesErrors[keyof GetAppUpdatesErrors];
+
+export type GetAppUpdatesResponses = {
+    /**
+     * OK
+     */
+    200: AppUpdateStatus;
+};
+
+export type GetAppUpdatesResponse = GetAppUpdatesResponses[keyof GetAppUpdatesResponses];
+
+export type UpdateAppData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/apps/{id}/update';
+};
+
+export type UpdateAppErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type UpdateAppError = UpdateAppErrors[keyof UpdateAppErrors];
+
+export type UpdateAppResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type UpdateAppResponse = UpdateAppResponses[keyof UpdateAppResponses];
 
 export type ImportBookmarksData = {
     body?: null | ImportBookmarksRequest;

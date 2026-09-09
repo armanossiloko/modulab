@@ -17,6 +17,14 @@ export interface WidgetDefinition {
 /** Built-in widgets (same types as the default home layout). */
 export const BUILTIN_WIDGETS: WidgetDefinition[] = [
   { type: 'stacks', label: 'Lab stacks', description: 'Installed lab apps and status', kind: 'builtin', w: 10, h: 3 },
+  {
+    type: 'updates',
+    label: 'Updates',
+    description: 'Docker image updates for installed stacks',
+    kind: 'builtin',
+    w: 8,
+    h: 3,
+  },
   { type: 'community', label: 'Community', description: 'Reddit / Lemmy feed', kind: 'builtin', w: 8, h: 3 },
   { type: 'hackerNews', label: 'Hacker News', description: 'Top HN stories', kind: 'builtin', w: 10, h: 3 },
   { type: 'media', label: 'Media', description: 'Media stack highlights', kind: 'builtin', w: 8, h: 3 },

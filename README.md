@@ -278,6 +278,8 @@ Uses shared Postgres database `n8n` (`dependsOn: ["postgres"]`). Host/webhook UR
 | **docker-compose: all up** | `scripts/start.sh all` | Start `enabled` stacks |
 | **docker-compose: all down** | `scripts/stop.sh all` | Stop enabled stacks (keeps volumes) |
 
+Image updates: Control Center **Library** and the **Updates** widget call `GET /api/updates` (digest compare via `docker buildx imagetools`). Apply with **Update** or `bash scripts/update.sh <stack>` (pull + recreate).
+
 Config flow: `lab.config.json` → generated `.env`. Tracked template: `lab.config.example.json`. Add apps via `catalog/<id>/recipe.json` (see `.cursor/rules`).
 
 ## License

@@ -5,16 +5,20 @@ import {
   getDashboard,
   getHackerNewsFeed,
   getRedditFeed,
+  getUpdates,
   getWeather,
   installApp as apiInstallApp,
   putDashboard,
   startApp as apiStartApp,
   stopApp as apiStopApp,
   uninstallApp as apiUninstallApp,
+  updateApp as apiUpdateApp,
   type ApiMessage,
+  type AppUpdateStatus,
   type CatalogItem,
   type CatalogResponse,
   type FeedResponse,
+  type UpdatesResponse,
   type WeatherResponse,
 } from '../../api/generated';
 import { apiErrorMessage } from '../../api/configure-lab-api';
@@ -54,6 +58,9 @@ function newBoardId(title: string): string {
 export class DashboardService {
   readonly document = signal<DashboardDocument | null>(null);
   readonly catalog = signal<CatalogItem[]>([]);
+  readonly updates = signal<AppUpdateStatus[]>([]);
+  readonly updatesCheckedAt = signal<string | null>(null);
+  readonly updatesLoading = signal(false);
   readonly editMode = signal(false);
   readonly activeDashboardId = signal('home');
   /** Bumped when layout is force-reset so the grid re-binds items. */
@@ -100,6 +107,34 @@ export class DashboardService {
       tap((apps) => this.catalog.set(apps))
     );
   }
+
+  loadUpdates(refresh = false): Observable<AppUpdateStatus[]> {
+    this.updatesLoading.set(true);
+    return from(
+      unwrap(
+        getUpdates({
+          throwOnError: false,
+          query: refresh ? { refresh: true } : undefined,
+        })
+      )
+    ).pipe(
+      map((res: UpdatesResponse) => (Array.isArray(res.apps) ? res.apps : [])),
+      tap({
+        next: (apps) => {
+          this.updates.set(apps);
+          this.updatesCheckedAt.set(new Date().toISOString());
+          this.updatesLoading.set(false);
+        },
+        error: () => this.updatesLoading.set(false),
+      })
+    );
+  }
+
+  updateAvailable(id: string): boolean {
+    return this.updates().some((a) => a.id === id && a.updateAvailable);
+  }
+
+  appsWithUpdates = computed(() => this.updates().filter((a) => a.updateAvailable));
 
   save(doc: DashboardDocument): Observable<ApiMessage> {
     const normalized = ensureDashboards(doc);
@@ -287,6 +322,17 @@ export class DashboardService {
           body: { config },
         })
       )
+    );
+  }
+
+  updateApp(id: string): Observable<ApiMessage> {
+    return from(unwrap(apiUpdateApp({ throwOnError: false, path: { id } }))).pipe(
+      tap(() => {
+        // Drop stale cache locally; next loadUpdates(true) refreshes from API.
+        this.updates.update((list) =>
+          list.map((a) => (a.id === id ? { ...a, updateAvailable: false, images: a.images ?? [] } : a))
+        );
+      })
     );
   }
 

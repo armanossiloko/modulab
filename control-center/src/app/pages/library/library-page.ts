@@ -29,13 +29,18 @@ import { DashboardService } from '../../core/services/dashboard.service';
               <div class="library-meta">
                 <p class="library-title">{{ app.name }}</p>
                 <p class="library-desc">{{ app.description || '' }}</p>
-                <span
-                  class="library-status"
-                  [class.is-running]="app.status === 'running'"
-                  [class.is-available]="app.status === 'available'"
-                  [class.is-removed]="app.status === 'removed'"
-                  >{{ app.status }}</span
-                >
+                <div class="library-badges">
+                  <span
+                    class="library-status"
+                    [class.is-running]="app.status === 'running'"
+                    [class.is-available]="app.status === 'available'"
+                    [class.is-removed]="app.status === 'removed'"
+                    >{{ app.status }}</span
+                  >
+                  @if (hasUpdate(app.id)) {
+                    <span class="library-status is-update">update</span>
+                  }
+                </div>
               </div>
               <div class="library-actions">
                 @if (app.status === 'available' && app.installable !== false) {
@@ -55,6 +60,16 @@ import { DashboardService } from '../../core/services/dashboard.service';
                 }
                 @if (app.status === 'stopped' || app.status === 'installed') {
                   <button type="button" class="btn" (click)="start(app)">Start</button>
+                }
+                @if (hasUpdate(app.id)) {
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    [disabled]="busyId() === app.id"
+                    (click)="update(app)"
+                  >
+                    {{ busyId() === app.id ? 'Updating…' : 'Update' }}
+                  </button>
                 }
                 @if (
                   !app.core &&
@@ -133,6 +148,12 @@ import { DashboardService } from '../../core/services/dashboard.service';
       color: var(--text-dim);
       font-size: 0.9rem;
     }
+    .library-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
     .library-status {
       display: inline-block;
       font-family: var(--mono);
@@ -156,6 +177,12 @@ import { DashboardService } from '../../core/services/dashboard.service';
     .library-status.is-removed {
       color: var(--negative);
     }
+    .library-status.is-update {
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 0.12rem 0.4rem;
+      border-radius: 999px;
+    }
     .library-actions {
       display: flex;
       flex-wrap: wrap;
@@ -169,6 +196,7 @@ export class LibraryPage implements OnInit {
   readonly query = signal('');
   readonly error = signal<string | null>(null);
   readonly apps = signal<CatalogItem[]>([]);
+  readonly busyId = signal<string | null>(null);
 
   filteredApps(): CatalogItem[] {
     const q = this.query().trim().toLowerCase();
@@ -187,6 +215,7 @@ export class LibraryPage implements OnInit {
     };
     return list.sort(
       (a, b) =>
+        Number(this.hasUpdate(b.id)) - Number(this.hasUpdate(a.id)) ||
         (order[a.status ?? ''] ?? 9) - (order[b.status ?? ''] ?? 9) ||
         a.name.localeCompare(b.name)
     );
@@ -194,9 +223,16 @@ export class LibraryPage implements OnInit {
 
   ngOnInit(): void {
     forkJoin([this.dash.load(), this.dash.loadCatalog()]).subscribe({
-      next: () => this.apps.set(this.dash.catalog()),
+      next: () => {
+        this.apps.set(this.dash.catalog());
+        this.dash.loadUpdates(false).subscribe({ error: () => undefined });
+      },
       error: (err: Error) => this.error.set(err.message),
     });
+  }
+
+  hasUpdate(id: string): boolean {
+    return this.dash.updateAvailable(id);
   }
 
   openUrl(app: CatalogItem): string {
@@ -206,7 +242,10 @@ export class LibraryPage implements OnInit {
 
   refresh(): void {
     this.dash.loadCatalog().subscribe({
-      next: (apps) => this.apps.set(apps),
+      next: (apps) => {
+        this.apps.set(apps);
+        this.dash.loadUpdates(true).subscribe({ error: () => undefined });
+      },
       error: (err: Error) => this.error.set(err.message),
     });
   }
@@ -223,6 +262,21 @@ export class LibraryPage implements OnInit {
     this.dash.startApp(app.id).subscribe({
       next: () => this.refresh(),
       error: (err: Error) => alert(err.message),
+    });
+  }
+
+  update(app: CatalogItem): void {
+    if (!confirm(`Pull and recreate ${app.name}?`)) return;
+    this.busyId.set(app.id);
+    this.dash.updateApp(app.id).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+      },
     });
   }
 

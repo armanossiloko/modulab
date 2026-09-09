@@ -12,6 +12,7 @@ import { StackUsageWidget } from './stack-usage-widget';
 import { NetworkWidget } from './network-widget';
 import { NowRunningWidget } from './now-running-widget';
 import { CalendarWidget } from './calendar-widget';
+import { UpdatesWidget } from './updates-widget';
 
 @Component({
   selector: 'app-widget-host',
@@ -29,6 +30,7 @@ import { CalendarWidget } from './calendar-widget';
     NetworkWidget,
     NowRunningWidget,
     CalendarWidget,
+    UpdatesWidget,
   ],
   template: `
     <header class="widget-head">
@@ -45,6 +47,9 @@ import { CalendarWidget } from './calendar-widget';
         }
         @case ('stacks') {
           <app-stacks-widget class="fills" [config]="config" />
+        }
+        @case ('updates') {
+          <app-updates-widget class="fills" [config]="config" />
         }
         @case ('yearProgress') {
           <app-year-progress-widget [config]="config" />

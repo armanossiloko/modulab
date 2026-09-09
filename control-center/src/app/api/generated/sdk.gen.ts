@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAppData, GetAppErrors, GetAppResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses } from './types.gen';
+import type { GetAppData, GetAppErrors, GetAppResponses, GetAppUpdatesData, GetAppUpdatesErrors, GetAppUpdatesResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetUpdatesData, GetUpdatesErrors, GetUpdatesResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses, UpdateAppData, UpdateAppErrors, UpdateAppResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -44,6 +44,12 @@ export const installApp = <ThrowOnError extends boolean = false>(options: Option
 export const startApp = <ThrowOnError extends boolean = false>(options: Options<StartAppData, ThrowOnError>): RequestResult<StartAppResponses, StartAppErrors, ThrowOnError> => (options.client ?? client).post<StartAppResponses, StartAppErrors, ThrowOnError>({ url: '/api/apps/{id}/start', ...options });
 
 export const stopApp = <ThrowOnError extends boolean = false>(options: Options<StopAppData, ThrowOnError>): RequestResult<StopAppResponses, StopAppErrors, ThrowOnError> => (options.client ?? client).post<StopAppResponses, StopAppErrors, ThrowOnError>({ url: '/api/apps/{id}/stop', ...options });
+
+export const getUpdates = <ThrowOnError extends boolean = false>(options?: Options<GetUpdatesData, ThrowOnError>): RequestResult<GetUpdatesResponses, GetUpdatesErrors, ThrowOnError> => (options?.client ?? client).get<GetUpdatesResponses, GetUpdatesErrors, ThrowOnError>({ url: '/api/updates', ...options });
+
+export const getAppUpdates = <ThrowOnError extends boolean = false>(options: Options<GetAppUpdatesData, ThrowOnError>): RequestResult<GetAppUpdatesResponses, GetAppUpdatesErrors, ThrowOnError> => (options.client ?? client).get<GetAppUpdatesResponses, GetAppUpdatesErrors, ThrowOnError>({ url: '/api/apps/{id}/updates', ...options });
+
+export const updateApp = <ThrowOnError extends boolean = false>(options: Options<UpdateAppData, ThrowOnError>): RequestResult<UpdateAppResponses, UpdateAppErrors, ThrowOnError> => (options.client ?? client).post<UpdateAppResponses, UpdateAppErrors, ThrowOnError>({ url: '/api/apps/{id}/update', ...options });
 
 export const importBookmarks = <ThrowOnError extends boolean = false>(options?: Options<ImportBookmarksData, ThrowOnError>): RequestResult<ImportBookmarksResponses, ImportBookmarksErrors, ThrowOnError> => (options?.client ?? client).post<ImportBookmarksResponses, ImportBookmarksErrors, ThrowOnError>({
     url: '/api/dashboard/bookmarks',

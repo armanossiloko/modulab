@@ -35,6 +35,7 @@ export class Shell implements OnInit {
   refresh(): void {
     this.dash.load().subscribe();
     this.dash.loadCatalog().subscribe();
+    this.dash.loadUpdates(true).subscribe({ error: () => undefined });
   }
 
   startResize(event: PointerEvent): void {

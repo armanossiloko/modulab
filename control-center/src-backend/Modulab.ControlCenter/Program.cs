@@ -392,6 +392,67 @@ app.MapPost("/api/apps/{id}/stop", async (string id) =>
     .Produces<ApiMessage>(StatusCodes.Status200OK)
     .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
+app.MapGet("/api/updates", async (bool? refresh, CancellationToken ct) =>
+{
+    try
+    {
+        var response = await GetUpdatesCachedAsync(labRoot, refresh == true, ct);
+        return Results.Json(response, LabJsonContext.Default.UpdatesResponse);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
+    }
+})
+    .WithName("GetUpdates")
+    .WithTags("Apps")
+    .Produces<UpdatesResponse>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status500InternalServerError);
+
+app.MapGet("/api/apps/{id}/updates", async (string id, bool? refresh, CancellationToken ct) =>
+{
+    var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
+    if (recipe is null)
+        return Results.Json(new ApiMessage($"Unknown app '{id}'"), LabJsonContext.Default.ApiMessage, statusCode: 404);
+
+    try
+    {
+        var status = await CheckAppUpdatesAsync(labRoot, recipe, ct);
+        return Results.Json(status, LabJsonContext.Default.AppUpdateStatus);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
+    }
+})
+    .WithName("GetAppUpdates")
+    .WithTags("Apps")
+    .Produces<AppUpdateStatus>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
+
+app.MapPost("/api/apps/{id}/update", async (string id) =>
+{
+    var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
+    if (recipe is null)
+        return Results.Json(new ApiMessage($"Unknown app '{id}'"), LabJsonContext.Default.ApiMessage, statusCode: 404);
+
+    try
+    {
+        EnsureEnabled(labRoot, id);
+        await RunScriptAsync(labRoot, "update.sh", id);
+        InvalidateUpdatesCache();
+        return Results.Json(new ApiMessage($"Updated {id}"), LabJsonContext.Default.ApiMessage);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
+    }
+})
+    .WithName("UpdateApp")
+    .WithTags("Apps")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
+
 app.MapDelete("/api/apps/{id}", async (string id) =>
 {
     var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
@@ -719,6 +780,339 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
     await RunScriptAsync(labRoot, "start.sh", recipe.Id);
 }
 
+static void InvalidateUpdatesCache()
+{
+    lock (UpdatesCacheState.Lock)
+    {
+        UpdatesCacheState.Response = null;
+    }
+}
+
+static async Task<UpdatesResponse> GetUpdatesCachedAsync(string labRoot, bool forceRefresh, CancellationToken ct)
+{
+    if (!forceRefresh)
+    {
+        lock (UpdatesCacheState.Lock)
+        {
+            if (UpdatesCacheState.Response is not null
+                && DateTimeOffset.UtcNow - UpdatesCacheState.At < UpdatesCacheState.Ttl)
+                return UpdatesCacheState.Response with { FromCache = true };
+        }
+    }
+
+    var recipes = LoadRecipes(labRoot)
+        .Where(r => !string.Equals(r.Id, "control-center", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+    var enabled = LoadEnabled(labRoot);
+    var (_, present) = ProbeContainers(labRoot, recipes);
+
+    var targets = recipes
+        .Where(r => enabled.Contains(r.Id) || present.Contains(r.Id) || r.Core)
+        .Where(r => File.Exists(ResolveComposeFile(labRoot, r)))
+        .ToList();
+
+    var apps = new List<AppUpdateStatus>();
+    foreach (var recipe in targets)
+    {
+        ct.ThrowIfCancellationRequested();
+        apps.Add(await CheckAppUpdatesAsync(labRoot, recipe, ct));
+    }
+
+    var response = new UpdatesResponse(apps, DateTimeOffset.UtcNow, FromCache: false);
+    lock (UpdatesCacheState.Lock)
+    {
+        UpdatesCacheState.Response = response;
+        UpdatesCacheState.At = DateTimeOffset.UtcNow;
+    }
+
+    return response;
+}
+
+static async Task<AppUpdateStatus> CheckAppUpdatesAsync(string labRoot, Recipe recipe, CancellationToken ct)
+{
+    var images = new List<ImageUpdateStatus>();
+    List<string> refs;
+    try
+    {
+        refs = ComposeImageRefs(labRoot, recipe);
+    }
+    catch (Exception ex)
+    {
+        return new AppUpdateStatus(recipe.Id, recipe.Name, false, [
+            new ImageUpdateStatus("", null, null, null, false, null, ex.Message)
+        ]);
+    }
+
+    if (refs.Count == 0)
+        return new AppUpdateStatus(recipe.Id, recipe.Name, false, images);
+
+    foreach (var imageRef in refs)
+    {
+        ct.ThrowIfCancellationRequested();
+        images.Add(await CheckImageUpdateAsync(labRoot, imageRef, ct));
+    }
+
+    return new AppUpdateStatus(
+        recipe.Id,
+        recipe.Name,
+        images.Any(i => i.UpdateAvailable),
+        images);
+}
+
+static async Task<ImageUpdateStatus> CheckImageUpdateAsync(
+    string labRoot,
+    string imageRef,
+    CancellationToken ct)
+{
+    string? localId = null;
+    string? localDigest = null;
+    string? remoteDigest = null;
+    string? error = null;
+    var reasons = new List<string>();
+
+    try
+    {
+        var (exit, stdout, stderr) = await RunAsync(
+            "docker",
+            $"image inspect {QuoteArg(imageRef)} --format \"{{{{json .}}}}\"",
+            labRoot,
+            20_000);
+        if (exit == 0 && !string.IsNullOrWhiteSpace(stdout))
+        {
+            using var doc = JsonDocument.Parse(stdout);
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                root = root[0];
+            localId = root.TryGetProperty("Id", out var idEl) ? idEl.GetString() : null;
+            localDigest = ExtractLocalDigest(root, imageRef);
+        }
+        else
+        {
+            error = string.IsNullOrWhiteSpace(stderr) ? "Local image not found" : stderr.Trim();
+        }
+    }
+    catch (Exception ex)
+    {
+        error = ex.Message;
+    }
+
+    try
+    {
+        remoteDigest = await ResolveRemoteDigestAsync(labRoot, imageRef, ct);
+    }
+    catch (Exception ex)
+    {
+        error = string.IsNullOrEmpty(error) ? ex.Message : $"{error}; {ex.Message}";
+    }
+
+    if (!string.IsNullOrEmpty(localDigest)
+        && !string.IsNullOrEmpty(remoteDigest)
+        && !DigestsEqual(localDigest, remoteDigest))
+        reasons.Add("newer-registry");
+
+    // No local image but remote resolves → treat as needing pull/update.
+    if (string.IsNullOrEmpty(localId) && !string.IsNullOrEmpty(remoteDigest))
+        reasons.Add("newer-registry");
+
+    // Container still on an older local image ID for this tag.
+    if (!string.IsNullOrEmpty(localId) && ContainersUseStaleImage(labRoot, imageRef, localId))
+        reasons.Add("container-stale");
+
+    var reason = reasons.Count == 0 ? null : string.Join(",", reasons);
+    return new ImageUpdateStatus(
+        imageRef,
+        localDigest,
+        remoteDigest,
+        localId,
+        reasons.Count > 0,
+        reason,
+        error);
+}
+
+static async Task<string?> ResolveRemoteDigestAsync(string labRoot, string imageRef, CancellationToken ct)
+{
+    ct.ThrowIfCancellationRequested();
+    var (exit, stdout, stderr) = await RunAsync(
+        "docker",
+        $"buildx imagetools inspect {QuoteArg(imageRef)} --format \"{{{{json .}}}}\"",
+        labRoot,
+        45_000);
+    if (exit != 0 || string.IsNullOrWhiteSpace(stdout))
+        throw new InvalidOperationException(
+            string.IsNullOrWhiteSpace(stderr) ? $"Could not inspect remote image {imageRef}" : stderr.Trim());
+
+    using var doc = JsonDocument.Parse(stdout);
+    return ExtractRemoteDigest(doc.RootElement)
+        ?? throw new InvalidOperationException($"No digest in imagetools output for {imageRef}");
+}
+
+static string? ExtractRemoteDigest(JsonElement root)
+{
+    if (root.TryGetProperty("manifest", out var manifest) && manifest.TryGetProperty("digest", out var md))
+        return NormalizeDigest(md.GetString());
+    if (root.TryGetProperty("Manifest", out var manifest2) && manifest2.TryGetProperty("Digest", out var md2))
+        return NormalizeDigest(md2.GetString());
+    if (root.TryGetProperty("descriptor", out var desc) && desc.TryGetProperty("digest", out var dd))
+        return NormalizeDigest(dd.GetString());
+    if (root.TryGetProperty("Descriptor", out var desc2) && desc2.TryGetProperty("digest", out var dd2))
+        return NormalizeDigest(dd2.GetString());
+    if (root.TryGetProperty("digest", out var d))
+        return NormalizeDigest(d.GetString());
+    return null;
+}
+
+static string? ExtractLocalDigest(JsonElement imageInspect, string imageRef)
+{
+    if (!imageInspect.TryGetProperty("RepoDigests", out var digests) || digests.ValueKind != JsonValueKind.Array)
+        return null;
+
+    var repo = ImageRepo(imageRef);
+    foreach (var entry in digests.EnumerateArray())
+    {
+        var text = entry.GetString();
+        if (string.IsNullOrWhiteSpace(text))
+            continue;
+        var at = text.IndexOf('@');
+        if (at <= 0)
+            continue;
+        var entryRepo = text[..at];
+        if (!string.IsNullOrEmpty(repo)
+            && !entryRepo.Equals(repo, StringComparison.OrdinalIgnoreCase)
+            && !entryRepo.EndsWith("/" + repo, StringComparison.OrdinalIgnoreCase)
+            && !repo.EndsWith("/" + entryRepo, StringComparison.OrdinalIgnoreCase))
+            continue;
+        return NormalizeDigest(text[(at + 1)..]);
+    }
+
+    // Fall back to first digest if repo matching failed.
+    foreach (var entry in digests.EnumerateArray())
+    {
+        var text = entry.GetString();
+        if (string.IsNullOrWhiteSpace(text))
+            continue;
+        var at = text.IndexOf('@');
+        if (at >= 0)
+            return NormalizeDigest(text[(at + 1)..]);
+    }
+
+    return null;
+}
+
+static string ImageRepo(string imageRef)
+{
+    var cut = imageRef.IndexOf('@');
+    if (cut >= 0)
+        imageRef = imageRef[..cut];
+    var slash = imageRef.LastIndexOf('/');
+    var name = slash >= 0 ? imageRef[(slash + 1)..] : imageRef;
+    var colon = name.LastIndexOf(':');
+    if (colon >= 0)
+        name = name[..colon];
+    // Prefer full path without tag for matching RepoDigests.
+    cut = imageRef.LastIndexOf(':');
+    if (cut > imageRef.LastIndexOf('/'))
+        return imageRef[..cut];
+    return imageRef;
+}
+
+static string? NormalizeDigest(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        return null;
+    value = value.Trim();
+    var at = value.LastIndexOf('@');
+    if (at >= 0)
+        value = value[(at + 1)..];
+    return value.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+        ? value.ToLowerInvariant()
+        : value;
+}
+
+static bool DigestsEqual(string a, string b)
+{
+    var na = NormalizeDigest(a);
+    var nb = NormalizeDigest(b);
+    return !string.IsNullOrEmpty(na)
+        && !string.IsNullOrEmpty(nb)
+        && string.Equals(na, nb, StringComparison.OrdinalIgnoreCase);
+}
+
+static string ResolveComposeFile(string labRoot, Recipe recipe)
+{
+    if (!string.IsNullOrWhiteSpace(recipe.Compose))
+    {
+        var relative = recipe.Compose.Replace('/', Path.DirectorySeparatorChar)
+            .Replace('\\', Path.DirectorySeparatorChar);
+        return Path.GetFullPath(Path.Combine(labRoot, relative));
+    }
+
+    return Path.Combine(labRoot, $"docker-compose.{recipe.Id}.yml");
+}
+
+static List<string> ComposeImageRefs(string labRoot, Recipe recipe)
+{
+    var compose = ResolveComposeFile(labRoot, recipe);
+    if (!File.Exists(compose))
+        return [];
+
+    var envFile = Path.Combine(labRoot, ".env");
+    var args = File.Exists(envFile)
+        ? $"compose --env-file {QuoteArg(envFile)} -f {QuoteArg(compose)} config --images"
+        : $"compose -f {QuoteArg(compose)} config --images";
+    var output = RunCapture("docker", args, labRoot, 30_000);
+    return output
+        .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(line => !string.IsNullOrWhiteSpace(line))
+        .Distinct(StringComparer.Ordinal)
+        .ToList();
+}
+
+static bool ContainersUseStaleImage(string labRoot, string imageRef, string localImageId)
+{
+    try
+    {
+        var output = RunCapture(
+            "docker",
+            $"ps -a --filter ancestor={QuoteArg(imageRef)} --format \"{{{{.ID}}}}\"",
+            labRoot,
+            15_000);
+        var containerIds = output
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToList();
+        if (containerIds.Count == 0)
+            return false;
+
+        foreach (var containerId in containerIds)
+        {
+            var (exit, stdout, _) = RunAsync(
+                "docker",
+                $"inspect {QuoteArg(containerId)} --format \"{{{{.Image}}}}\"",
+                labRoot,
+                15_000).GetAwaiter().GetResult();
+            if (exit != 0 || string.IsNullOrWhiteSpace(stdout))
+                continue;
+            if (!DigestsEqual(stdout.Trim(), localImageId))
+                return true;
+        }
+    }
+    catch
+    {
+        return false;
+    }
+
+    return false;
+}
+
+static string QuoteArg(string value)
+{
+    if (string.IsNullOrEmpty(value))
+        return "\"\"";
+    if (!value.Contains(' ') && !value.Contains('"') && !value.Contains('\\'))
+        return value;
+    return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+}
+
 static (HashSet<string> Running, HashSet<string> Present) ProbeContainers(string labRoot, List<Recipe> recipes)
 {
     var running = new HashSet<string>(StringComparer.Ordinal);
@@ -827,7 +1221,11 @@ static async Task RunScriptAsync(string labRoot, string script, string? arg = nu
         throw new InvalidOperationException($"bash {script} failed ({exit}): {stderr}\n{stdout}".Trim());
 }
 
-static Task<(int Exit, string StdOut, string StdErr)> RunAsync(string file, string args, string cwd)
+static Task<(int Exit, string StdOut, string StdErr)> RunAsync(
+    string file,
+    string args,
+    string cwd,
+    int? timeoutMs = null)
 {
     return Task.Run(() =>
     {
@@ -844,12 +1242,24 @@ static Task<(int Exit, string StdOut, string StdErr)> RunAsync(string file, stri
         using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {file}");
         var stdout = proc.StandardOutput.ReadToEnd();
         var stderr = proc.StandardError.ReadToEnd();
-        proc.WaitForExit();
+        if (timeoutMs is int ms)
+        {
+            if (!proc.WaitForExit(ms))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                throw new TimeoutException($"{file} timed out after {ms}ms");
+            }
+        }
+        else
+        {
+            proc.WaitForExit();
+        }
+
         return (proc.ExitCode, stdout, stderr);
     });
 }
 
-static string RunCapture(string file, string args, string cwd)
+static string RunCapture(string file, string args, string cwd, int timeoutMs = 15_000)
 {
     var psi = new ProcessStartInfo
     {
@@ -863,7 +1273,12 @@ static string RunCapture(string file, string args, string cwd)
     };
     using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {file}");
     var stdout = proc.StandardOutput.ReadToEnd();
-    proc.WaitForExit(15_000);
+    if (!proc.WaitForExit(timeoutMs))
+    {
+        try { proc.Kill(entireProcessTree: true); } catch { /* ignore */ }
+        throw new TimeoutException($"{file} timed out after {timeoutMs}ms");
+    }
+
     return stdout.Trim();
 }
 
@@ -1093,6 +1508,23 @@ internal sealed record BookmarkLinkDto(string Title, string Url, string? Domain)
 internal sealed record BookmarkGroupDto(string Title, string? Color, List<BookmarkLinkDto> Links);
 internal sealed record ImportBookmarksRequest(List<BookmarkGroupDto> Groups, bool? MergeByTitle);
 internal sealed record ReplaceBookmarksRequest(List<BookmarkGroupDto> Groups, bool? ShowInstalledApps);
+internal sealed record ImageUpdateStatus(
+    string Image,
+    string? LocalDigest,
+    string? RemoteDigest,
+    string? LocalId,
+    bool UpdateAvailable,
+    string? Reason,
+    string? Error);
+internal sealed record AppUpdateStatus(
+    string Id,
+    string Name,
+    bool UpdateAvailable,
+    List<ImageUpdateStatus> Images);
+internal sealed record UpdatesResponse(
+    List<AppUpdateStatus> Apps,
+    DateTimeOffset CheckedAt,
+    bool FromCache);
 
 internal sealed class Recipe
 {
@@ -1136,6 +1568,11 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(BookmarkGroupDto))]
 [JsonSerializable(typeof(ImportBookmarksRequest))]
 [JsonSerializable(typeof(ReplaceBookmarksRequest))]
+[JsonSerializable(typeof(ImageUpdateStatus))]
+[JsonSerializable(typeof(AppUpdateStatus))]
+[JsonSerializable(typeof(UpdatesResponse))]
+[JsonSerializable(typeof(List<ImageUpdateStatus>))]
+[JsonSerializable(typeof(List<AppUpdateStatus>))]
 [JsonSerializable(typeof(List<BookmarkLinkDto>))]
 [JsonSerializable(typeof(List<BookmarkGroupDto>))]
 [JsonSerializable(typeof(Recipe))]
@@ -1148,3 +1585,11 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]
 internal partial class LabJsonContext : JsonSerializerContext;
+
+file static class UpdatesCacheState
+{
+    public static readonly object Lock = new();
+    public static UpdatesResponse? Response;
+    public static DateTimeOffset At;
+    public static readonly TimeSpan Ttl = TimeSpan.FromMinutes(15);
+}
