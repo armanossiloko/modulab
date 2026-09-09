@@ -16,17 +16,17 @@ export interface WidgetDefinition {
 
 /** Built-in widgets (same types as the default home layout). */
 export const BUILTIN_WIDGETS: WidgetDefinition[] = [
-  { type: 'stacks', label: 'Lab stacks', description: 'Installed lab apps and status', kind: 'builtin', w: 5, h: 3 },
-  { type: 'community', label: 'Community', description: 'Reddit / Lemmy feed', kind: 'builtin', w: 4, h: 4 },
-  { type: 'hackerNews', label: 'Hacker News', description: 'Top HN stories', kind: 'builtin', w: 5, h: 4 },
-  { type: 'media', label: 'Media', description: 'Media stack highlights', kind: 'builtin', w: 4, h: 2 },
-  { type: 'clock', label: 'Clock', description: 'Local time and date', kind: 'builtin', w: 3, h: 2 },
-  { type: 'weather', label: 'Weather', description: 'Current conditions', kind: 'builtin', w: 3, h: 2 },
-  { type: 'yearProgress', label: 'Year progress', description: 'Progress through the year', kind: 'builtin', w: 3, h: 2 },
-  { type: 'stackUsage', label: 'Stack usage', description: 'Installed vs running counts', kind: 'builtin', w: 3, h: 2 },
-  { type: 'network', label: 'Network', description: 'Online / ping summary', kind: 'builtin', w: 3, h: 2 },
-  { type: 'nowRunning', label: 'Now running', description: 'Featured running app', kind: 'builtin', w: 3, h: 2 },
-  { type: 'calendar', label: 'Calendar', description: 'Month calendar', kind: 'builtin', w: 3, h: 3 },
+  { type: 'stacks', label: 'Lab stacks', description: 'Installed lab apps and status', kind: 'builtin', w: 10, h: 3 },
+  { type: 'community', label: 'Community', description: 'Reddit / Lemmy feed', kind: 'builtin', w: 8, h: 3 },
+  { type: 'hackerNews', label: 'Hacker News', description: 'Top HN stories', kind: 'builtin', w: 10, h: 3 },
+  { type: 'media', label: 'Media', description: 'Media stack highlights', kind: 'builtin', w: 8, h: 3 },
+  { type: 'clock', label: 'Clock', description: 'Local time and date', kind: 'builtin', w: 4, h: 1 },
+  { type: 'weather', label: 'Weather', description: 'Current conditions', kind: 'builtin', w: 4, h: 1 },
+  { type: 'yearProgress', label: 'Year progress', description: 'Progress through the year', kind: 'builtin', w: 4, h: 1 },
+  { type: 'stackUsage', label: 'Stack usage', description: 'Installed vs running counts', kind: 'builtin', w: 4, h: 1 },
+  { type: 'network', label: 'Network', description: 'Online / ping summary', kind: 'builtin', w: 4, h: 1 },
+  { type: 'nowRunning', label: 'Now running', description: 'Featured running app', kind: 'builtin', w: 4, h: 1 },
+  { type: 'calendar', label: 'Calendar', description: 'Month calendar', kind: 'builtin', w: 4, h: 4 },
 ];
 
 /** Custom widgets you configure when adding. */
@@ -36,8 +36,8 @@ export const CUSTOM_WIDGETS: WidgetDefinition[] = [
     label: 'Embed',
     description: 'Embed any HTTPS page in an iframe',
     kind: 'custom',
-    w: 6,
-    h: 5,
+    w: 12,
+    h: 4,
     defaultConfig: { title: 'Embed', url: '' },
   },
   {
@@ -45,8 +45,8 @@ export const CUSTOM_WIDGETS: WidgetDefinition[] = [
     label: 'Note',
     description: 'Free-text note card',
     kind: 'custom',
-    w: 4,
-    h: 3,
+    w: 8,
+    h: 2,
     defaultConfig: { title: 'Note', text: '' },
   },
   {
@@ -54,8 +54,8 @@ export const CUSTOM_WIDGETS: WidgetDefinition[] = [
     label: 'Link list',
     description: 'A small list of titled links',
     kind: 'custom',
-    w: 3,
-    h: 3,
+    w: 6,
+    h: 2,
     defaultConfig: {
       title: 'Links',
       links: [{ title: 'Example', url: 'https://example.com' }],

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardGrid } from '../../grid/dashboard-grid';
@@ -8,26 +8,80 @@ import { PageItem } from '../../core/models/dashboard';
 
 @Component({
   selector: 'app-home-page',
-  imports: [DashboardGrid, FormsModule, AddWidgetPanel],
+  imports: [DashboardGrid, AddWidgetPanel],
   template: `
     <div class="home">
       <div class="home-toolbar">
-        <label class="edit-toggle">
-          <input type="checkbox" [ngModel]="dash.editMode()" (ngModelChange)="onEdit($event)" />
-          Edit layout
-        </label>
-        @if (dash.editMode()) {
-          <button type="button" class="btn btn--sm btn--primary" (click)="showAdd.set(true)">
-            Add widget
+        <h1 class="board-title">{{ dash.pageTitle(dash.activeDashboard()) }}</h1>
+        <div class="toolbar-actions">
+          @if (dash.editMode()) {
+            <span class="hint">Drag · resize · auto-saves</span>
+            <button
+              type="button"
+              class="icon-btn"
+              title="Add widget"
+              aria-label="Add widget"
+              (click)="showAdd.set(true)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 5v14M5 12h14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+            @if (dash.activeDashboardId() === 'home') {
+              <button
+                type="button"
+                class="icon-btn"
+                title="Reset to default"
+                aria-label="Reset to default"
+                (click)="resetLayout()"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </button>
+            }
+          }
+          <button
+            type="button"
+            class="icon-btn"
+            [class.is-active]="dash.editMode()"
+            [title]="dash.editMode() ? 'Done editing' : 'Edit layout'"
+            [attr.aria-label]="dash.editMode() ? 'Done editing' : 'Edit layout'"
+            [attr.aria-pressed]="dash.editMode()"
+            (click)="onEdit(!dash.editMode())"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13 6l3 3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
-          <button type="button" class="btn btn--sm" (click)="resetLayout()">Reset to default</button>
-          <span class="hint">Drag, resize, add, or remove · auto-saves</span>
-        }
+        </div>
       </div>
       @if (error()) {
         <p class="empty-note">{{ error() }}</p>
       } @else if (!ready()) {
         <p class="empty-note">Loading dashboard…</p>
+      } @else if (!dash.activeDashboard()) {
+        <p class="empty-note">Dashboard not found.</p>
       } @else {
         <app-dashboard-grid />
       }
@@ -48,43 +102,60 @@ import { PageItem } from '../../core/models/dashboard';
     .home-toolbar {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
+      justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.55rem;
       flex: 0 0 auto;
     }
-    .edit-toggle {
+    .board-title {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .toolbar-actions {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      min-height: 34px;
-      padding: 0.35rem 0.7rem;
+      gap: 0.4rem;
+      flex: 0 0 auto;
+      margin-left: auto;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-right: 0.25rem;
+    }
+    .icon-btn {
+      width: 34px;
+      height: 34px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--widget);
-      font-size: 0.82rem;
-      font-weight: 500;
       color: var(--text-dim);
       cursor: pointer;
-      user-select: none;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
     }
-    .edit-toggle:hover {
+    .icon-btn svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+    }
+    .icon-btn:hover {
       color: var(--text);
       background: var(--widget-hover);
     }
-    .edit-toggle:has(input:checked) {
+    .icon-btn.is-active {
       color: var(--accent);
       border-color: var(--accent-border);
       background: var(--accent-soft);
-    }
-    .edit-toggle input {
-      accent-color: var(--accent);
-      margin: 0;
-    }
-    .hint {
-      font-size: 0.78rem;
-      color: var(--text-muted);
     }
     app-dashboard-grid {
       flex: 1;
@@ -94,13 +165,33 @@ import { PageItem } from '../../core/models/dashboard';
 })
 export class HomePage implements OnInit {
   readonly dash = inject(DashboardService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   readonly ready = signal(false);
   readonly error = signal<string | null>(null);
   readonly showAdd = signal(false);
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id') || 'home';
+      this.dash.setActiveDashboard(id);
+      this.dash.setEditMode(false);
+      this.showAdd.set(false);
+      const boards = this.dash.dashboards();
+      if (this.ready() && boards.length && !boards.some((b) => b.id === id)) {
+        void this.router.navigate(['/d', boards[0].id]);
+      }
+    });
+
     forkJoin([this.dash.load(), this.dash.loadCatalog()]).subscribe({
-      next: () => this.ready.set(true),
+      next: () => {
+        this.ready.set(true);
+        const id = this.route.snapshot.paramMap.get('id') || 'home';
+        this.dash.setActiveDashboard(id);
+        if (!this.dash.dashboards().some((b) => b.id === id)) {
+          void this.router.navigate(['/d', this.dash.dashboards()[0]?.id || 'home']);
+        }
+      },
       error: (err: Error) => this.error.set(err.message),
     });
   }
@@ -118,6 +209,7 @@ export class HomePage implements OnInit {
   resetLayout(): void {
     if (!confirm('Reset Home layout to the default (2-column main + right rail)?')) return;
     this.dash.resetLayoutToDefault().subscribe({
+      next: () => void this.router.navigate(['/d/home']),
       error: (err: Error) => alert(err.message),
     });
   }

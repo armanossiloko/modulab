@@ -18,8 +18,13 @@ import {
   type WeatherResponse,
 } from '../../api/generated';
 import { apiErrorMessage } from '../../api/configure-lab-api';
-import { ensurePages, resetPagesFromLayout } from './layout-migrate';
-import { DashboardDocument, DashboardPage, PageItem } from '../models/dashboard';
+import {
+  buildDashboardTree,
+  collectDescendantIds,
+  ensureDashboards,
+  resetPagesFromLayout,
+} from './layout-migrate';
+import { DashboardBoard, DashboardDocument, PageItem } from '../models/dashboard';
 
 async function unwrap<T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>): Promise<T> {
   const result = await promise;
@@ -36,33 +41,54 @@ async function unwrap<T>(promise: Promise<{ data?: T; error?: unknown; response?
   return result.data;
 }
 
+function newBoardId(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 24);
+  return `${slug || 'board'}-${Date.now().toString(36)}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   readonly document = signal<DashboardDocument | null>(null);
   readonly catalog = signal<CatalogItem[]>([]);
   readonly editMode = signal(false);
-  readonly activePageId = signal('home');
+  readonly activeDashboardId = signal('home');
   /** Bumped when layout is force-reset so the grid re-binds items. */
   readonly layoutEpoch = signal(0);
 
-  readonly pages = computed(() => this.document()?.pages ?? []);
-  readonly activePage = computed(() => {
-    const pages = this.pages();
-    const id = this.activePageId();
-    return pages.find((p) => p.id === id) ?? pages[0] ?? null;
+  /** @deprecated use activeDashboardId */
+  readonly activePageId = this.activeDashboardId;
+
+  readonly dashboards = computed(() => this.document()?.dashboards ?? []);
+  readonly dashboardTree = computed(() => buildDashboardTree(this.dashboards()));
+  readonly sidebar = computed(() => this.document()?.sidebar ?? null);
+
+  readonly activeDashboard = computed(() => {
+    const boards = this.dashboards();
+    const id = this.activeDashboardId();
+    return boards.find((b) => b.id === id) ?? boards[0] ?? null;
   });
+
+  /** @deprecated use activeDashboard */
+  readonly activePage = this.activeDashboard;
+  /** @deprecated use dashboards */
+  readonly pages = this.dashboards;
 
   load(): Observable<DashboardDocument> {
     return from(unwrap(getDashboard({ throwOnError: false }))).pipe(
-      map((raw) => ensurePages(raw as DashboardDocument)),
+      map((raw) => ensureDashboards(raw as DashboardDocument)),
       tap((doc) => {
         this.document.set(doc);
         const accent = doc.theme?.accent;
         if (accent) {
           document.documentElement.style.setProperty('--accent', accent);
         }
-        if (doc.pages?.[0] && !doc.pages.some((p) => p.id === this.activePageId())) {
-          this.activePageId.set(doc.pages[0].id);
+        const boards = doc.dashboards || [];
+        if (boards.length && !boards.some((b) => b.id === this.activeDashboardId())) {
+          this.activeDashboardId.set(boards[0].id);
         }
       })
     );
@@ -76,7 +102,7 @@ export class DashboardService {
   }
 
   save(doc: DashboardDocument): Observable<ApiMessage> {
-    const normalized = ensurePages(doc);
+    const normalized = ensureDashboards(doc);
     return from(
       unwrap(
         putDashboard({
@@ -87,11 +113,17 @@ export class DashboardService {
     ).pipe(tap(() => this.document.set(normalized)));
   }
 
+  setActiveDashboard(id: string): void {
+    if (this.activeDashboardId() === id) return;
+    this.activeDashboardId.set(id);
+    this.layoutEpoch.update((n) => n + 1);
+  }
+
   updatePageItems(pageId: string, items: PageItem[]): void {
     const doc = this.document();
-    if (!doc?.pages) return;
-    const pages = doc.pages.map((p) => (p.id === pageId ? { ...p, items } : p));
-    this.document.set({ ...doc, pages });
+    if (!doc?.dashboards) return;
+    const dashboards = doc.dashboards.map((p) => (p.id === pageId ? { ...p, items } : p));
+    this.document.set({ ...doc, dashboards });
   }
 
   persistLayout(): Observable<ApiMessage> {
@@ -102,7 +134,7 @@ export class DashboardService {
     return this.save(doc);
   }
 
-  /** Restore Home grid from layout.center / layout.right (master defaults). */
+  /** Restore Home board widgets from layout defaults (keeps other boards + sidebar). */
   resetLayoutToDefault(): Observable<ApiMessage> {
     const doc = this.document();
     if (!doc) {
@@ -111,32 +143,90 @@ export class DashboardService {
     const next = resetPagesFromLayout(doc);
     return this.save(next).pipe(
       tap(() => {
-        this.activePageId.set('home');
+        this.activeDashboardId.set('home');
         this.layoutEpoch.update((n) => n + 1);
       })
     );
   }
 
   addWidget(item: PageItem): void {
-    const page = this.activePage();
+    const board = this.activeDashboard();
     const doc = this.document();
-    if (!page || !doc?.pages) return;
+    if (!board || !doc?.dashboards) return;
 
-    const maxY = page.items.reduce((m, i) => Math.max(m, i.y + i.h), 0);
+    const maxY = board.items.reduce((m, i) => Math.max(m, i.y + i.h), 0);
     const placed: PageItem = { ...item, x: item.x || 0, y: maxY };
-    const items = [...page.items, placed];
-    this.updatePageItems(page.id, items);
+    this.updatePageItems(board.id, [...board.items, placed]);
     this.layoutEpoch.update((n) => n + 1);
     this.persistLayout().subscribe({ error: (e: Error) => console.error(e) });
   }
 
   removeWidget(itemId: string): void {
-    const page = this.activePage();
-    if (!page) return;
-    const items = page.items.filter((i) => i.id !== itemId);
-    this.updatePageItems(page.id, items);
+    const board = this.activeDashboard();
+    if (!board) return;
+    this.updatePageItems(
+      board.id,
+      board.items.filter((i) => i.id !== itemId)
+    );
     this.layoutEpoch.update((n) => n + 1);
     this.persistLayout().subscribe({ error: (e: Error) => console.error(e) });
+  }
+
+  addDashboard(opts?: { title?: string; parentId?: string | null }): Observable<DashboardBoard> {
+    const doc = this.document();
+    if (!doc) {
+      throw new Error('No document loaded');
+    }
+    const title = (opts?.title || 'New dashboard').trim() || 'New dashboard';
+    const parentId = opts?.parentId ?? null;
+    if (parentId && !doc.dashboards?.some((b) => b.id === parentId)) {
+      throw new Error('Parent dashboard not found');
+    }
+    const board: DashboardBoard = {
+      id: newBoardId(title),
+      title,
+      parentId,
+      items: [],
+    };
+    const next = ensureDashboards({
+      ...doc,
+      dashboards: [...(doc.dashboards || []), board],
+    });
+    return this.save(next).pipe(map(() => board));
+  }
+
+  renameDashboard(id: string, title: string): Observable<ApiMessage> {
+    const doc = this.document();
+    if (!doc?.dashboards) {
+      throw new Error('No document loaded');
+    }
+    const name = title.trim() || 'Untitled';
+    const dashboards = doc.dashboards.map((b) => (b.id === id ? { ...b, title: name } : b));
+    return this.save({ ...doc, dashboards });
+  }
+
+  /** Deletes a board and all nested children. */
+  removeDashboard(id: string): Observable<ApiMessage> {
+    const doc = this.document();
+    if (!doc?.dashboards) {
+      throw new Error('No document loaded');
+    }
+    if (id === 'home') {
+      throw new Error('Cannot delete the Home dashboard');
+    }
+    const drop = collectDescendantIds(doc.dashboards, id);
+    const dashboards = doc.dashboards.filter((b) => !drop.has(b.id));
+    if (dashboards.length === 0) {
+      throw new Error('At least one dashboard is required');
+    }
+    return this.save({ ...doc, dashboards }).pipe(
+      tap(() => {
+        if (drop.has(this.activeDashboardId())) {
+          this.activeDashboardId.set(dashboards[0].id);
+        }
+        this.layoutEpoch.update((n) => n + 1);
+      })
+    );
   }
 
   setEditMode(on: boolean): void {
@@ -204,7 +294,7 @@ export class DashboardService {
     return this.document()?.widgets?.[type] ?? {};
   }
 
-  pageTitle(page: DashboardPage | null): string {
-    return page?.title || this.document()?.title || 'Modulab';
+  pageTitle(board: DashboardBoard | null): string {
+    return board?.title || this.document()?.title || 'Modulab';
   }
 }

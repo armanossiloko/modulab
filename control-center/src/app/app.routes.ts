@@ -9,11 +9,12 @@ export const routes: Routes = [
     path: '',
     component: Shell,
     children: [
-      { path: '', component: HomePage },
+      { path: '', pathMatch: 'full', redirectTo: 'd/home' },
+      { path: 'd/:id', component: HomePage },
       { path: 'library', component: LibraryPage },
       { path: 'settings', component: SettingsPage },
       { path: 'settings/:section', component: SettingsPage },
-      { path: '**', redirectTo: '' },
+      { path: '**', redirectTo: 'd/home' },
     ],
   },
 ];

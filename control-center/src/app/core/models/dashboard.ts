@@ -1,4 +1,4 @@
-/** UI-only dashboard document shapes (flexible JSON from dashboard.json). */
+/** Lab Control Center document shapes (flexible JSON from dashboard.json). */
 
 export interface DashboardSearch {
   engine?: string;
@@ -24,6 +24,7 @@ export interface BookmarkGroup {
   links: BookmarkLink[];
 }
 
+/** Global shell sidebar — shared across every dashboard. */
 export interface DashboardSidebar {
   showInstalledApps?: boolean;
   bookmarks?: BookmarkGroup[];
@@ -44,11 +45,20 @@ export interface PageItem {
   config?: Record<string, unknown>;
 }
 
-export interface DashboardPage {
+/**
+ * A widget board. Nested via parentId (null/omit = root).
+ * Sidebar is NOT part of a board — it lives on the document root.
+ */
+export interface DashboardBoard {
   id: string;
   title: string;
+  /** Parent board id; omit or null for a top-level dashboard. */
+  parentId?: string | null;
   items: PageItem[];
 }
+
+/** @deprecated Use DashboardBoard — kept for migrate from pages[]. */
+export type DashboardPage = DashboardBoard;
 
 export interface LegacyLayout {
   center?: string[];
@@ -59,9 +69,19 @@ export interface DashboardDocument {
   title?: string;
   search?: DashboardSearch;
   theme?: DashboardTheme;
+  /** Shell chrome — same for every dashboard. */
   sidebar?: DashboardSidebar;
   widgets?: WidgetConfigMap;
   layout?: LegacyLayout;
-  pages?: DashboardPage[];
+  /** Widget boards (supports nesting via parentId). */
+  dashboards?: DashboardBoard[];
+  /** @deprecated Migrated into dashboards[] on load. */
+  pages?: DashboardBoard[];
   _comment?: string;
+}
+
+export interface DashboardTreeNode {
+  board: DashboardBoard;
+  children: DashboardTreeNode[];
+  depth: number;
 }

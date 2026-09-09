@@ -18,24 +18,25 @@ import { DashboardService } from '../core/services/dashboard.service';
   styles: `
     .stats {
       display: flex;
-      gap: 0.75rem;
-      height: 100%;
-      align-items: center;
+      gap: 0.4rem;
+      align-items: stretch;
     }
     .stat {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 0.15rem;
-      padding: 0.45rem 0.55rem;
+      justify-content: center;
+      gap: 0.05rem;
+      padding: 0.25rem 0.4rem;
       border-radius: var(--radius-sm);
       background: color-mix(in srgb, var(--bg) 55%, var(--widget));
       border: 1px solid var(--border-soft);
     }
     .stat-value {
       font-family: var(--mono);
-      font-size: 1.25rem;
+      font-size: 1.05rem;
       font-weight: 600;
+      line-height: 1.1;
     }
     .stat-label {
       font-size: 0.72rem;

@@ -17,17 +17,18 @@ import { DashboardService } from '../core/services/dashboard.service';
     .feat {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      height: 100%;
-      gap: 0.25rem;
+      justify-content: flex-start;
+      gap: 0.15rem;
     }
     .feat-title {
       margin: 0;
       font-weight: 600;
+      font-size: 0.9rem;
+      line-height: 1.15;
     }
     .feat-sub {
       margin: 0;
-      font-size: 0.82rem;
+      font-size: 0.75rem;
       color: var(--text-dim);
     }
   `,

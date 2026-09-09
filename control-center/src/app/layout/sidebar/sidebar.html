@@ -1,0 +1,48 @@
+<aside class="sidebar" aria-label="Navigation">
+  <a class="brand" routerLink="/d/home" aria-label="Modulab home">
+    <span class="brand-orb" aria-hidden="true"></span>
+    <span class="brand-name">{{ brand() }}</span>
+  </a>
+
+  <nav class="nav-pages" aria-label="Dashboards">
+    <div class="nav-head">
+      <span class="nav-label">Dashboards</span>
+      <button type="button" class="nav-add" title="Add dashboard" (click)="addRoot()">+</button>
+    </div>
+    @for (node of tree(); track node.board.id) {
+      <app-dashboard-nav-node [node]="node" />
+    }
+  </nav>
+
+  <nav class="nav-pages nav-pages--app" aria-label="App">
+    <a class="page-tab" routerLink="/library" routerLinkActive="is-active">Library</a>
+    <a class="page-tab" routerLink="/settings" routerLinkActive="is-active">Settings</a>
+  </nav>
+
+  <div class="bookmark-groups">
+    @for (group of bookmarkGroups(); track group.title) {
+      <section class="category-block">
+        <h2 class="category-title" [style.color]="color(group.color)">{{ group.title }}</h2>
+        @for (link of group.links; track link.url) {
+          @if (link.enabled !== false) {
+            <a class="app-link" [href]="link.url" target="_blank" rel="noopener noreferrer">
+              <img
+                class="app-icon bookmark-link-icon"
+                [src]="favicon(link.domain, link.url)"
+                alt=""
+                width="16"
+                height="16"
+              />
+              <span class="app-link-text">{{ link.title || link.url }}</span>
+            </a>
+          }
+        }
+      </section>
+    }
+  </div>
+
+  <div class="sidebar-actions">
+    <a class="sidebar-import-btn" routerLink="/settings/sidebar">Edit shortcuts</a>
+  </div>
+  <p class="sidebar-foot">Control Center</p>
+</aside>

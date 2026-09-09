@@ -2,8 +2,8 @@
   "title": "Modulab",
   "search": {
     "engine": "https://duckduckgo.com/?q=%s",
-    "placeholder": "Search stacks or the web\u2026",
-    "libraryPlaceholder": "Filter library\u2026"
+    "placeholder": "Search stacks or the web…",
+    "libraryPlaceholder": "Filter library…"
   },
   "theme": {
     "accent": "#d9a441"
@@ -240,7 +240,8 @@
       "calendar"
     ]
   },
-  "pages": [
+  "_comment": "sidebar=global. dashboards[] boards. Rail widgets 5x3 (calendar 5x5) on square 24-col cells.",
+  "dashboards": [
     {
       "id": "home",
       "title": "Home",
@@ -250,102 +251,102 @@
           "type": "stacks",
           "x": 0,
           "y": 0,
-          "w": 5,
-          "h": 4,
-          "config": {}
-        },
-        {
-          "id": "community-5-0",
-          "type": "community",
-          "x": 5,
-          "y": 0,
-          "w": 4,
-          "h": 4,
-          "config": {}
-        },
-        {
-          "id": "hackerNews-0-4",
-          "type": "hackerNews",
-          "x": 0,
-          "y": 4,
-          "w": 5,
-          "h": 4,
-          "config": {}
-        },
-        {
-          "id": "media-5-4",
-          "type": "media",
-          "x": 5,
-          "y": 4,
-          "w": 4,
-          "h": 4,
-          "config": {}
-        },
-        {
-          "id": "clock-9-0",
-          "type": "clock",
-          "x": 9,
-          "y": 0,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "weather-9-2",
-          "type": "weather",
-          "x": 9,
-          "y": 2,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "yearProgress-9-4",
-          "type": "yearProgress",
-          "x": 9,
-          "y": 4,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "stackUsage-9-6",
-          "type": "stackUsage",
-          "x": 9,
-          "y": 6,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "network-9-8",
-          "type": "network",
-          "x": 9,
-          "y": 8,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "nowRunning-9-10",
-          "type": "nowRunning",
-          "x": 9,
-          "y": 10,
-          "w": 3,
-          "h": 2,
-          "config": {}
-        },
-        {
-          "id": "calendar-9-12",
-          "type": "calendar",
-          "x": 9,
-          "y": 12,
-          "w": 3,
+          "w": 11,
           "h": 3,
           "config": {}
+        },
+        {
+          "id": "community-11-0",
+          "type": "community",
+          "x": 11,
+          "y": 0,
+          "w": 9,
+          "h": 3,
+          "config": {}
+        },
+        {
+          "id": "hackerNews-0-3",
+          "type": "hackerNews",
+          "x": 0,
+          "y": 3,
+          "w": 11,
+          "h": 3,
+          "config": {}
+        },
+        {
+          "id": "media-11-3",
+          "type": "media",
+          "x": 11,
+          "y": 3,
+          "w": 9,
+          "h": 3,
+          "config": {}
+        },
+        {
+          "id": "clock-20-0",
+          "type": "clock",
+          "x": 20,
+          "y": 0,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "weather-20-1",
+          "type": "weather",
+          "x": 20,
+          "y": 1,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "yearProgress-20-2",
+          "type": "yearProgress",
+          "x": 20,
+          "y": 2,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "stackUsage-20-3",
+          "type": "stackUsage",
+          "x": 20,
+          "y": 3,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "network-20-4",
+          "type": "network",
+          "x": 20,
+          "y": 4,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "nowRunning-20-5",
+          "type": "nowRunning",
+          "x": 20,
+          "y": 5,
+          "w": 4,
+          "h": 1,
+          "config": {}
+        },
+        {
+          "id": "calendar-20-6",
+          "type": "calendar",
+          "x": 20,
+          "y": 6,
+          "w": 4,
+          "h": 4,
+          "config": {}
         }
-      ]
+      ],
+      "parentId": null
     }
-  ],
-  "_comment": "pages[] mirrors the pre-Angular home: 2-col main grid \u002B narrow right rail (from layout.center/right). Row unit \u2248 56px."
+  ]
 }

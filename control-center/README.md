@@ -11,6 +11,8 @@ control-center/
   Dockerfile                            # multi-stage UI + API image
 ```
 
+Shell chrome (sidebar) is a separate component — shortcuts are global. Widget boards live in `dashboards[]` (nest via `parentId`) and open at `/d/:id`.
+
 `wwwroot/` is **not** in git. Create it with:
 
 ```bash

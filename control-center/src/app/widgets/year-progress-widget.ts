@@ -16,9 +16,8 @@ import { DecimalPipe } from '@angular/common';
     .yp {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      height: 100%;
-      gap: 0.55rem;
+      justify-content: flex-start;
+      gap: 0.35rem;
     }
     .yp__bar {
       height: 6px;
@@ -36,7 +35,7 @@ import { DecimalPipe } from '@angular/common';
     .yp__label {
       margin: 0;
       font-family: var(--mono);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-dim);
     }
   `,

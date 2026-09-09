@@ -14,23 +14,22 @@ import { DatePipe } from '@angular/common';
     .w-clock {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      height: 100%;
-      padding: 0.25rem 0;
+      justify-content: flex-start;
+      gap: 0.1rem;
     }
     .w-clock__time {
       margin: 0;
       font-family: var(--mono);
-      font-size: 1.65rem;
+      font-size: 1.35rem;
       font-weight: 600;
       letter-spacing: 0.02em;
       color: var(--text);
-      line-height: 1.15;
+      line-height: 1.1;
     }
     .w-clock__date {
-      margin: 0.2rem 0 0;
+      margin: 0;
       color: var(--text-dim);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
   `,
 })

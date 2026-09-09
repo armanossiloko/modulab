@@ -19,19 +19,19 @@ import { DashboardService } from '../core/services/dashboard.service';
     .w-weather {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      height: 100%;
+      justify-content: flex-start;
+      gap: 0.1rem;
     }
     .w-weather__temp {
       margin: 0;
-      font-size: 1.45rem;
+      font-size: 1.25rem;
       font-weight: 600;
-      line-height: 1.15;
+      line-height: 1.1;
     }
     .w-weather__meta {
-      margin: 0.25rem 0 0;
+      margin: 0;
       color: var(--text-dim);
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
   `,
 })

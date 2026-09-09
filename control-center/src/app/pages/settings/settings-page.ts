@@ -76,15 +76,20 @@ function toColorInput(value?: string): string {
               </label>
             </div>
 
-            <h2>Home page</h2>
+            <h2>Dashboards</h2>
             <p class="muted">
-              Drag and resize widgets on the Home page with <strong>Edit layout</strong>.
+              Manage boards in the sidebar (+ / nested). Edit widgets on a board with
+              <strong>Edit layout</strong>. Shortcuts stay global.
             </p>
             <ul class="page-list">
-              @for (page of draft.pages || []; track page.id) {
+              @for (page of draft.dashboards || draft.pages || []; track page.id) {
                 <li>
                   <strong>{{ page.title }}</strong>
-                  <span class="muted">{{ page.items.length }} widgets</span>
+                  <span class="muted"
+                    >{{ page.items.length }} widgets{{
+                      page.parentId ? ' · nested' : ''
+                    }}</span
+                  >
                 </li>
               }
             </ul>
