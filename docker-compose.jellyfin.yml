@@ -4,8 +4,6 @@ services:
     container_name: jellyfin
     user: "1000:1000"
     network_mode: "bridge"
-    # Bind IPv4 only - on Windows, localhost prefers ::1 and Docker's IPv6
-    # publish often hangs; browsers then never reach the working IPv4 listener.
     ports:
       - "0.0.0.0:8096:8096"
       - "0.0.0.0:8920:8920"
@@ -13,8 +11,6 @@ services:
       - ./data/jellyfin/config:/config
       - ./data/jellyfin/cache:/cache
       - ./media:/media
-    env_file:
-      - .env.jellyfin
     environment:
-      - TZ=${TZ:-Etc/UTC}
+      TZ: ${TZ:-UTC}
     restart: unless-stopped

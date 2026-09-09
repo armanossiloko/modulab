@@ -1,0 +1,27 @@
+{
+  "id": "jellyfin",
+  "name": "Jellyfin",
+  "description": "Movies, TV, and music",
+  "category": "media",
+  "compose": "docker-compose.jellyfin.yml",
+  "port": 8096,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "jellyfin",
+    "port": 8096
+  },
+  "dns": [
+    "jellyfin"
+  ],
+  "defaults": {},
+  "fields": [
+    {
+      "key": "TZ",
+      "label": "Timezone",
+      "type": "string",
+      "fromLab": "timezone",
+      "required": false
+    }
+  ]
+}

@@ -1,15 +1,14 @@
--- Idempotent app DB setup — runs on every "docker compose up" via db-bootstrap.
--- Safe to re-run: use DO blocks with EXCEPTION handlers (see example below).
--- First empty cluster: postgres/init/*.sql also runs once at initial init.
+-- GENERATED from lab.config.json + catalog recipes — do not edit.
+-- Regenerate: bash scripts/render-config.sh
+-- Idempotent: safe to re-run on every postgres up.
 
--- Example (uncomment and edit when you add an app stack):
---
--- DO $$ BEGIN
---   CREATE USER myapp WITH PASSWORD 'myapp';
--- EXCEPTION WHEN duplicate_object THEN NULL;
--- END $$;
---
--- DO $$ BEGIN
---   CREATE DATABASE myapp OWNER myapp ENCODING 'UTF8';
--- EXCEPTION WHEN duplicate_database THEN NULL;
--- END $$;
+
+DO $$ BEGIN
+  CREATE DATABASE immich OWNER modulab ENCODING 'UTF8';
+EXCEPTION WHEN duplicate_database THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE DATABASE n8n OWNER modulab ENCODING 'UTF8';
+EXCEPTION WHEN duplicate_database THEN NULL;
+END $$;

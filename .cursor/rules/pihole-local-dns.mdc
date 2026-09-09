@@ -6,21 +6,17 @@ alwaysApply: false
 
 # Pi-hole local DNS for new stacks
 
-When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU overlays in `odysseus/`), add a matching local DNS name.
+When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU overlays in `odysseus/`), add a **catalog recipe** instead of hand-editing DNS/proxy files.
 
 ## Checklist
 
-1. **`pihole/dns-hosts.conf`** — append one DNS-safe host **label** (one line).
-2. **`docker-compose.pihole.yml`** — add a matching line under `FTLCONF_dns_hosts`:
-   ```yaml
-   ${LAB_HOST_IP} myservice.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-   ```
-3. **`dashboard/services.manifest.json`** — add an entry with `port` (and optional `path`, `category`); run `bash scripts/render-config.sh` or start caddy to regenerate `services.json`.
-4. **`caddy/proxy.caddy`** — add a site block if you use optional network.lan proxy (`ENABLE_LAN_PROXY=true`).
-5. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
+1. **`catalog/<name>/recipe.json`** — set `dns` labels and optional `proxy` (`host` + `port`).
+2. Run **`bash scripts/render-config.sh`** — regenerates DNS/proxy/`control-center/wwwroot/services.json`.
+3. Add the stack to **`lab.config.json` → `enabled`** (or install via Control Center Library / `scripts/install.sh`).
+4. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
 
-Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`). Odysseus sidecars get their own labels (`searxng`, `ntfy`).
+Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`). Odysseus sidecars use `extraServices` / `dns` on the odysseus recipe (`searxng`, `ntfy`).
 
-User sets **`LAB_HOST_IP`** and **`PIHOLE_LOCAL_DOMAIN`** in `.env.pihole` (from `.env.pihole.example`). Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
+User sets **`LAB_HOST_IP`** and domain via **`lab.config.json`**. Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
 
-See [pihole/LOCAL-DNS.md](../pihole/LOCAL-DNS.md).
+See [pihole/LOCAL-DNS.md](../pihole/LOCAL-DNS.md) and [catalog/README.md](../catalog/README.md).

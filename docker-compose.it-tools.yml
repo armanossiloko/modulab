@@ -1,11 +1,7 @@
-# https://github.com/CorentinTh/it-tools
-
 services:
   it-tools:
     image: corentinth/it-tools:latest
     container_name: it-tools
     ports:
-      - "8083:80"
-    env_file:
-      - .env.it-tools
+      - "127.0.0.1:8083:80"
     restart: unless-stopped

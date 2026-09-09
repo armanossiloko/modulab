@@ -1,0 +1,37 @@
+{
+  "id": "picoshare",
+  "name": "PicoShare",
+  "description": "File sharing",
+  "category": "tools",
+  "compose": "docker-compose.picoshare.yml",
+  "port": 4001,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "picoshare",
+    "port": 4001
+  },
+  "dns": [
+    "picoshare"
+  ],
+  "defaults": {
+    "PORT": 4001,
+    "PS_BEHIND_PROXY": false
+  },
+  "fields": [
+    {
+      "key": "PORT",
+      "label": "HTTP port",
+      "type": "number",
+      "default": 4001,
+      "required": false
+    },
+    {
+      "key": "PS_BEHIND_PROXY",
+      "label": "Behind reverse proxy",
+      "type": "boolean",
+      "default": false,
+      "required": false
+    }
+  ]
+}

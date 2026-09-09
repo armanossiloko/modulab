@@ -9,27 +9,18 @@ Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can ru
 
 ## Setup
 
-Configure everything from one file — **`lab.config.json`** — instead of editing a dozen `.env.*` files:
+Configure everything from one file — **`lab.config.json`**. A single generated **`.env`** (gitignored) is produced for Compose; do not edit it.
 
 ```bash
 bash scripts/setup.sh
 ```
 
-This copies `lab.config.example.json` → `lab.config.json` (if missing) and renders all stack env files. Edit **`lab.config.json`** once (domain, host IP, timezone, passwords), then re-render after changes:
-
-```bash
-bash scripts/render-config.sh
-```
-
-### Configuration
-
 | File | Purpose |
 |------|---------|
-| **`lab.config.json`** | Your local config (gitignored) — one JSON object per stack |
-| **`lab.config.example.json`** | Tracked template with defaults |
-| **`secrets/`** | Optional secret files (gitignored); reference as `"$secret:filename"` in JSON |
-
-Shared settings live under **`lab`** and propagate automatically (e.g. `domain` → Pi-hole/Caddy/n8n hostnames, `timezone` → service `TZ` values):
+| **`lab.config.json`** | Only hand-edited config (gitignored) |
+| **`lab.config.example.json`** | Tracked template |
+| **`.env`** | Generated — Docker Compose variable source |
+| **`secrets/`** | Optional secrets via `"$secret:filename"` |
 
 ```json
 {
@@ -38,19 +29,26 @@ Shared settings live under **`lab`** and propagate automatically (e.g. `domain` 
     "hostIp": "192.168.1.10",
     "timezone": "Europe/Berlin",
     "postgresPassword": "modulab",
-    "immichDbPassword": "immich",
     "piholePassword": "change-me",
     "picoshareAdminSecret": "change-me"
   },
-  "picoshare": { "PORT": 4001 },
-  "jellyfin": {},
-  "bentopdf": {}
+  "enabled": ["control-center", "postgres", "redis"]
 }
+```
+
+**Shared infra:** one Postgres (vector-capable) and one Redis on Docker network `modulab`. Apps that need a database get their own DB name on that Postgres (see `catalog/*/recipe.json` → `database` + `dependsOn`). Installing Immich or n8n starts Postgres/Redis if needed — never a second Postgres.
+
+**Control Center:** everything under [`control-center/`](control-center/) — UI in `wwwroot/`, API in `src-backend/Modulab.ControlCenter/`. Open **`Modulab.slnx`**.
+
+After editing config:
+
+```bash
+bash scripts/render-config.sh
 ```
 
 For sensitive values, put the secret in `secrets/picoshare-admin` and reference `"picoshareAdminSecret": "$secret:picoshare-admin"` under `lab`, or set `"PS_SHARED_SECRET": "$secret:picoshare-admin"` under `picoshare`.
 
-Generated `.env.*` files are overwritten on each render — edit **`lab.config.json`**, not the env files directly.
+Generated `.env` files are overwritten on each render — edit **`lab.config.json`**, not `.env`.
 
 VS Code: run task **lab: setup** or **lab: render config**.
 
@@ -64,7 +62,7 @@ bash scripts/start.sh n8n
 bash scripts/start.sh odysseus
 ```
 
-Start the default lab (Caddy dashboard, Postgres, all apps — skips Odysseus if the submodule is not initialized). Pi-hole is not included:
+Start the default lab (Control Center, Postgres, Redis — skips Odysseus if the submodule is not initialized). Pi-hole is not included:
 
 ```bash
 bash scripts/start.sh all
@@ -80,36 +78,49 @@ bash scripts/stop.sh all
 
 Or use **Run and Debug** → **All stacks up** / **&lt;Stack&gt; up** (and matching **down** tasks) in VS Code.
 
-## Dashboard
+## Control Center
 
-The **caddy** stack serves a home dashboard on loopback. An optional **network.lan** reverse proxy is off by default.
+The **control-center** stack is Modulab.ControlCenter (.NET 10): static UI from [`control-center/`](control-center/) plus `/api` for install/start/stop. Optional **network.lan** proxy is the separate **caddy** stack.
 
 ```bash
-bash scripts/start.sh caddy
+bash scripts/start.sh control-center
 ```
 
-Open **http://127.0.0.1:8888** (`HOME_PORT` in `.env.caddy`). The dashboard lists running stacks by category; links use `127.0.0.1:<port>`. Services are discovered from `docker-compose.*.yml` files (auto-added when you add a new stack). Edit [dashboard/services.manifest.json](dashboard/services.manifest.json) for display names and categories, then run `bash scripts/render-config.sh`.
+Open **http://127.0.0.1:8888**. Solution file: **[`Modulab.slnx`](Modulab.slnx)**.
+
+```text
+control-center/
+  wwwroot/                              # frontend
+  src-backend/Modulab.ControlCenter/    # API + serves wwwroot
+Modulab.slnx
+```
+
+Apps are defined as **recipes** (`catalog/<id>/recipe.json`). `lab.config.json` → **`enabled`** controls what `start.sh all` starts. Install from the Library UI or:
+
+```bash
+bash scripts/install.sh jellyfin
+```
 
 | Mode | What to run | How you reach services |
 |------|-------------|-------------------------|
 | **Direct** (default) | App stacks only | `http://127.0.0.1:8096`, `:5678`, … |
-| **Dashboard** | `caddy` (`ENABLE_LAN_PROXY=false`) | Dashboard at **http://127.0.0.1:8888** → links to localhost ports |
+| **Control Center** | `control-center` | **http://127.0.0.1:8888** (UI + `/api`) |
 | **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
 
-Config: [dashboard/services.manifest.json](dashboard/services.manifest.json) (generates `services.json`) · routes: [caddy/Caddyfile](caddy/Caddyfile) · LAN proxy: [caddy/proxy.caddy](caddy/proxy.caddy)
+Config: [catalog/](catalog/) · [control-center/](control-center/)
 
 ### Optional: network.lan URLs
 
-Enable only if you want portless LAN hostnames. In **`.env.caddy`**:
+Enable only if you want portless LAN hostnames. In **`lab.config.json`**:
 
-```env
-ENABLE_LAN_PROXY=true
-PIHOLE_LOCAL_DOMAIN=network.lan
+```json
+"caddy": { "ENABLE_LAN_PROXY": true }
 ```
 
-Set **`LAB_HOST_IP`** in **`.env.pihole`**, then:
+Set **`lab.hostIp`**, then:
 
 ```bash
+bash scripts/render-config.sh
 bash scripts/start.sh pihole
 bash scripts/start.sh caddy
 ```
@@ -123,6 +134,7 @@ bash scripts/start.sh caddy
 | http://stirling.network.lan | Stirling PDF |
 | http://bentopdf.network.lan | BentoPDF |
 | http://picoshare.network.lan | PicoShare |
+| http://notes.network.lan | FUTO Notes |
 | http://immich.network.lan | Immich |
 | http://odysseus.network.lan | Odysseus |
 | http://searxng.network.lan | SearXNG (Odysseus) |
@@ -136,7 +148,8 @@ Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 
 | Stack | Compose file | Default URL | Role |
 |--------|----------------|-------------|------|
-| **Caddy** | `docker-compose.caddy.yml` | http://127.0.0.1:8888 | Dashboard; optional network.lan proxy |
+| **Control Center** | `docker-compose.control-center.yml` | http://127.0.0.1:8888 | Home UI + install API (.NET 10) |
+| **Caddy** | `docker-compose.caddy.yml` | port 80 when enabled | Optional network.lan proxy |
 | **n8n** | `docker-compose.n8n.yml` | http://127.0.0.1:5678 | Workflow automation ([n8n](https://n8n.io/)) |
 | **Jellyfin** | `docker-compose.jellyfin.yml` | http://localhost:8096 | Media server ([Jellyfin](https://jellyfin.org/)) |
 | **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
@@ -144,8 +157,10 @@ Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 | **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
 | **BentoPDF** | `docker-compose.bentopdf.yml` | http://localhost:8084 | PDF toolkit ([BentoPDF](https://github.com/alam00000/bentopdf)) |
 | **PicoShare** | `docker-compose.picoshare.yml` | http://localhost:4001 | File sharing ([PicoShare](https://github.com/mtlynch/picoshare)) |
-| **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared PostgreSQL 18 |
-| **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photo/video backup ([Immich](https://immich.app/)) |
+| **FUTO Notes** | `docker-compose.futo-notes.yml` | http://127.0.0.1:3005 | Encrypted notes sync ([FUTO Notes](https://notes.futo.tech/)) |
+| **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared Postgres (vector image; many DBs) |
+| **Redis** | `docker-compose.redis.yml` | `redis:6379` (Docker) | Shared Valkey/Redis |
+| **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photos (uses shared Postgres + Redis) |
 | **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
 | **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | AI workspace; submodule in `odysseus/` |
 
@@ -155,7 +170,7 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 
 | Port | Stack / service | Compose file |
 |------|-----------------|--------------|
-| 8888 | Dashboard (loopback) | `docker-compose.caddy.yml` |
+| 8888 | Control Center UI + API (loopback) | `docker-compose.control-center.yml` |
 | 80 | LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
 | 5055 | Seerr | `docker-compose.seerr.yml` |
 | 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
@@ -165,6 +180,7 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 | 8083 | IT-Tools | `docker-compose.it-tools.yml` |
 | 8084 | BentoPDF | `docker-compose.bentopdf.yml` |
 | 4001 | PicoShare | `docker-compose.picoshare.yml` |
+| 3005 | FUTO Notes (loopback) | `docker-compose.futo-notes.yml` |
 | 8091 | Odysseus ntfy (loopback) | `odysseus/docker-compose.yml` |
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
 | 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
@@ -181,115 +197,92 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 bash scripts/start.sh postgres
 ```
 
-- Host: `127.0.0.1:5432` · in-network hostname: `postgres` on `modulab-db`
-- Data: `data/postgres/`
-- Defaults: user/database `modulab` / password `modulab` — override via `.env.postgres`
-- **First boot:** `postgres/init/<NN>-<app>.sql` (empty data dir only)
-- **Every `up`:** idempotent `postgres/bootstrap.sql` via `db-bootstrap` — see [postgres/README.md](postgres/README.md)
+- Host: `127.0.0.1:5432` · Docker hostname: `postgres` on network **`modulab`**
+- Image: Immich vector/pgvectors (so Immich can share this instance)
+- Data: `data/postgres/` — if you previously used stock Postgres 18, wipe/migrate this volume before first start
+- Credentials: `lab.postgresUser` / `postgresPassword` / `postgresDb` in `lab.config.json`
+- **Every `up`:** generated `postgres/bootstrap.sql` creates app databases (`immich`, `n8n`, …) — see [postgres/README.md](postgres/README.md)
 
-Other containers join the shared database:
+Apps join:
 
 ```yaml
 networks:
-  modulab-db:
+  modulab:
     external: true
-    name: modulab-db
+    name: modulab
 ```
 
-**Odysseus + Cookbook:** ChromaDB uses host port **8100**. Cookbook’s diffusion server also defaults to **8100** — pick another port in the serve command if both are active.
+**Odysseus + Cookbook:** ChromaDB uses host port **8100**. Cookbook’s diffusion server also defaults to **8100** — pick another port if both are active.
 
 ### Immich
 
 ```bash
-bash scripts/setup.sh   # once
-bash scripts/start.sh immich
+bash scripts/install.sh immich
+# or Library → Install (starts shared Postgres + Redis automatically)
 ```
 
-- UI: http://127.0.0.1:2283 (first visit creates the admin user)
-- Data: `data/immich/library/`, `data/immich/postgres/`
-- Machine learning container is **commented out** by default. Uncomment `immich-machine-learning` in `docker-compose.immich.yml` for smart search and facial recognition
-- Pin versions via `IMMICH_VERSION` in `.env.immich` ([releases](https://github.com/immich-app/immich/releases))
-- Hardware transcoding: uncomment `extends` on `immich-server` and add upstream `hwaccel.*.yml` from the [Immich docker folder](https://github.com/immich-app/immich/tree/main/docker) if needed
+- UI: http://127.0.0.1:2283
+- Library data: `data/immich/library/` (DB lives in shared Postgres database `immich`)
+- Cache: shared Redis
+- ML container is commented out by default (RAM). Uncomment in `docker-compose.immich.yml` if needed
+- Pin version: `"immich": { "IMMICH_VERSION": "v3" }` in `lab.config.json`
+
+### FUTO Notes
+
+```bash
+bash scripts/install.sh futo-notes
+# or Library → Install (set sync password in the form)
+```
+
+- Sync URL: http://127.0.0.1:3005 (or `http://notes.<domain>` with Pi-hole + Caddy)
+- Data: `data/futo-notes/` (SQLite + encrypted blobs; no shared Postgres)
+- In the app: Settings → Self-hosted sync → paste the URL and the same password
+- Password: install form, or `lab.futoNotesPassword` / `"FUTO_NOTES_PASSWORD": "$secret:futo-notes-password"` under `futo-notes`
 
 ### Pi-hole
 
 ```bash
-bash scripts/setup.sh   # once
-bash scripts/start.sh pihole
+bash scripts/install.sh pihole
 ```
 
-- Admin: http://pihole.network.lan/admin (with network.lan DNS) or http://127.0.0.1:5080/admin
-- DNS: `127.0.0.1:53` on the host (tcp + udp)
-- Data: `data/pihole/etc-pihole/`
-- Port **53** must be free on the host
-- Set **`LAB_HOST_IP`** in `.env.pihole` — see [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
-- **LAN / Raspberry Pi:** bind DNS on all interfaces via `docker-compose.override.yml`, e.g. `"53:53/tcp"` and `"53:53/udp"`, then point router DHCP DNS at the host IP
+- Admin: http://127.0.0.1:5080/admin
+- Set **`lab.hostIp`** / **`lab.domain`** — see [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 
 ### Odysseus
 
-Submodule at [`odysseus/`](odysseus/) → [pewdiepie-archdaemon/odysseus](https://github.com/pewdiepie-archdaemon/odysseus). Root `docker-compose.odysseus.yml` includes the submodule compose file; build context, `.env`, and data stay under `odysseus/`.
+Submodule at [`odysseus/`](odysseus/). Still uses its own SQLite + ChromaDB (not the shared Postgres). Root `docker-compose.odysseus.yml` includes the submodule; a few keys are patched into `odysseus/.env` from `lab.config.json`.
 
 ```bash
-bash scripts/start.sh odysseus
+bash scripts/install.sh odysseus
 ```
-
-- UI: http://localhost:7000 · SearXNG: http://127.0.0.1:8080 · ntfy: http://127.0.0.1:8091 · ChromaDB: `127.0.0.1:8100`
-- First admin password: `docker compose -f docker-compose.odysseus.yml logs odysseus`
-- Data: `odysseus/data/` · logs: `odysseus/logs/`
-
-Update submodule:
-
-```bash
-git submodule update --remote odysseus
-```
-
-GPU overlays, macOS native run, etc.: [odysseus/README.md](odysseus/README.md)
 
 ### Jellyfin
 
-Container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin/*` and `./media` with that UID/GID if you hit permission errors.
+Container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin/*` and `./media` if you hit permission errors.
 
 ### n8n
 
-Defaults in `.env.n8n.example` (created by `setup.sh`). Adjust `N8N_HOST`, `WEBHOOK_URL`, `GENERIC_TIMEZONE`, etc. for reverse-proxy setups.
-
-Volumes: `./data/n8n` (app data), `./data/n8n-local-files` (mounted at `/files` in the container).
+Uses shared Postgres database `n8n` (`dependsOn: ["postgres"]`). Host/webhook URLs come from `lab.domain`.
 
 ### Local data
 
-Git ignores runtime data (see `.gitignore`):
-
 | Path | Used by |
 |------|---------|
-| `data/` | n8n, Jellyfin, Seerr, Immich, PicoShare, Postgres, Pi-hole, … |
+| `data/` | Runtime volumes (Postgres, Redis, Immich library, Jellyfin, …) |
 | `media/` | Jellyfin library |
 | `secrets/` | Optional sensitive files |
-| `.data/stirling-pdf/` | Stirling PDF (tessdata, configs, logs) |
-| `odysseus/data/`, `odysseus/logs/` | Odysseus (inside submodule) |
-
-Create directories before first run, or let Docker create them on mount.
+| `odysseus/data/`, `odysseus/logs/` | Odysseus |
 
 ## VS Code / Cursor
 
 | Task | Script | Purpose |
 |------|--------|---------|
-| **lab: setup** | `scripts/setup.sh` | Create `lab.config.json` and render all `.env.*` |
-| **lab: render config** | `scripts/render-config.sh` | Re-render `.env.*` from `lab.config.json` |
-| **docker-compose: all up** | `scripts/start.sh all` | Start every stack |
-| **docker-compose: all down** | `scripts/stop.sh all` | Stop every stack (keeps volumes) |
-| **docker-compose: &lt;name&gt; up** | `scripts/start.sh <name>` | Start one stack |
-| **docker-compose: &lt;name&gt; down** | `scripts/stop.sh <name>` | Stop one stack |
+| **lab: setup** | `scripts/setup.sh` | Create `lab.config.json` and render `.env` |
+| **lab: render config** | `scripts/render-config.sh` | Re-render `.env` + edge/DNS from `lab.config.json` |
+| **docker-compose: all up** | `scripts/start.sh all` | Start `enabled` stacks |
+| **docker-compose: all down** | `scripts/stop.sh all` | Stop enabled stacks (keeps volumes) |
 
-Launch profiles run the matching **up** or **down** task. **`start.sh` does not create env files** — run setup or render-config first.
-
-| Stack | Config source |
-|-------|---------------|
-| Jellyfin, n8n, Seerr, IT-Tools, Stirling PDF, BentoPDF, PicoShare, Immich, Caddy, Pi-hole, Postgres | `lab.config.json` → `.env.<stack>` |
-| Odysseus | `lab.config.json` → `odysseus/.env` (patches existing file; submodule must be initialized) |
-
-`lab.config.json`, `secrets/`, and generated `.env.*` files are gitignored. Tracked templates: `lab.config.example.json`, `.env.*.example`.
-
-When adding a new `docker-compose.*.yml`, add `.env.<name>.example`, register the stack in `scripts/start.sh` / `scripts/setup.sh`, and add a task + launch entry (see `.cursor/rules/docker-compose-vscode-launch.mdc`).
+Config flow: `lab.config.json` → generated `.env` (+ `odysseus/.env` patches). Tracked template: `lab.config.example.json`. Add apps via `catalog/<id>/recipe.json` (see `.cursor/rules`).
 
 ## License
 

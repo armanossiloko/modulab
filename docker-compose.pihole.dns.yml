@@ -1,0 +1,23 @@
+# GENERATED from catalog/*/recipe.json — do not edit by hand.
+# Regenerate: bash scripts/render-config.sh
+# Merged when starting Pi-hole (see scripts/common.sh).
+services:
+  pihole:
+    environment:
+      FTLCONF_dns_hosts: |-
+        192.168.1.10 bentopdf.network.lan
+        192.168.1.10 home.network.lan
+        192.168.1.10 notes.network.lan
+        192.168.1.10 futo-notes.network.lan
+        192.168.1.10 immich.network.lan
+        192.168.1.10 it-tools.network.lan
+        192.168.1.10 jellyfin.network.lan
+        192.168.1.10 n8n.network.lan
+        192.168.1.10 odysseus.network.lan
+        192.168.1.10 searxng.network.lan
+        192.168.1.10 ntfy.network.lan
+        192.168.1.10 picoshare.network.lan
+        192.168.1.10 pihole.network.lan
+        192.168.1.10 postgres.network.lan
+        192.168.1.10 seerr.network.lan
+        192.168.1.10 stirling.network.lan

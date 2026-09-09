@@ -112,6 +112,17 @@
       }
     },
     {
+      "label": "docker-compose: futo-notes up",
+      "type": "shell",
+      "command": "bash scripts/start.sh futo-notes",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: odysseus up",
       "type": "shell",
       "command": "bash scripts/start.sh odysseus",
@@ -148,6 +159,28 @@
       "label": "docker-compose: pihole up",
       "type": "shell",
       "command": "bash scripts/start.sh pihole",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: control-center up",
+      "type": "shell",
+      "command": "bash scripts/start.sh control-center",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: redis up",
+      "type": "shell",
+      "command": "bash scripts/start.sh redis",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -255,6 +288,17 @@
       }
     },
     {
+      "label": "docker-compose: futo-notes down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh futo-notes",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "docker-compose: odysseus down",
       "type": "shell",
       "command": "bash scripts/stop.sh odysseus",
@@ -291,6 +335,28 @@
       "label": "docker-compose: pihole down",
       "type": "shell",
       "command": "bash scripts/stop.sh pihole",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: control-center down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh control-center",
+      "problemMatcher": [],
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "docker-compose: redis down",
+      "type": "shell",
+      "command": "bash scripts/stop.sh redis",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

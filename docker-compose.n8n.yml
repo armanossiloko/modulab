@@ -1,25 +1,36 @@
-# https://docs.n8n.io/hosting/installation/server-setups/docker-compose/#5-create-local-files-directory
-# Localhost only: open http://127.0.0.1:5678 (port bound to loopback).
-# Persistence: ./data/n8n (app data) and ./data/n8n/files (binary/local files).
+# n8n — uses shared Postgres (database "n8n") on network "modulab".
+# Localhost: http://127.0.0.1:5678
 
 services:
   n8n:
     image: docker.n8n.io/n8nio/n8n
-    restart: always
-    env_file:
-      - .env.n8n
+    container_name: n8n
+    restart: unless-stopped
     ports:
       - "127.0.0.1:5678:5678"
     environment:
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - N8N_HOST=${N8N_HOST:-localhost}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
-      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
-      - NODE_ENV=production
-      - WEBHOOK_URL=${WEBHOOK_URL:-http://localhost:5678/}
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
-      - TZ=${GENERIC_TIMEZONE:-UTC}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE:-false}
+      NODE_ENV: production
+      WEBHOOK_URL: ${WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: ${TZ:-UTC}
+      TZ: ${TZ:-UTC}
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-modulab}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
     volumes:
       - ./data/n8n:/home/node/.n8n
       - ./data/n8n-local-files:/files
+    networks:
+      - modulab
+
+networks:
+  modulab:
+    external: true
+    name: modulab

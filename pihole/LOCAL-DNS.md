@@ -1,6 +1,6 @@
 # Local names for lab stacks (optional)
 
-Pi-hole is optional. The dashboard is **http://127.0.0.1:8888** via Caddy. Set **`ENABLE_LAN_PROXY=true`** in `.env.caddy` (and run Pi-hole) only for network.lan URLs on port 80.
+Pi-hole is optional. **Control Center** is **http://127.0.0.1:8888**. Set **`caddy.ENABLE_LAN_PROXY=true`** in `lab.config.json` and run Pi-hole only for network.lan URLs on port 80.
 
 Use this when you want portless **`http://<label>.<domain>`** URLs on your LAN.
 
@@ -21,6 +21,7 @@ bash scripts/start.sh jellyfin   # example — repeat per stack
 | http://stirling.network.lan | Stirling PDF |
 | http://bentopdf.network.lan | BentoPDF |
 | http://picoshare.network.lan | PicoShare |
+| http://notes.network.lan | FUTO Notes |
 | http://immich.network.lan | Immich |
 | http://odysseus.network.lan | Odysseus |
 | http://searxng.network.lan | SearXNG |
@@ -28,22 +29,23 @@ bash scripts/start.sh jellyfin   # example — repeat per stack
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP only) |
 
-Replace `network.lan` with your **`PIHOLE_LOCAL_DOMAIN`**. Routes: **`caddy/proxy.caddy`** (requires `ENABLE_LAN_PROXY=true`).
+Replace `network.lan` with your **`lab.domain`**. Routes: **`caddy/proxy.caddy`** (requires `caddy.ENABLE_LAN_PROXY=true`).
 
 ## Configuration
 
-Set in **`.env.pihole`** (from `.env.pihole.example`):
+Set in **`lab.config.json`** (then `bash scripts/render-config.sh`):
 
-| Variable | Example | Purpose |
-|----------|---------|---------|
-| `LAB_HOST_IP` | `192.168.1.10` | LAN IP of the Docker host — all local names point here |
-| `PIHOLE_LOCAL_DOMAIN` | `network.lan` | Private zone suffix |
+| Key | Example | Purpose |
+|-----|---------|---------|
+| `lab.hostIp` | `192.168.1.10` | LAN IP of the Docker host — all local names point here |
+| `lab.domain` | `network.lan` | Private zone suffix |
 
-DNS records are defined in **`docker-compose.pihole.yml`** under `FTLCONF_dns_hosts`. Keep **`pihole/dns-hosts.conf`** in sync — same host labels, one per line.
+DNS host labels come from **catalog recipes** → generated `pihole/dns-hosts.conf` + `docker-compose.pihole.dns.yml`.
 
-After changing IP, domain, or host list:
+After changing IP, domain, or recipes:
 
 ```bash
+bash scripts/render-config.sh
 bash scripts/start.sh pihole
 ```
 

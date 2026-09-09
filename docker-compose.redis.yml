@@ -1,0 +1,23 @@
+# Shared Valkey/Redis — only one cache container for the lab.
+# Hostname on network "modulab": redis
+# Immich and future apps connect here instead of bundling their own.
+
+services:
+  redis:
+    container_name: redis
+    image: docker.io/valkey/valkey:9
+    restart: unless-stopped
+    networks:
+      - modulab
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/redis:/data
+
+networks:
+  modulab:
+    external: true
+    name: modulab

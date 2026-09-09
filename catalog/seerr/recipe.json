@@ -1,0 +1,36 @@
+{
+  "id": "seerr",
+  "name": "Seerr",
+  "description": "Media requests",
+  "category": "media",
+  "compose": "docker-compose.seerr.yml",
+  "port": 5055,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "seerr",
+    "port": 5055
+  },
+  "dns": [
+    "seerr"
+  ],
+  "defaults": {
+    "LOG_LEVEL": "debug"
+  },
+  "fields": [
+    {
+      "key": "TZ",
+      "label": "Timezone",
+      "type": "string",
+      "fromLab": "timezone",
+      "required": false
+    },
+    {
+      "key": "LOG_LEVEL",
+      "label": "Log level",
+      "type": "string",
+      "default": "debug",
+      "required": false
+    }
+  ]
+}

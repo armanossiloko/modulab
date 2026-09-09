@@ -1,0 +1,27 @@
+{
+  "id": "n8n",
+  "name": "n8n",
+  "description": "Workflow automation (uses shared Postgres)",
+  "category": "productivity",
+  "compose": "docker-compose.n8n.yml",
+  "port": 5678,
+  "installable": true,
+  "dependsOn": ["postgres"],
+  "database": "n8n",
+  "proxy": { "host": "n8n", "port": 5678 },
+  "dns": ["n8n"],
+  "defaults": {
+    "N8N_PROTOCOL": "http",
+    "N8N_SECURE_COOKIE": false,
+    "N8N_DB_NAME": "n8n"
+  },
+  "fields": [
+    {
+      "key": "N8N_PROTOCOL",
+      "label": "Protocol",
+      "type": "string",
+      "default": "http",
+      "required": false
+    }
+  ]
+}

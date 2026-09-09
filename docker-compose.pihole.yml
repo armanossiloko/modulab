@@ -1,34 +1,16 @@
-# https://docs.pi-hole.net/docker/
-# Network DNS ad blocker.
-# setup.sh → .env.pihole (set LAB_HOST_IP), then: bash scripts/start.sh pihole
-# Admin: http://127.0.0.1:5080/admin · Local DNS: *.network.lan → LAB_HOST_IP (see pihole/dns-hosts.conf)
+# Pi-hole — DNS hosts come from generated docker-compose.pihole.dns.yml
+# Set lab.hostIp + lab.domain in lab.config.json
 
 services:
   pihole:
     container_name: pihole
     image: pihole/pihole:${PIHOLE_TAG:-latest}
     restart: unless-stopped
-    env_file:
-      - .env.pihole
     environment:
-      TZ: ${TZ:-Europe/Berlin}
+      TZ: ${TZ:-UTC}
       FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD}
       FTLCONF_dns_listeningMode: ALL
-      FTLCONF_dns_upstreams: ${PIHOLE_UPSTREAM_DNS:-8.8.8.8;8.8.4.4}
-      FTLCONF_dns_hosts: |-
-        ${LAB_HOST_IP} jellyfin.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} n8n.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} seerr.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} it-tools.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} stirling.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} bentopdf.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} picoshare.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} immich.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} odysseus.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} searxng.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} ntfy.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} postgres.${PIHOLE_LOCAL_DOMAIN:-network.lan}
-        ${LAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN:-network.lan}
+      FTLCONF_dns_upstreams: ${PIHOLE_UPSTREAM_DNS:-1.1.1.1;1.0.0.1}
     ports:
       - "127.0.0.1:53:53/tcp"
       - "127.0.0.1:53:53/udp"

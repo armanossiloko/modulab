@@ -1,5 +1,3 @@
-# https://github.com/mtlynch/picoshare
-
 services:
   picoshare:
     image: mtlynch/picoshare:latest
@@ -10,9 +8,7 @@ services:
     volumes:
       - ./data/picoshare:/data
     environment:
-      - PORT=${PORT:-4001}
-      - PS_SHARED_SECRET=${PS_SHARED_SECRET:?Set PS_SHARED_SECRET in .env.picoshare}
-      - PS_BEHIND_PROXY=${PS_BEHIND_PROXY:-false}
-    env_file:
-      - .env.picoshare
+      PORT: ${PORT:-4001}
+      PS_SHARED_SECRET: ${PS_SHARED_SECRET:?Set picoshareAdminSecret in lab.config.json}
+      PS_BEHIND_PROXY: ${PS_BEHIND_PROXY:-false}
     restart: unless-stopped

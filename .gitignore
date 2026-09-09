@@ -16,6 +16,14 @@ data/
 media/
 .data/
 
+# .NET build outputs
+**/bin/
+**/obj/
+control-center/src-backend/**/bin/
+control-center/src-backend/**/obj/
+src-backend/**/bin/
+src-backend/**/obj/
+
 # Secrets and local env (never commit passwords or generated keys)
 secrets/
 lab.config.json

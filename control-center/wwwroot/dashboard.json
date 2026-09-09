@@ -1,0 +1,244 @@
+{
+  "title": "Modulab",
+  "search": {
+    "engine": "https://duckduckgo.com/?q=%s",
+    "placeholder": "Search stacks or the web\u2026",
+    "libraryPlaceholder": "Filter library\u2026"
+  },
+  "theme": {
+    "accent": "#d9a441"
+  },
+  "sidebar": {
+    "showInstalledApps": true,
+    "bookmarks": [
+      {
+        "title": "Web",
+        "color": "productivity",
+        "links": [
+          {
+            "title": "GitHub",
+            "url": "https://github.com",
+            "domain": "github.com"
+          },
+          {
+            "title": "YouTube",
+            "url": "https://www.youtube.com",
+            "domain": "youtube.com"
+          },
+          {
+            "title": "Reddit",
+            "url": "https://www.reddit.com",
+            "domain": "reddit.com"
+          },
+          {
+            "title": "Gmail",
+            "url": "https://mail.google.com",
+            "domain": "mail.google.com"
+          }
+        ]
+      },
+      {
+        "title": "Tools",
+        "color": "tools",
+        "links": [
+          {
+            "title": "ChatGPT",
+            "url": "https://chatgpt.com",
+            "domain": "chatgpt.com"
+          },
+          {
+            "title": "DuckDuckGo",
+            "url": "https://duckduckgo.com",
+            "domain": "duckduckgo.com"
+          },
+          {
+            "title": "Wikipedia",
+            "url": "https://en.wikipedia.org",
+            "domain": "wikipedia.org"
+          }
+        ]
+      },
+      {
+        "title": "Bookmarks bar",
+        "color": "other",
+        "links": [
+          {
+            "title": "Fuck WEBP",
+            "url": "https://armanossiloko.github.io/fuck-webp/",
+            "domain": "armanossiloko.github.io"
+          },
+          {
+            "title": "NoSignups",
+            "url": "https://nosignups.net/",
+            "domain": "nosignups.net"
+          },
+          {
+            "title": "Proton Mail",
+            "url": "https://mail.proton.me/u/0/inbox",
+            "domain": "mail.proton.me"
+          },
+          {
+            "title": "Gmail",
+            "url": "https://mail.google.com/mail/u/0/#inbox",
+            "domain": "mail.google.com"
+          },
+          {
+            "title": "YouTube",
+            "url": "http://www.youtube.com/",
+            "domain": "www.youtube.com"
+          },
+          {
+            "title": "Facebook",
+            "url": "https://www.facebook.com/",
+            "domain": "www.facebook.com"
+          },
+          {
+            "title": "Odysee",
+            "url": "https://odysee.com/",
+            "domain": "odysee.com"
+          },
+          {
+            "title": "RG Social Club",
+            "url": "http://socialclub.rockstargames.com/member/thedeadviper",
+            "domain": "socialclub.rockstargames.com"
+          },
+          {
+            "title": "Twitter",
+            "url": "https://x.com/home",
+            "domain": "x.com"
+          },
+          {
+            "title": "GitHub",
+            "url": "https://github.com/",
+            "domain": "github.com"
+          },
+          {
+            "title": "Unity Store",
+            "url": "https://assetstore.unity.com/",
+            "domain": "assetstore.unity.com"
+          }
+        ]
+      },
+      {
+        "title": "TFS",
+        "color": "other",
+        "links": [
+          {
+            "title": "Nebulora",
+            "url": "https://dev.azure.com/nebulora/",
+            "domain": "dev.azure.com"
+          },
+          {
+            "title": "Scalestar",
+            "url": "https://dev.azure.com/scalestar/",
+            "domain": "dev.azure.com"
+          },
+          {
+            "title": "TFS - Arman",
+            "url": "https://dev.azure.com/armanossiloko",
+            "domain": "dev.azure.com"
+          },
+          {
+            "title": "Microsoft Azure",
+            "url": "https://portal.azure.com/#home",
+            "domain": "portal.azure.com"
+          }
+        ]
+      },
+      {
+        "title": "AI",
+        "color": "other",
+        "links": [
+          {
+            "title": "T3 Chat",
+            "url": "https://t3.chat/chat",
+            "domain": "t3.chat"
+          },
+          {
+            "title": "Claude",
+            "url": "https://claude.ai/new",
+            "domain": "claude.ai"
+          },
+          {
+            "title": "Cursor",
+            "url": "https://www.cursor.com/settings",
+            "domain": "www.cursor.com"
+          }
+        ]
+      }
+    ]
+  },
+  "widgets": {
+    "stacks": {
+      "enabled": true,
+      "title": "Lab stacks"
+    },
+    "community": {
+      "enabled": true,
+      "title": "Community",
+      "communities": [
+        "selfhosted",
+        "homelab",
+        "linux"
+      ],
+      "limit": 6
+    },
+    "hackerNews": {
+      "enabled": true,
+      "title": "Hacker News",
+      "limit": 8
+    },
+    "media": {
+      "enabled": true,
+      "title": "Media",
+      "emptyHint": "Install Jellyfin, Immich, or Seerr from the Library."
+    },
+    "clock": {
+      "enabled": true
+    },
+    "weather": {
+      "enabled": true,
+      "title": "Weather",
+      "label": "Berlin",
+      "latitude": 52.52,
+      "longitude": 13.405
+    },
+    "yearProgress": {
+      "enabled": true,
+      "title": "Year progress"
+    },
+    "stackUsage": {
+      "enabled": true,
+      "title": "Stack usage"
+    },
+    "network": {
+      "enabled": true,
+      "title": "Network"
+    },
+    "nowRunning": {
+      "enabled": true,
+      "title": "Now running"
+    },
+    "calendar": {
+      "enabled": true
+    }
+  },
+  "layout": {
+    "center": [
+      "stacks",
+      "community",
+      "hackerNews",
+      "media"
+    ],
+    "right": [
+      "clock",
+      "weather",
+      "yearProgress",
+      "stackUsage",
+      "network",
+      "nowRunning",
+      "calendar"
+    ]
+  },
+  "_comment": "Control Center UI config. Edit this file, then hard-refresh. See dashboard.example.json for the full schema."
+}

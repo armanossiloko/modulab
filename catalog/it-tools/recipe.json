@@ -1,0 +1,27 @@
+{
+  "id": "it-tools",
+  "name": "IT-Tools",
+  "description": "Developer utilities",
+  "category": "tools",
+  "compose": "docker-compose.it-tools.yml",
+  "port": 8083,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "it-tools",
+    "port": 8083
+  },
+  "dns": [
+    "it-tools"
+  ],
+  "defaults": {},
+  "fields": [
+    {
+      "key": "TZ",
+      "label": "Timezone",
+      "type": "string",
+      "fromLab": "timezone",
+      "required": false
+    }
+  ]
+}

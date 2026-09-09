@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copy lab.config.example.json → lab.config.json, render all .env.* files.
+# Copy lab.config.example.json → lab.config.json, render all generated files.
 # Run once after clone (or whenever you change lab.config.json).
 
 set -euo pipefail
@@ -16,11 +16,11 @@ cat <<'EOF'
 Setup finished.
 
 Next:
-  1. Edit lab.config.json (passwords, domain, host IP, timezone).
-     Optional: put sensitive values in secrets/ and reference them as "$secret:filename".
-  2. bash scripts/render-config.sh   (after any lab.config.json change)
-  3. bash scripts/start.sh caddy     (dashboard at http://127.0.0.1:8888)
-  4. bash scripts/start.sh all       or  bash scripts/start.sh <stack>
+  1. Edit lab.config.json (passwords, domain, host IP, timezone, enabled apps).
+  2. bash scripts/render-config.sh
+  3. bash scripts/start.sh all       (control-center + postgres + redis by default)
+  4. Open http://127.0.0.1:8888  (Control Center)
 
-Stacks: caddy postgres jellyfin n8n seerr it-tools stirling-pdf bentopdf picoshare immich pihole odysseus
+Open Modulab.slnx in Visual Studio → control-center/src-backend/Modulab.ControlCenter
+UI lives in control-center/wwwroot/
 EOF

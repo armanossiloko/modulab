@@ -1,0 +1,42 @@
+{
+  "id": "futo-notes",
+  "name": "FUTO Notes",
+  "description": "E2E-encrypted notes sync server (SQLite + blobs on disk)",
+  "category": "productivity",
+  "compose": "docker-compose.futo-notes.yml",
+  "port": 3005,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": { "host": "notes", "port": 3005 },
+  "dns": ["notes", "futo-notes"],
+  "defaults": {
+    "FUTO_NOTES_PORT": 3005,
+    "FUTO_NOTES_IMAGE": "futotech/notes-server:stable",
+    "FUTO_NOTES_COOKIE_SECURE": false,
+    "FUTO_NOTES_BLOB_GC_ENABLED": true,
+    "FUTO_NOTES_DATA_DIR": "./data/futo-notes"
+  },
+  "fields": [
+    {
+      "key": "FUTO_NOTES_PASSWORD",
+      "label": "Sync password (same as in the FUTO Notes app)",
+      "type": "string",
+      "required": true,
+      "fromLab": "futoNotesPassword"
+    },
+    {
+      "key": "FUTO_NOTES_PORT",
+      "label": "HTTP port",
+      "type": "number",
+      "default": 3005,
+      "required": false
+    },
+    {
+      "key": "FUTO_NOTES_IMAGE",
+      "label": "Docker image tag",
+      "type": "string",
+      "default": "futotech/notes-server:stable",
+      "required": false
+    }
+  ]
+}

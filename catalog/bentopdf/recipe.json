@@ -1,0 +1,29 @@
+{
+  "id": "bentopdf",
+  "name": "BentoPDF",
+  "description": "Privacy-first PDF toolkit",
+  "category": "productivity",
+  "compose": "docker-compose.bentopdf.yml",
+  "port": 8084,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "bentopdf",
+    "port": 8084
+  },
+  "dns": [
+    "bentopdf"
+  ],
+  "defaults": {
+    "DISABLE_IPV6": false
+  },
+  "fields": [
+    {
+      "key": "DISABLE_IPV6",
+      "label": "Disable IPv6",
+      "type": "boolean",
+      "default": false,
+      "required": false
+    }
+  ]
+}

@@ -1,12 +1,12 @@
-# https://hub.docker.com/_/postgres
-# Standalone database stack — start before any app that needs Postgres.
-# Other stacks join network "modulab-db" (hostname: postgres).
-# Persistence: ./data/postgres (Postgres 18+ cluster: ./data/postgres/18/docker/)
+# Shared Postgres for the whole lab — only one Postgres container.
+# Uses Immich's vector/pgvectors image so Immich and other apps share the same instance
+# (separate databases). Hostname on Docker network "modulab": postgres
 # Host: 127.0.0.1:5432
+# Edit lab.config.json only — .env is generated.
 
 services:
   postgres:
-    image: postgres:18.6
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
     container_name: postgres
     restart: unless-stopped
     ports:
@@ -15,25 +15,27 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-modulab}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
       POSTGRES_DB: ${POSTGRES_DB:-modulab}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
     volumes:
-      - ./data/postgres:/var/lib/postgresql
+      - ./data/postgres:/var/lib/postgresql/data
       - ./postgres/init:/docker-entrypoint-initdb.d:ro
     networks:
-      - modulab-db
+      - modulab
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 20s
+    shm_size: 128mb
 
   db-bootstrap:
-    image: postgres:18.6
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - modulab-db
+      - modulab
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:-modulab}
     volumes:
@@ -51,5 +53,5 @@ services:
     restart: "no"
 
 networks:
-  modulab-db:
-    name: modulab-db
+  modulab:
+    name: modulab

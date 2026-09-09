@@ -32,14 +32,15 @@ stop_stack() {
 name="${1:?Usage: bash scripts/stop.sh <stack>|all}"
 shift
 
-if [[ "$name" == home ]]; then
-  echo "note: home is served by caddy — stopping caddy" >&2
-  name=caddy
+if [[ "$name" == home || "$name" == lab-api || "$name" == admin ]]; then
+  echo "note: stopping control-center" >&2
+  name=control-center
 fi
 
 if [[ "$name" == all ]]; then
-  for ((i = ${#LAB_STACKS[@]} - 1; i >= 0; i--)); do
-    stop_stack "${LAB_STACKS[i]}" "$@"
+  mapfile -t stacks < <(enabled_stacks | tr -d '\r')
+  for ((i = ${#stacks[@]} - 1; i >= 0; i--)); do
+    stop_stack "${stacks[i]}" "$@"
   done
   exit 0
 fi
@@ -48,7 +49,7 @@ compose="${root}/docker-compose.${name}.yml"
 if [[ ! -f "$compose" ]]; then
   echo "Unknown stack '${name}'. No ${compose}" >&2
   echo "Usage: bash scripts/stop.sh <stack>|all" >&2
-  echo "Stacks: ${LAB_STACKS[*]} pihole caddy" >&2
+  echo "Default stacks: ${LAB_STACKS[*]} (+ pihole)" >&2
   exit 1
 fi
 

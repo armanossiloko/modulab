@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Render stack .env files from lab.config.json."""
+"""Render a single .env + postgres/bootstrap.sql from lab.config.json + catalog recipes.
+
+Hand-edit lab.config.json only. Do not edit generated .env.
+"""
 
 from __future__ import annotations
 
@@ -10,35 +13,28 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "lab.config.json"
+CATALOG = ROOT / "catalog"
 SECRETS_DIR = ROOT / "secrets"
+ENV_PATH = ROOT / ".env"
+BOOTSTRAP_PATH = ROOT / "postgres" / "bootstrap.sql"
+ODYSSEUS_ENV = ROOT / "odysseus" / ".env"
+
 GENERATED_HEADER = (
-    "# Generated from lab.config.json — edit that file, then run:\n"
+    "# GENERATED from lab.config.json — do not edit.\n"
     "#   bash scripts/render-config.sh\n\n"
 )
 
-# Maps lab.config.json service keys to .env.<name> filenames.
-SERVICE_ENV_FILES: dict[str, str] = {
-    "caddy": ".env.caddy",
-    "postgres": ".env.postgres",
-    "pihole": ".env.pihole",
-    "n8n": ".env.n8n",
-    "jellyfin": ".env.jellyfin",
-    "seerr": ".env.seerr",
-    "it-tools": ".env.it-tools",
-    "stirling-pdf": ".env.stirling-pdf",
-    "bentopdf": ".env.bentopdf",
-    "picoshare": ".env.picoshare",
-    "immich": ".env.immich",
-    "odysseus": "odysseus/.env",
-}
+BOOTSTRAP_HEADER = """\
+-- GENERATED from lab.config.json + catalog recipes — do not edit.
+-- Regenerate: bash scripts/render-config.sh
+-- Idempotent: safe to re-run on every postgres up.
+
+"""
 
 
-def load_config(path: Path) -> dict[str, Any]:
+def load_json(path: Path) -> Any:
     with path.open(encoding="utf-8") as handle:
-        data = json.load(handle)
-    if not isinstance(data, dict):
-        raise SystemExit(f"{path}: root must be a JSON object")
-    return data
+        return json.load(handle)
 
 
 def resolve_secret(name: str) -> str:
@@ -66,173 +62,217 @@ def stringify(value: Any) -> str:
     value = resolve_value(value)
     if isinstance(value, bool):
         return "true" if value else "false"
-    return str(value)
+    text = str(value)
+    # Quote when bash `source .env` would misparse (e.g. PIHOLE_UPSTREAM_DNS=1.1.1.1;1.0.0.1)
+    if any(ch in text for ch in ' \t\n#"\'\\$`;&|<>()'):
+        escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+    return text
 
 
-def merge_lab_defaults(lab: dict[str, Any], service: str, values: dict[str, Any]) -> dict[str, Any]:
-    merged = dict(values)
-    domain = lab.get("domain", "network.lan")
-    timezone = lab.get("timezone", "UTC")
-
-    if service == "caddy":
-        merged.setdefault("PIHOLE_LOCAL_DOMAIN", domain)
-
-    elif service == "pihole":
-        merged.setdefault("PIHOLE_LOCAL_DOMAIN", domain)
-        merged.setdefault("LAB_HOST_IP", lab.get("hostIp", "127.0.0.1"))
-        merged.setdefault("TZ", timezone)
-        merged.setdefault("PIHOLE_PASSWORD", lab.get("piholePassword", "change-me"))
-
-    elif service == "postgres":
-        merged.setdefault("POSTGRES_USER", lab.get("postgresUser", "modulab"))
-        merged.setdefault("POSTGRES_PASSWORD", lab.get("postgresPassword", "modulab"))
-        merged.setdefault("POSTGRES_DB", lab.get("postgresDb", "modulab"))
-
-    elif service == "n8n":
-        merged.setdefault("N8N_HOST", f"n8n.{domain}")
-        merged.setdefault("WEBHOOK_URL", f"http://n8n.{domain}/")
-        merged.setdefault("GENERIC_TIMEZONE", timezone)
-        merged.setdefault("TZ", timezone)
-
-    elif service == "jellyfin":
-        merged.setdefault("TZ", timezone)
-
-    elif service == "seerr":
-        merged.setdefault("TZ", timezone)
-
-    elif service == "it-tools":
-        merged.setdefault("TZ", timezone)
-
-    elif service == "immich":
-        merged.setdefault("DB_PASSWORD", lab.get("immichDbPassword", "immich"))
-        merged.setdefault("TZ", timezone)
-
-    elif service == "picoshare":
-        merged.setdefault("PS_SHARED_SECRET", lab.get("picoshareAdminSecret", "change-me"))
-        if lab.get("enableLanProxy") is True:
-            merged.setdefault("PS_BEHIND_PROXY", True)
-
-    elif service == "odysseus":
-        merged.setdefault("GENERIC_TIMEZONE", timezone)
-
-    return merged
+def load_recipes() -> dict[str, dict[str, Any]]:
+    recipes: dict[str, dict[str, Any]] = {}
+    if not CATALOG.is_dir():
+        return recipes
+    for path in sorted(CATALOG.glob("*/recipe.json")):
+        data = load_json(path)
+        if isinstance(data, dict) and data.get("id"):
+            recipes[str(data["id"])] = data
+    return recipes
 
 
-def render_env_file(values: dict[str, Any]) -> str:
-    lines: list[str] = []
-    for key in sorted(values):
-        value = values[key]
+def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    lab = config.get("lab")
+    if not isinstance(lab, dict):
+        raise SystemExit("lab.config.json: 'lab' must be an object")
+
+    domain = str(lab.get("domain", "network.lan"))
+    timezone = str(lab.get("timezone", "UTC"))
+    pg_user = str(lab.get("postgresUser", "modulab"))
+    pg_pass = str(lab.get("postgresPassword", "modulab"))
+    pg_db = str(lab.get("postgresDb", "modulab"))
+
+    env: dict[str, Any] = {
+        "TZ": timezone,
+        "POSTGRES_USER": pg_user,
+        "POSTGRES_PASSWORD": pg_pass,
+        "POSTGRES_DB": pg_db,
+        "PIHOLE_LOCAL_DOMAIN": domain,
+        "LAB_HOST_IP": lab.get("hostIp", "127.0.0.1"),
+        "PIHOLE_PASSWORD": lab.get("piholePassword", "change-me"),
+        "PS_SHARED_SECRET": lab.get("picoshareAdminSecret", "change-me"),
+        "FUTO_NOTES_PASSWORD": lab.get("futoNotesPassword", ""),
+        "FUTO_NOTES_PORT": 3005,
+        "FUTO_NOTES_IMAGE": "futotech/notes-server:stable",
+        "FUTO_NOTES_COOKIE_SECURE": False,
+        "FUTO_NOTES_BLOB_GC_ENABLED": True,
+        "FUTO_NOTES_DATA_DIR": "./data/futo-notes",
+        "CONTROL_CENTER_API_KEY": lab.get("controlCenterApiKey") or lab.get("labApiKey") or "",
+        "LAB_API_KEY": lab.get("controlCenterApiKey") or lab.get("labApiKey") or "",
+        "LAB_ROOT": "/lab",
+        "HOME_PORT": 8888,
+        "ASPNETCORE_URLS": "http://0.0.0.0:8888",
+        "DOTNET_gcServer": "0",
+        "DOTNET_EnableDiagnostics": "0",
+        "ENABLE_LAN_PROXY": False,
+        "UPSTREAM_HOST": "host.docker.internal",
+        "CADDY_TAG": "2-alpine",
+        "N8N_HOST": f"n8n.{domain}",
+        "WEBHOOK_URL": f"http://n8n.{domain}/",
+        "N8N_PROTOCOL": "http",
+        "N8N_SECURE_COOKIE": False,
+        "N8N_DB_NAME": "n8n",
+        "IMMICH_DB_NAME": "immich",
+        "IMMICH_VERSION": "v3",
+        "UPLOAD_LOCATION": "./data/immich/library",
+        "PIHOLE_UPSTREAM_DNS": "1.1.1.1;1.0.0.1",
+        "PIHOLE_TAG": "latest",
+        "PORT": 4001,
+        "PS_BEHIND_PROXY": bool(lab.get("enableLanProxy") is True),
+        "SECURITY_ENABLELOGIN": False,
+        "LANGS": "en_GB",
+        "DISABLE_IPV6": False,
+        "LOG_LEVEL": "debug",
+    }
+
+    # Recipe defaults (non-install form) then per-stack config overrides
+    for recipe_id, recipe in recipes.items():
+        defaults = recipe.get("defaults")
+        if isinstance(defaults, dict):
+            for key, value in defaults.items():
+                env.setdefault(key, value)
+        db_name = recipe.get("database")
+        if isinstance(db_name, str) and db_name:
+            env.setdefault(f"{recipe_id.upper().replace('-', '_')}_DB_NAME", db_name)
+
+    for key, section in config.items():
+        if key in ("lab", "enabled", "_comment") or not isinstance(section, dict):
+            continue
+        for sk, sv in section.items():
+            env[sk] = sv
+
+    # Lab-level aliases win for shared infra
+    env["TZ"] = timezone
+    env["POSTGRES_USER"] = pg_user
+    env["POSTGRES_PASSWORD"] = pg_pass
+    env["POSTGRES_DB"] = pg_db
+    env["PIHOLE_LOCAL_DOMAIN"] = domain
+    env["LAB_HOST_IP"] = lab.get("hostIp", "127.0.0.1")
+    env["GENERIC_TIMEZONE"] = timezone
+
+    return env
+
+
+def write_env(env: dict[str, Any]) -> None:
+    lines = [GENERATED_HEADER.rstrip(), ""]
+    for key in sorted(env):
+        value = env[key]
         if value is None:
             continue
-        if isinstance(value, str) and value == "":
+        if isinstance(value, str) and value == "" and key != "LAB_API_KEY":
             continue
         lines.append(f"{key}={stringify(value)}")
-    return GENERATED_HEADER + "\n".join(lines) + ("\n" if lines else "")
+    ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def ensure_odysseus_base(target: Path) -> None:
-    if target.is_file():
+def databases_to_create(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> list[tuple[str, bool]]:
+    """Return (db_name, needs_vector) declared by recipes."""
+    dbs: list[tuple[str, bool]] = []
+    seen: set[str] = set()
+    lab = config.get("lab") if isinstance(config.get("lab"), dict) else {}
+    default_db = str(lab.get("postgresDb", "modulab"))
+
+    for recipe in recipes.values():
+        db = recipe.get("database")
+        if not isinstance(db, str) or not db or db == default_db:
+            continue
+        if db in seen:
+            continue
+        seen.add(db)
+        dbs.append((db, bool(recipe.get("databaseNeedsVector"))))
+    return dbs
+
+
+def write_bootstrap(dbs: list[tuple[str, bool]], pg_user: str) -> None:
+    parts = [BOOTSTRAP_HEADER]
+    for name, _needs_vector in dbs:
+        parts.append(
+            f"DO $$ BEGIN\n"
+            f"  CREATE DATABASE {name} OWNER {pg_user} ENCODING 'UTF8';\n"
+            f"EXCEPTION WHEN duplicate_database THEN NULL;\n"
+            f"END $$;\n"
+        )
+    BOOTSTRAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+    BOOTSTRAP_PATH.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
+
+
+def patch_odysseus(env: dict[str, Any], config: dict[str, Any]) -> None:
+    if not (ROOT / "odysseus" / ".env.example").is_file():
         return
-    example = ROOT / "odysseus" / ".env.example"
-    if example.is_file():
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
-
-
-def patch_env_file_inplace(path: Path, overrides: dict[str, Any]) -> None:
-    """Update keys in an existing env file without removing comments or other keys."""
-    if not path.is_file():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render_env_file(overrides), encoding="utf-8")
+    if "odysseus" not in config and not ODYSSEUS_ENV.is_file():
         return
 
-    raw = path.read_text(encoding="utf-8")
+    if not ODYSSEUS_ENV.is_file():
+        ODYSSEUS_ENV.write_text(
+            (ROOT / "odysseus" / ".env.example").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+
+    overrides = {
+        "GENERIC_TIMEZONE": env.get("TZ", "UTC"),
+    }
+    section = config.get("odysseus")
+    if isinstance(section, dict):
+        overrides.update(section)
+
+    raw = ODYSSEUS_ENV.read_text(encoding="utf-8")
     lines = raw.splitlines(keepends=True)
     seen: set[str] = set()
     output: list[str] = []
-
     for line in lines:
         stripped = line.strip()
         if not stripped or stripped.startswith("#") or "=" not in stripped:
             output.append(line if line.endswith("\n") else line + "\n")
             continue
-
         key = stripped.split("=", 1)[0]
         if key in overrides:
-            value = overrides[key]
-            if value is None or (isinstance(value, str) and value == ""):
-                continue
-            output.append(f"{key}={stringify(value)}\n")
+            output.append(f"{key}={stringify(overrides[key])}\n")
             seen.add(key)
         else:
             output.append(line if line.endswith("\n") else line + "\n")
-
     for key in sorted(overrides):
         if key in seen:
             continue
-        value = overrides[key]
-        if value is None or (isinstance(value, str) and value == ""):
-            continue
-        if output and not output[-1].endswith("\n\n"):
-            output.append("\n")
-        output.append(f"# From lab.config.json\n")
-        output.append(f"{key}={stringify(value)}\n")
-
-    path.write_text("".join(output), encoding="utf-8")
+        output.append(f"{key}={stringify(overrides[key])}\n")
+    ODYSSEUS_ENV.write_text("".join(output), encoding="utf-8")
 
 
-def write_env_file(path: Path, values: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_env_file(values), encoding="utf-8")
+def render(config_path: Path) -> None:
+    config = load_json(config_path)
+    if not isinstance(config, dict):
+        raise SystemExit("lab.config.json: root must be an object")
 
+    recipes = load_recipes()
+    env = flat_env(config, recipes)
+    write_env(env)
 
-def render(config_path: Path) -> list[str]:
-    config = load_config(config_path)
-    lab = config.get("lab", {})
-    if not isinstance(lab, dict):
-        raise SystemExit("lab.config.json: 'lab' must be an object")
-
-    written: list[str] = []
-
-    for service, rel_path in SERVICE_ENV_FILES.items():
-        service_values = config.get(service, {})
-        if service_values is None:
-            service_values = {}
-        if not isinstance(service_values, dict):
-            raise SystemExit(f"lab.config.json: '{service}' must be an object")
-
-        if service == "odysseus" and not (ROOT / "odysseus" / ".env.example").is_file():
-            continue
-
-        if service == "odysseus" and service not in config:
-            continue
-
-        merged = merge_lab_defaults(lab, service, service_values)
-        target = ROOT / rel_path
-
-        if service == "odysseus":
-            ensure_odysseus_base(target)
-            patch_env_file_inplace(target, merged)
-        else:
-            write_env_file(target, merged)
-        written.append(rel_path)
-
-    return written
+    lab = config.get("lab") if isinstance(config.get("lab"), dict) else {}
+    pg_user = str(lab.get("postgresUser", "modulab"))
+    write_bootstrap(databases_to_create(config, recipes), pg_user)
+    patch_odysseus(env, config)
 
 
 def main() -> int:
     config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CONFIG_PATH
     if not config_path.is_file():
         example = ROOT / "lab.config.example.json"
-        print(f"Missing {config_path.relative_to(ROOT)}", file=sys.stderr)
+        print(f"Missing {config_path}", file=sys.stderr)
         if example.is_file():
-            print(f"Copy {example.relative_to(ROOT)} to lab.config.json and edit it.", file=sys.stderr)
+            print(f"Copy {example.name} to lab.config.json and edit it.", file=sys.stderr)
         return 1
 
-    written = render(config_path)
-    print(f"Rendered {len(written)} env file(s) from {config_path.relative_to(ROOT)}:", file=sys.stderr)
-    for path in written:
-        print(f"  {path}", file=sys.stderr)
+    render(config_path)
+    print(f"Rendered {ENV_PATH.relative_to(ROOT)} and {BOOTSTRAP_PATH.relative_to(ROOT)}", file=sys.stderr)
     return 0
 
 

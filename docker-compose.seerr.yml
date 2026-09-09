@@ -1,17 +1,13 @@
-# https://docs.seerr.dev/getting-started/docker?docker-methods=docker-compose
-
 services:
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
     init: true
     container_name: seerr
     environment:
-      - LOG_LEVEL=${LOG_LEVEL:-debug}
-      - TZ=${TZ:-Europe/Berlin}
-    env_file:
-      - .env.seerr
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      TZ: ${TZ:-UTC}
     ports:
-      - 5055:5055
+      - "127.0.0.1:5055:5055"
     volumes:
       - ./data/seerr/config:/app/config
     healthcheck:

@@ -1,0 +1,15 @@
+{
+  "id": "postgres",
+  "name": "Postgres",
+  "description": "Shared database (vector-capable; one instance for all apps)",
+  "category": "infrastructure",
+  "compose": "docker-compose.postgres.yml",
+  "port": null,
+  "installable": false,
+  "core": true,
+  "dependsOn": [],
+  "proxy": null,
+  "dns": ["postgres"],
+  "defaults": {},
+  "fields": []
+}

@@ -1,0 +1,37 @@
+{
+  "id": "stirling-pdf",
+  "name": "Stirling PDF",
+  "description": "PDF toolkit",
+  "category": "productivity",
+  "compose": "docker-compose.stirling-pdf.yml",
+  "port": 8082,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "stirling",
+    "port": 8082
+  },
+  "dns": [
+    "stirling"
+  ],
+  "defaults": {
+    "SECURITY_ENABLELOGIN": false,
+    "LANGS": "en_GB"
+  },
+  "fields": [
+    {
+      "key": "SECURITY_ENABLELOGIN",
+      "label": "Enable login",
+      "type": "boolean",
+      "default": false,
+      "required": false
+    },
+    {
+      "key": "LANGS",
+      "label": "Languages",
+      "type": "string",
+      "default": "en_GB",
+      "required": false
+    }
+  ]
+}

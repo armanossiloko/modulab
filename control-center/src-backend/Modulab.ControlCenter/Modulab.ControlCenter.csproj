@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Modulab.ControlCenter</RootNamespace>
+    <AssemblyName>Modulab.ControlCenter</AssemblyName>
+    <!-- Native AOT in Docker (linux-*). Local Windows builds stay JIT. -->
+    <PublishAot Condition="$(RuntimeIdentifier.StartsWith('linux'))">true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols Condition="$(PublishAot) == true">true</StripSymbols>
+    <OptimizationPreference>Size</OptimizationPreference>
+    <DebuggerSupport Condition="$(PublishAot) == true">false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <StackTraceSupport Condition="$(PublishAot) == true">false</StackTraceSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+</Project>

@@ -1,22 +1,17 @@
-# Dashboard (127.0.0.1:8888) + optional network.lan reverse proxy (ENABLE_LAN_PROXY).
-# Bridge + published ports (works on Docker Desktop). setup.sh → .env.caddy
+# Optional LAN reverse proxy only (network.lan). Control Center serves the home UI.
 
 services:
   caddy:
     container_name: caddy
     image: caddy:${CADDY_TAG:-2-alpine}
     restart: unless-stopped
-    env_file:
-      - .env.caddy
     environment:
-      LOCAL_DOMAIN: ${PIHOLE_LOCAL_DOMAIN}
-      HOME_PORT: ${HOME_PORT:-8888}
+      LOCAL_DOMAIN: ${PIHOLE_LOCAL_DOMAIN:-network.lan}
       ENABLE_LAN_PROXY: ${ENABLE_LAN_PROXY:-false}
       UPSTREAM_HOST: ${UPSTREAM_HOST:-host.docker.internal}
+      HOME_PORT: ${HOME_PORT:-8888}
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    ports:
-      - "127.0.0.1:${HOME_PORT:-8888}:8888"
     command:
       - sh
       - -c
@@ -25,11 +20,11 @@ services:
           cat /etc/caddy/Caddyfile /etc/caddy/proxy.caddy > /tmp/Caddyfile
           exec caddy run --config /tmp/Caddyfile
         else
-          exec caddy run --config /etc/caddy/Caddyfile
+          echo "LAN proxy disabled — use Control Center for the home UI."
+          sleep infinity
         fi
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/proxy.caddy:/etc/caddy/proxy.caddy:ro
-      - ./dashboard:/srv/dashboard:ro
       - ./data/caddy/data:/data
       - ./data/caddy/config:/config

@@ -1,0 +1,159 @@
+[
+  {
+    "label": "control-center",
+    "name": "Control Center",
+    "description": "Home control plane \u2014 UI and install API",
+    "category": "infrastructure",
+    "port": 8888,
+    "compose": "docker-compose.control-center.yml",
+    "installable": false,
+    "core": true,
+    "enabled": true
+  },
+  {
+    "label": "pihole",
+    "name": "Pi-hole",
+    "description": "DNS admin + local *.lan names",
+    "category": "infrastructure",
+    "port": 5080,
+    "compose": "docker-compose.pihole.yml",
+    "installable": true,
+    "core": false,
+    "path": "/admin",
+    "enabled": false
+  },
+  {
+    "label": "immich",
+    "name": "Immich",
+    "description": "Photos and videos (uses shared Postgres + Redis)",
+    "category": "media",
+    "port": 2283,
+    "compose": "docker-compose.immich.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "jellyfin",
+    "name": "Jellyfin",
+    "description": "Movies, TV, and music",
+    "category": "media",
+    "port": 8096,
+    "compose": "docker-compose.jellyfin.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "seerr",
+    "name": "Seerr",
+    "description": "Media requests",
+    "category": "media",
+    "port": 5055,
+    "compose": "docker-compose.seerr.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "bentopdf",
+    "name": "BentoPDF",
+    "description": "Privacy-first PDF toolkit",
+    "category": "productivity",
+    "port": 8084,
+    "compose": "docker-compose.bentopdf.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "futo-notes",
+    "name": "FUTO Notes",
+    "description": "E2E-encrypted notes sync server (SQLite + blobs on disk)",
+    "category": "productivity",
+    "port": 3005,
+    "compose": "docker-compose.futo-notes.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "odysseus",
+    "name": "Odysseus",
+    "description": "AI workspace (includes SearXNG + ntfy)",
+    "category": "productivity",
+    "port": 7000,
+    "compose": "docker-compose.odysseus.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "stirling-pdf",
+    "name": "Stirling PDF",
+    "description": "PDF toolkit",
+    "category": "productivity",
+    "port": 8082,
+    "compose": "docker-compose.stirling-pdf.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "n8n",
+    "name": "n8n",
+    "description": "Workflow automation (uses shared Postgres)",
+    "category": "productivity",
+    "port": 5678,
+    "compose": "docker-compose.n8n.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "it-tools",
+    "name": "IT-Tools",
+    "description": "Developer utilities",
+    "category": "tools",
+    "port": 8083,
+    "compose": "docker-compose.it-tools.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "picoshare",
+    "name": "PicoShare",
+    "description": "File sharing",
+    "category": "tools",
+    "port": 4001,
+    "compose": "docker-compose.picoshare.yml",
+    "installable": true,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "searxng",
+    "name": "SearXNG",
+    "description": "Private search",
+    "category": "tools",
+    "port": 8080,
+    "compose": "docker-compose.odysseus.yml",
+    "parent": "odysseus",
+    "installable": false,
+    "core": false,
+    "enabled": false
+  },
+  {
+    "label": "ntfy",
+    "name": "ntfy",
+    "description": "Push notifications",
+    "category": "tools",
+    "port": 8091,
+    "compose": "docker-compose.odysseus.yml",
+    "parent": "odysseus",
+    "installable": false,
+    "core": false,
+    "enabled": false
+  }
+]

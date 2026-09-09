@@ -1,0 +1,32 @@
+{
+  "id": "pihole",
+  "name": "Pi-hole",
+  "description": "DNS admin + local *.lan names",
+  "category": "infrastructure",
+  "compose": "docker-compose.pihole.yml",
+  "port": 5080,
+  "path": "/admin",
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "pihole",
+    "port": 5080
+  },
+  "dns": [
+    "pihole",
+    "postgres"
+  ],
+  "defaults": {
+    "PIHOLE_UPSTREAM_DNS": "1.1.1.1;1.0.0.1",
+    "PIHOLE_TAG": "latest"
+  },
+  "fields": [
+    {
+      "key": "PIHOLE_UPSTREAM_DNS",
+      "label": "Upstream DNS",
+      "type": "string",
+      "default": "1.1.1.1;1.0.0.1",
+      "required": false
+    }
+  ]
+}

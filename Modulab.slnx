@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/control-center/">
+    <Project Path="control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="lab.config.example.json" />
+    <File Path="README.md" />
+    <File Path="control-center/README.md" />
+  </Folder>
+</Solution>

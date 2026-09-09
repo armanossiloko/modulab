@@ -1,0 +1,23 @@
+# Control Center — UI + API in one directory (Native AOT .NET 10).
+# Open http://127.0.0.1:8888
+
+services:
+  control-center:
+    container_name: control-center
+    build:
+      context: .
+      dockerfile: control-center/src-backend/Modulab.ControlCenter/Dockerfile
+    restart: unless-stopped
+    environment:
+      LAB_ROOT: /lab
+      HOME_PORT: ${HOME_PORT:-8888}
+      ASPNETCORE_URLS: http://0.0.0.0:8888
+      CONTROL_CENTER_WWWROOT: /lab/control-center/wwwroot
+      DOTNET_gcServer: "0"
+      DOTNET_EnableDiagnostics: "0"
+      CONTROL_CENTER_API_KEY: ${CONTROL_CENTER_API_KEY:-${LAB_API_KEY:-}}
+    ports:
+      - "127.0.0.1:${HOME_PORT:-8888}:8888"
+    volumes:
+      - ./:/lab
+      - /var/run/docker.sock:/var/run/docker.sock

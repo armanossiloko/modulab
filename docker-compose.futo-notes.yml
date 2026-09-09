@@ -1,0 +1,28 @@
+# FUTO Notes sync server — encrypted blobs + SQLite on disk (no shared Postgres).
+# Localhost: http://127.0.0.1:3005
+# In the app: Settings → Self-hosted sync → this URL + your sync password.
+
+services:
+  futo-notes:
+    image: ${FUTO_NOTES_IMAGE:-futotech/notes-server:stable}
+    container_name: futo-notes
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FUTO_NOTES_PORT:-3005}:3000"
+    environment:
+      PORT: "3000"
+      AUTH_MODE: password
+      FUTO_NOTES_PASSWORD: ${FUTO_NOTES_PASSWORD:?Set FUTO_NOTES_PASSWORD under futo-notes in lab.config.json}
+      FUTO_NOTES_PASSWORD_HASH: ${FUTO_NOTES_PASSWORD_HASH:-}
+      COOKIE_SECURE: ${FUTO_NOTES_COOKIE_SECURE:-false}
+      BLOB_DIR: /data/blobs
+      BLOB_GC_ENABLED: ${FUTO_NOTES_BLOB_GC_ENABLED:-true}
+    volumes:
+      - ${FUTO_NOTES_DATA_DIR:-./data/futo-notes}:/data
+    networks:
+      - modulab
+
+networks:
+  modulab:
+    external: true
+    name: modulab

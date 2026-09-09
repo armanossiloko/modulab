@@ -1,0 +1,57 @@
+{
+  "_comment": "Copy to dashboard.json (same folder) and edit. Hard-refresh Control Center after changes. Unknown keys are ignored.",
+  "title": "Modulab",
+  "search": {
+    "engine": "https://duckduckgo.com/?q=%s",
+    "placeholder": "Search stacks or the web…",
+    "libraryPlaceholder": "Filter library…"
+  },
+  "theme": {
+    "accent": "#d9a441"
+  },
+  "sidebar": {
+    "showInstalledApps": true,
+    "bookmarks": [
+      {
+        "_comment": "Prefer Edit shortcuts in the Control Center UI to regroup/reorder. Import bookmarks from a browser HTML export also works.",
+        "title": "Personal",
+        "color": "#5b9bd9",
+        "links": [
+          { "title": "Example", "url": "https://example.com", "domain": "example.com" }
+        ]
+      }
+    ]
+  },
+  "widgets": {
+    "stacks": { "enabled": true, "title": "Lab stacks" },
+    "community": {
+      "enabled": true,
+      "title": "Community",
+      "communities": ["selfhosted", "homelab"],
+      "limit": 6
+    },
+    "hackerNews": { "enabled": true, "title": "Hacker News", "limit": 8 },
+    "media": {
+      "enabled": true,
+      "title": "Media",
+      "emptyHint": "Install a media app from the Library."
+    },
+    "clock": { "enabled": true },
+    "weather": {
+      "enabled": false,
+      "title": "Weather",
+      "label": "Your city",
+      "latitude": 0,
+      "longitude": 0
+    },
+    "yearProgress": { "enabled": true, "title": "Year progress" },
+    "stackUsage": { "enabled": true, "title": "Stack usage" },
+    "network": { "enabled": true, "title": "Network" },
+    "nowRunning": { "enabled": true, "title": "Now running" },
+    "calendar": { "enabled": true }
+  },
+  "layout": {
+    "center": ["stacks", "community", "hackerNews", "media"],
+    "right": ["clock", "weather", "yearProgress", "stackUsage", "network", "nowRunning", "calendar"]
+  }
+}

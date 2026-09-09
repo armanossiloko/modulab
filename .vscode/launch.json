@@ -150,6 +150,24 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "FUTO Notes up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: futo-notes up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.futo-notes.yml"
+    },
+    {
+      "name": "FUTO Notes down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: futo-notes down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "Odysseus up",
       "type": "docker",
       "request": "launch",
@@ -222,14 +240,32 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
-      "name": "Caddy up",
+      "name": "Control Center up",
+      "type": "docker",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: control-center up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.control-center.yml"
+    },
+    {
+      "name": "Control Center down",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "docker-compose: control-center down",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.exit(0)"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Caddy LAN proxy up",
       "type": "docker",
       "request": "launch",
       "preLaunchTask": "docker-compose: caddy up",
       "dockerComposeFile": "${workspaceFolder}/docker-compose.caddy.yml"
     },
     {
-      "name": "Caddy down",
+      "name": "Caddy LAN proxy down",
       "type": "node",
       "request": "launch",
       "preLaunchTask": "docker-compose: caddy down",

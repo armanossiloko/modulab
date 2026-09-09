@@ -21,9 +21,9 @@ When you add a new `docker-compose*.yml` file at the workspace root (a stack thi
    - **Up:** `name` `<Title> up`, `type` `docker`, `request` `launch`, `preLaunchTask` matches up task, `dockerComposeFile` `${workspaceFolder}/docker-compose.<short-name>.yml`
    - **Down:** `name` `<Title> down`, `type` `node`, `preLaunchTask` matches down task, `runtimeExecutable` `node`, `runtimeArgs` `["-e", "process.exit(0)"]`, `console` `integratedTerminal` (same pattern as **All stacks down**)
 
-**Do not** add per-stack `up-*.sh` / `down-*.sh` files. Use `scripts/setup.sh`, `scripts/start.sh`, and `scripts/stop.sh`. Extend `scripts/common.sh` only if the stack needs special startup (see `postgres`, `odysseus` in `start.sh`). Add new default stacks to `LAB_STACKS` in `common.sh` when they belong in `start.sh all` / `stop.sh all`.
+**Do not** add per-stack `up-*.sh` / `down-*.sh` files. Use `scripts/setup.sh`, `scripts/start.sh`, `scripts/stop.sh`, and `scripts/install.sh`. Extend `scripts/common.sh` only if the stack needs special startup (see `postgres`, `odysseus` in `start.sh`). Add a **`catalog/<name>/recipe.json`**; `start.sh all` follows `lab.config.json` → `enabled` (fallback: `LAB_STACKS` in `common.sh`).
 
-When adding a root stack, also update **`pihole/dns-hosts.conf`** per `.cursor/rules/pihole-local-dns.mdc`.
+When adding a root stack, also add the catalog recipe so DNS/proxy/Control Center regenerate via `scripts/render-config.sh` (see `.cursor/rules/pihole-local-dns.mdc`).
 
 Keep JSON valid (commas between array entries).
 

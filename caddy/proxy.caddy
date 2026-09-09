@@ -1,6 +1,29 @@
+# GENERATED from catalog/*/recipe.json — do not edit by hand.
+# Regenerate: bash scripts/render-config.sh
 # Included when ENABLE_LAN_PROXY=true — port 80, host-based routing.
 # UPSTREAM_HOST: host.docker.internal (Docker Desktop / bridge). On native Linux
 # homelab, 127.0.0.1 often works via host-gateway; override in .env.caddy if needed.
+
+
+bentopdf.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8084
+}
+
+home.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8888
+}
+
+notes.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:3005
+}
+
+immich.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:2283
+}
+
+it-tools.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8083
+}
 
 jellyfin.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8096
@@ -8,30 +31,6 @@ jellyfin.{$LOCAL_DOMAIN} {
 
 n8n.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5678
-}
-
-seerr.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5055
-}
-
-it-tools.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8083
-}
-
-stirling.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8082
-}
-
-bentopdf.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8084
-}
-
-picoshare.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:4001
-}
-
-immich.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:2283
 }
 
 odysseus.{$LOCAL_DOMAIN} {
@@ -46,6 +45,18 @@ ntfy.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8091
 }
 
+picoshare.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:4001
+}
+
 pihole.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5080
+}
+
+seerr.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5055
+}
+
+stirling.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8082
 }

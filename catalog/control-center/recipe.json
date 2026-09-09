@@ -1,0 +1,17 @@
+{
+  "id": "control-center",
+  "name": "Control Center",
+  "description": "Home control plane — UI and install API",
+  "category": "infrastructure",
+  "compose": "docker-compose.control-center.yml",
+  "port": 8888,
+  "installable": false,
+  "core": true,
+  "dependsOn": [],
+  "proxy": { "host": "home", "port": 8888 },
+  "dns": ["home"],
+  "defaults": {
+    "HOME_PORT": 8888
+  },
+  "fields": []
+}

@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Modulab.ControlCenter": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://127.0.0.1:8888",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "HOME_PORT": "8888"
+      }
+    }
+  }
+}

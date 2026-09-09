@@ -1,0 +1,27 @@
+{
+  "id": "caddy",
+  "name": "Caddy",
+  "description": "Optional network.lan reverse proxy",
+  "category": "infrastructure",
+  "compose": "docker-compose.caddy.yml",
+  "port": null,
+  "installable": true,
+  "core": false,
+  "dependsOn": ["control-center"],
+  "proxy": null,
+  "dns": [],
+  "defaults": {
+    "ENABLE_LAN_PROXY": false,
+    "UPSTREAM_HOST": "host.docker.internal",
+    "CADDY_TAG": "2-alpine"
+  },
+  "fields": [
+    {
+      "key": "ENABLE_LAN_PROXY",
+      "label": "Enable LAN reverse proxy on port 80",
+      "type": "boolean",
+      "default": true,
+      "required": false
+    }
+  ]
+}
