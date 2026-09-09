@@ -33,24 +33,16 @@ n8n.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5678
 }
 
-odysseus.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:7000
-}
-
-searxng.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8080
-}
-
-ntfy.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8091
-}
-
 picoshare.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:4001
 }
 
 pihole.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5080
+}
+
+searxng.{$LOCAL_DOMAIN} {
+	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8080
 }
 
 seerr.{$LOCAL_DOMAIN} {

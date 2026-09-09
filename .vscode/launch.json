@@ -168,17 +168,17 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
-      "name": "Odysseus up",
+      "name": "SearXNG up",
       "type": "docker",
       "request": "launch",
-      "preLaunchTask": "docker-compose: odysseus up",
-      "dockerComposeFile": "${workspaceFolder}/docker-compose.odysseus.yml"
+      "preLaunchTask": "docker-compose: searxng up",
+      "dockerComposeFile": "${workspaceFolder}/docker-compose.searxng.yml"
     },
     {
-      "name": "Odysseus down",
+      "name": "SearXNG down",
       "type": "node",
       "request": "launch",
-      "preLaunchTask": "docker-compose: odysseus down",
+      "preLaunchTask": "docker-compose: searxng down",
       "runtimeExecutable": "node",
       "runtimeArgs": ["-e", "process.exit(0)"],
       "cwd": "${workspaceFolder}",

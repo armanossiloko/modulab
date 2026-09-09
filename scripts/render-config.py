@@ -17,7 +17,6 @@ CATALOG = ROOT / "catalog"
 SECRETS_DIR = ROOT / "secrets"
 ENV_PATH = ROOT / ".env"
 BOOTSTRAP_PATH = ROOT / "postgres" / "bootstrap.sql"
-ODYSSEUS_ENV = ROOT / "odysseus" / ".env"
 
 GENERATED_HEADER = (
     "# GENERATED from lab.config.json — do not edit.\n"
@@ -101,6 +100,9 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "LAB_HOST_IP": lab.get("hostIp", "127.0.0.1"),
         "PIHOLE_PASSWORD": lab.get("piholePassword", "change-me"),
         "PS_SHARED_SECRET": lab.get("picoshareAdminSecret", "change-me"),
+        "SEARXNG_SECRET": lab.get("searxngSecret", ""),
+        "SEARXNG_PORT": 8080,
+        "SEARXNG_BASE_URL": "http://localhost:8080/",
         "FUTO_NOTES_PASSWORD": lab.get("futoNotesPassword", ""),
         "FUTO_NOTES_PORT": 3005,
         "FUTO_NOTES_IMAGE": "futotech/notes-server:stable",
@@ -206,47 +208,6 @@ def write_bootstrap(dbs: list[tuple[str, bool]], pg_user: str) -> None:
     BOOTSTRAP_PATH.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
 
 
-def patch_odysseus(env: dict[str, Any], config: dict[str, Any]) -> None:
-    if not (ROOT / "odysseus" / ".env.example").is_file():
-        return
-    if "odysseus" not in config and not ODYSSEUS_ENV.is_file():
-        return
-
-    if not ODYSSEUS_ENV.is_file():
-        ODYSSEUS_ENV.write_text(
-            (ROOT / "odysseus" / ".env.example").read_text(encoding="utf-8"),
-            encoding="utf-8",
-        )
-
-    overrides = {
-        "GENERIC_TIMEZONE": env.get("TZ", "UTC"),
-    }
-    section = config.get("odysseus")
-    if isinstance(section, dict):
-        overrides.update(section)
-
-    raw = ODYSSEUS_ENV.read_text(encoding="utf-8")
-    lines = raw.splitlines(keepends=True)
-    seen: set[str] = set()
-    output: list[str] = []
-    for line in lines:
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            output.append(line if line.endswith("\n") else line + "\n")
-            continue
-        key = stripped.split("=", 1)[0]
-        if key in overrides:
-            output.append(f"{key}={stringify(overrides[key])}\n")
-            seen.add(key)
-        else:
-            output.append(line if line.endswith("\n") else line + "\n")
-    for key in sorted(overrides):
-        if key in seen:
-            continue
-        output.append(f"{key}={stringify(overrides[key])}\n")
-    ODYSSEUS_ENV.write_text("".join(output), encoding="utf-8")
-
-
 def render(config_path: Path) -> None:
     config = load_json(config_path)
     if not isinstance(config, dict):
@@ -259,7 +220,6 @@ def render(config_path: Path) -> None:
     lab = config.get("lab") if isinstance(config.get("lab"), dict) else {}
     pg_user = str(lab.get("postgresUser", "modulab"))
     write_bootstrap(databases_to_create(config, recipes), pg_user)
-    patch_odysseus(env, config)
 
 
 def main() -> int:

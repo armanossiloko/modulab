@@ -1,0 +1,37 @@
+{
+  "id": "searxng",
+  "name": "SearXNG",
+  "description": "Private metasearch engine",
+  "category": "tools",
+  "compose": "docker-compose.searxng.yml",
+  "port": 8080,
+  "installable": true,
+  "dependsOn": [],
+  "proxy": {
+    "host": "searxng",
+    "port": 8080
+  },
+  "dns": [
+    "searxng"
+  ],
+  "defaults": {
+    "SEARXNG_PORT": 8080,
+    "SEARXNG_BASE_URL": "http://localhost:8080/"
+  },
+  "fields": [
+    {
+      "key": "SEARXNG_PORT",
+      "label": "HTTP port",
+      "type": "number",
+      "default": 8080,
+      "required": false
+    },
+    {
+      "key": "SEARXNG_BASE_URL",
+      "label": "Public base URL",
+      "type": "string",
+      "default": "http://localhost:8080/",
+      "required": false
+    }
+  ]
+}

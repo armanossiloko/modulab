@@ -18,15 +18,7 @@ stop_stack() {
   fi
 
   echo "Stopping ${name}..." >&2
-
-  case "$name" in
-    odysseus)
-      docker compose -f "$compose" down "$@"
-      ;;
-    *)
-      stack_down "$name" "$@"
-      ;;
-  esac
+  stack_down "$name" "$@"
 }
 
 name="${1:?Usage: bash scripts/stop.sh <stack>|all}"

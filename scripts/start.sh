@@ -18,19 +18,7 @@ start_stack() {
     return 0
   fi
 
-  if [[ "$name" == odysseus ]]; then
-    if [[ ! -f "${root}/odysseus/.env" ]]; then
-      echo "skip odysseus: missing odysseus/.env (run render-config after enabling odysseus)" >&2
-      return 0
-    fi
-    if [[ ! -f "${root}/odysseus/docker-compose.yml" ]]; then
-      echo "skip odysseus: submodule not initialized (git submodule update --init odysseus)" >&2
-      return 0
-    fi
-  else
-    require_lab_env
-  fi
-
+  require_lab_env
   ensure_modulab_network
 
   if [[ -f "${root}/catalog/${name}/recipe.json" ]]; then
@@ -45,9 +33,6 @@ start_stack() {
   echo "Starting ${name}..." >&2
 
   case "$name" in
-    odysseus)
-      docker compose -f "$compose" up -d --build "$@"
-      ;;
     postgres)
       stack_compose postgres up -d "$@"
       wait_for_postgres

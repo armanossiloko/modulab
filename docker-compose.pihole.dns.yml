@@ -13,11 +13,9 @@ services:
         192.168.1.10 it-tools.network.lan
         192.168.1.10 jellyfin.network.lan
         192.168.1.10 n8n.network.lan
-        192.168.1.10 odysseus.network.lan
-        192.168.1.10 searxng.network.lan
-        192.168.1.10 ntfy.network.lan
         192.168.1.10 picoshare.network.lan
         192.168.1.10 pihole.network.lan
         192.168.1.10 postgres.network.lan
+        192.168.1.10 searxng.network.lan
         192.168.1.10 seerr.network.lan
         192.168.1.10 stirling.network.lan

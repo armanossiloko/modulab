@@ -123,9 +123,9 @@
       }
     },
     {
-      "label": "docker-compose: odysseus up",
+      "label": "docker-compose: searxng up",
       "type": "shell",
-      "command": "bash scripts/start.sh odysseus",
+      "command": "bash scripts/start.sh searxng",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -299,9 +299,9 @@
       }
     },
     {
-      "label": "docker-compose: odysseus down",
+      "label": "docker-compose: searxng down",
       "type": "shell",
-      "command": "bash scripts/stop.sh odysseus",
+      "command": "bash scripts/stop.sh searxng",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

@@ -23,9 +23,7 @@ bash scripts/start.sh jellyfin   # example — repeat per stack
 | http://picoshare.network.lan | PicoShare |
 | http://notes.network.lan | FUTO Notes |
 | http://immich.network.lan | Immich |
-| http://odysseus.network.lan | Odysseus |
 | http://searxng.network.lan | SearXNG |
-| http://ntfy.network.lan | ntfy |
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP only) |
 
@@ -61,9 +59,7 @@ bash scripts/start.sh pihole
 | `bentopdf` | BentoPDF | http://127.0.0.1:8084 |
 | `picoshare` | PicoShare | http://127.0.0.1:4001 |
 | `immich` | Immich | http://127.0.0.1:2283 |
-| `odysseus` | Odysseus UI | http://127.0.0.1:7000 |
-| `searxng` | Odysseus SearXNG | http://127.0.0.1:8080 |
-| `ntfy` | Odysseus ntfy | http://127.0.0.1:8091 |
+| `searxng` | SearXNG | http://127.0.0.1:8080 |
 | `postgres` | Shared Postgres | `127.0.0.1:5432` |
 | `pihole` | Pi-hole admin | http://127.0.0.1:5080/admin |
 

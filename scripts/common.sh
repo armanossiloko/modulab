@@ -15,7 +15,7 @@ LAB_STACKS=(
   picoshare
   futo-notes
   immich
-  odysseus
+  searxng
 )
 
 require_lab_env() {
@@ -197,6 +197,7 @@ print_stack_url() {
     picoshare) echo "PicoShare: $(lab_url picoshare)" ;;
     futo-notes) echo "FUTO Notes: $(lab_url notes) (also http://127.0.0.1:3005)" ;;
     immich) echo "Immich: $(lab_url immich)" ;;
+    searxng) echo "SearXNG: $(lab_url searxng) (also http://127.0.0.1:8080)" ;;
     redis) echo "Redis: redis:6379 (Docker network modulab)" ;;
     control-center) echo "Control Center: $(lab_control_center_url)" ;;
     pihole)
@@ -207,11 +208,6 @@ print_stack_url() {
       echo "Caddy LAN proxy: $(lan_proxy_enabled && echo enabled || echo disabled)"
       ;;
     postgres) echo "Postgres: postgres.${domain}:5432 (shared; DBs from bootstrap.sql)" ;;
-    odysseus)
-      echo "Odysseus: $(lab_url odysseus)"
-      echo "SearXNG: $(lab_url searxng)"
-      echo "ntfy: $(lab_url ntfy)"
-      ;;
     *) echo "Started ${name}" ;;
   esac
 }

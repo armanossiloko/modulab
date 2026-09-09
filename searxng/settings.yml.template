@@ -1,0 +1,10 @@
+# Seeded into data/searxng/settings.yml on first start (secret filled from SEARXNG_SECRET).
+use_default_settings: true
+
+server:
+  secret_key: "__SEARXNG_SECRET__"
+
+search:
+  formats:
+    - html
+    - json

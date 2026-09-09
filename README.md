@@ -1,11 +1,10 @@
 # Lab — modular homelab stacks
 
-Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can run alone or together on one host. Each stack has a `docker-compose.<name>.yml` at the repo root; [Odysseus](https://github.com/pewdiepie-archdaemon/odysseus) is included as a submodule.
+Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can run alone or together on one host. Each stack has a `docker-compose.<name>.yml` at the repo root.
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose (v2: `docker compose`, or classic `docker-compose` used by VS Code tasks)
-- **Odysseus:** after cloning, run `git submodule update --init --recursive`
 
 ## Setup
 
@@ -59,10 +58,10 @@ Start one stack:
 ```bash
 bash scripts/start.sh jellyfin
 bash scripts/start.sh n8n
-bash scripts/start.sh odysseus
+bash scripts/start.sh searxng
 ```
 
-Start the default lab (Control Center, Postgres, Redis — skips Odysseus if the submodule is not initialized). Pi-hole is not included:
+Start the default lab (Control Center, Postgres, Redis). Pi-hole is not included:
 
 ```bash
 bash scripts/start.sh all
@@ -141,9 +140,7 @@ bash scripts/start.sh caddy
 | http://picoshare.network.lan | PicoShare |
 | http://notes.network.lan | FUTO Notes |
 | http://immich.network.lan | Immich |
-| http://odysseus.network.lan | Odysseus |
-| http://searxng.network.lan | SearXNG (Odysseus) |
-| http://ntfy.network.lan | ntfy (Odysseus) |
+| http://searxng.network.lan | SearXNG |
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP, not HTTP) |
 
@@ -166,10 +163,10 @@ Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 | **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared Postgres (vector image; many DBs) |
 | **Redis** | `docker-compose.redis.yml` | `redis:6379` (Docker) | Shared Valkey/Redis |
 | **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photos (uses shared Postgres + Redis) |
+| **SearXNG** | `docker-compose.searxng.yml` | http://127.0.0.1:8080 | Private metasearch ([SearXNG](https://docs.searxng.org/)) |
 | **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
-| **Odysseus** | `docker-compose.odysseus.yml` | http://localhost:7000 | AI workspace; submodule in `odysseus/` |
 
-Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run together: Odysseus SearXNG (8080), Stirling PDF (8082), IT-Tools (8083), BentoPDF (8084).
+Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run together: SearXNG (8080), Stirling PDF (8082), IT-Tools (8083), BentoPDF (8084).
 
 ### Port map
 
@@ -179,16 +176,13 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 | 80 | LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
 | 5055 | Seerr | `docker-compose.seerr.yml` |
 | 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
-| 7000 | Odysseus UI | `docker-compose.odysseus.yml` → `odysseus/` |
-| 8080 | Odysseus SearXNG (loopback) | `odysseus/docker-compose.yml` |
+| 8080 | SearXNG (loopback) | `docker-compose.searxng.yml` |
 | 8082 | Stirling PDF | `docker-compose.stirling-pdf.yml` |
 | 8083 | IT-Tools | `docker-compose.it-tools.yml` |
 | 8084 | BentoPDF | `docker-compose.bentopdf.yml` |
 | 4001 | PicoShare | `docker-compose.picoshare.yml` |
 | 3005 | FUTO Notes (loopback) | `docker-compose.futo-notes.yml` |
-| 8091 | Odysseus ntfy (loopback) | `odysseus/docker-compose.yml` |
 | 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
-| 8100 | Odysseus ChromaDB (loopback) | `odysseus/docker-compose.yml` |
 | 2283 | Immich (loopback) | `docker-compose.immich.yml` |
 | 5080 | Pi-hole admin (loopback) | `docker-compose.pihole.yml` |
 | 53 | Pi-hole DNS (loopback tcp/udp) | `docker-compose.pihole.yml` |
@@ -216,8 +210,6 @@ networks:
     external: true
     name: modulab
 ```
-
-**Odysseus + Cookbook:** ChromaDB uses host port **8100**. Cookbook’s diffusion server also defaults to **8100** — pick another port if both are active.
 
 ### Immich
 
@@ -253,12 +245,12 @@ bash scripts/install.sh pihole
 - Admin: http://127.0.0.1:5080/admin
 - Set **`lab.hostIp`** / **`lab.domain`** — see [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
 
-### Odysseus
+### SearXNG
 
-Submodule at [`odysseus/`](odysseus/). Still uses its own SQLite + ChromaDB (not the shared Postgres). Root `docker-compose.odysseus.yml` includes the submodule; a few keys are patched into `odysseus/.env` from `lab.config.json`.
+Private metasearch at [`searxng/`](searxng/). Settings are seeded from `searxng/settings.yml.template` on first start (optional `lab.searxngSecret`).
 
 ```bash
-bash scripts/install.sh odysseus
+bash scripts/install.sh searxng
 ```
 
 ### Jellyfin
@@ -273,10 +265,9 @@ Uses shared Postgres database `n8n` (`dependsOn: ["postgres"]`). Host/webhook UR
 
 | Path | Used by |
 |------|---------|
-| `data/` | Runtime volumes (Postgres, Redis, Immich library, Jellyfin, …) |
+| `data/` | Runtime volumes (Postgres, Redis, Immich library, Jellyfin, SearXNG, …) |
 | `media/` | Jellyfin library |
 | `secrets/` | Optional sensitive files |
-| `odysseus/data/`, `odysseus/logs/` | Odysseus |
 
 ## VS Code / Cursor
 
@@ -287,7 +278,7 @@ Uses shared Postgres database `n8n` (`dependsOn: ["postgres"]`). Host/webhook UR
 | **docker-compose: all up** | `scripts/start.sh all` | Start `enabled` stacks |
 | **docker-compose: all down** | `scripts/stop.sh all` | Stop enabled stacks (keeps volumes) |
 
-Config flow: `lab.config.json` → generated `.env` (+ `odysseus/.env` patches). Tracked template: `lab.config.example.json`. Add apps via `catalog/<id>/recipe.json` (see `.cursor/rules`).
+Config flow: `lab.config.json` → generated `.env`. Tracked template: `lab.config.example.json`. Add apps via `catalog/<id>/recipe.json` (see `.cursor/rules`).
 
 ## License
 

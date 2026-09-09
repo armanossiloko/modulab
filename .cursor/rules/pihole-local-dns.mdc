@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Pi-hole local DNS for new stacks
 
-When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU overlays in `odysseus/`), add a **catalog recipe** instead of hand-editing DNS/proxy files.
+When you add a **new root stack** `docker-compose.<name>.yml`, add a **catalog recipe** instead of hand-editing DNS/proxy files.
 
 ## Checklist
 
@@ -15,7 +15,7 @@ When you add a **new root stack** `docker-compose.<name>.yml` (not Odysseus GPU 
 3. Add the stack to **`lab.config.json` → `enabled`** (or install via Control Center Library / `scripts/install.sh`).
 4. Do **not** add records for internal-only containers (e.g. Immich’s bundled Postgres/Redis).
 
-Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`). Odysseus sidecars use `extraServices` / `dns` on the odysseus recipe (`searxng`, `ntfy`).
+Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`).
 
 User sets **`LAB_HOST_IP`** and domain via **`lab.config.json`**. Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
 

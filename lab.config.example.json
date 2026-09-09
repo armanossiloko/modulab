@@ -10,10 +10,15 @@
     "piholePassword": "change-me",
     "picoshareAdminSecret": "change-me",
     "futoNotesPassword": "change-me",
+    "searxngSecret": "",
     "controlCenterApiKey": ""
   },
   "futo-notes": {
     "FUTO_NOTES_PORT": 3005
+  },
+  "searxng": {
+    "SEARXNG_PORT": 8080,
+    "SEARXNG_BASE_URL": "http://localhost:8080/"
   },
   "enabled": [
     "control-center",

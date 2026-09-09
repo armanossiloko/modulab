@@ -5,7 +5,6 @@
 **/data
 **/media
 **/secrets
-odysseus
 *.md
 control-center/src-backend/Modulab.ControlCenter/bin
 control-center/src-backend/Modulab.ControlCenter/obj
