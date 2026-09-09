@@ -3,15 +3,25 @@ namespace Modulab.ControlCenter.Extensions;
 public static class SpaExtensions
 {
     /// <summary>
-    /// Serves Control Center static UI from wwwroot when present (Fable-style SPA host).
+    /// Serves Control Center static UI (Angular build or legacy wwwroot).
+    /// Order: CONTROL_CENTER_ANGULAR_DIST → CONTROL_CENTER_WWWROOT / ADMIN_WWWROOT → ContentRoot/wwwroot.
     /// </summary>
     public static WebApplication UseControlCenterSpa(this WebApplication app)
     {
         var wwwroot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-        var alt = Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT")
-            ?? Environment.GetEnvironmentVariable("ADMIN_WWWROOT");
-        if (!string.IsNullOrWhiteSpace(alt) && Directory.Exists(alt))
-            wwwroot = Path.GetFullPath(alt);
+
+        var angularDist = Environment.GetEnvironmentVariable("CONTROL_CENTER_ANGULAR_DIST");
+        if (!string.IsNullOrWhiteSpace(angularDist) && File.Exists(Path.Combine(angularDist, "index.html")))
+        {
+            wwwroot = Path.GetFullPath(angularDist);
+        }
+        else
+        {
+            var alt = Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT")
+                ?? Environment.GetEnvironmentVariable("ADMIN_WWWROOT");
+            if (!string.IsNullOrWhiteSpace(alt) && Directory.Exists(alt))
+                wwwroot = Path.GetFullPath(alt);
+        }
 
         if (!Directory.Exists(wwwroot))
             return app;

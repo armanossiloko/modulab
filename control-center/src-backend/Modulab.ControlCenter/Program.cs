@@ -30,7 +30,9 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxConcurrentConnections = 32;
     options.Limits.MaxRequestBodySize = 1024 * 1024;
-    options.ListenAnyIP(port);
+    // Skip binding during build-time OpenAPI document generation.
+    if (!IsOpenApiDocumentGeneration())
+        options.ListenAnyIP(port);
 });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -39,7 +41,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
+builder.AddControlCenterOpenApi();
+
 var app = builder.Build();
+app.MapControlCenterOpenApi();
 
 var sharedHttp = new HttpClient(new SocketsHttpHandler
 {
@@ -157,7 +162,10 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
-app.MapGet("/api/health", () => Results.Json(new HealthResponse("ok", labRoot), LabJsonContext.Default.HealthResponse));
+app.MapGet("/api/health", () => Results.Json(new HealthResponse("ok", labRoot), LabJsonContext.Default.HealthResponse))
+    .WithName("GetHealth")
+    .WithTags("System")
+    .Produces<HealthResponse>(StatusCodes.Status200OK);
 
 app.MapGet("/api/feeds/reddit", async (string? sub, int? limit, CancellationToken ct) =>
 {
@@ -197,7 +205,11 @@ app.MapGet("/api/feeds/reddit", async (string? sub, int? limit, CancellationToke
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 502);
     }
-});
+})
+    .WithName("GetRedditFeed")
+    .WithTags("Feeds")
+    .Produces<FeedResponse>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest, StatusCodes.Status502BadGateway);
 
 app.MapGet("/api/feeds/hn", async (int? limit, CancellationToken ct) =>
 {
@@ -232,7 +244,11 @@ app.MapGet("/api/feeds/hn", async (int? limit, CancellationToken ct) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 502);
     }
-});
+})
+    .WithName("GetHackerNewsFeed")
+    .WithTags("Feeds")
+    .Produces<FeedResponse>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status502BadGateway);
 
 app.MapGet("/api/weather", async (double? lat, double? lon, string? label, CancellationToken ct) =>
 {
@@ -262,7 +278,11 @@ app.MapGet("/api/weather", async (double? lat, double? lon, string? label, Cance
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 502);
     }
-});
+})
+    .WithName("GetWeather")
+    .WithTags("Widgets")
+    .Produces<WeatherResponse>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status502BadGateway);
 
 app.MapGet("/api/catalog", () =>
 {
@@ -281,7 +301,11 @@ app.MapGet("/api/catalog", () =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("GetCatalog")
+    .WithTags("Apps")
+    .Produces<CatalogResponse>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status500InternalServerError);
 
 app.MapGet("/api/apps/{id}", (string id) =>
 {
@@ -292,7 +316,11 @@ app.MapGet("/api/apps/{id}", (string id) =>
     var enabled = LoadEnabled(labRoot);
     var (running, present) = ProbeContainers(labRoot, [recipe]);
     return Results.Json(ToCatalogItem(recipe, enabled, running, present), LabJsonContext.Default.CatalogItem);
-});
+})
+    .WithName("GetApp")
+    .WithTags("Apps")
+    .Produces<CatalogItem>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status404NotFound);
 
 app.MapPost("/api/apps/{id}/install", async (string id, InstallRequest? body) =>
 {
@@ -313,7 +341,12 @@ app.MapPost("/api/apps/{id}/install", async (string id, InstallRequest? body) =>
         try { DisableApp(labRoot, id); } catch { /* best-effort */ }
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("InstallApp")
+    .WithTags("Apps")
+    .Accepts<InstallRequest>("application/json")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest, StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
 app.MapPost("/api/apps/{id}/start", async (string id) =>
 {
@@ -332,7 +365,11 @@ app.MapPost("/api/apps/{id}/start", async (string id) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("StartApp")
+    .WithTags("Apps")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
 app.MapPost("/api/apps/{id}/stop", async (string id) =>
 {
@@ -349,7 +386,11 @@ app.MapPost("/api/apps/{id}/stop", async (string id) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("StopApp")
+    .WithTags("Apps")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
 app.MapDelete("/api/apps/{id}", async (string id) =>
 {
@@ -370,7 +411,11 @@ app.MapDelete("/api/apps/{id}", async (string id) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("UninstallApp")
+    .WithTags("Apps")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest, StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
 app.MapPost("/api/dashboard/bookmarks", (ImportBookmarksRequest? body) =>
 {
@@ -388,7 +433,12 @@ app.MapPost("/api/dashboard/bookmarks", (ImportBookmarksRequest? body) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("ImportBookmarks")
+    .WithTags("Dashboard")
+    .Accepts<ImportBookmarksRequest>("application/json")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest, StatusCodes.Status500InternalServerError);
 
 app.MapPut("/api/dashboard/bookmarks", (ReplaceBookmarksRequest? body) =>
 {
@@ -406,39 +456,57 @@ app.MapPut("/api/dashboard/bookmarks", (ReplaceBookmarksRequest? body) =>
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("ReplaceBookmarks")
+    .WithTags("Dashboard")
+    .Accepts<ReplaceBookmarksRequest>("application/json")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest, StatusCodes.Status500InternalServerError);
 
 app.MapGet("/api/dashboard", () =>
 {
     try
     {
+        EnsureDashboardJson(labRoot);
         var path = DashboardJsonPath(labRoot);
         if (!File.Exists(path))
             return Results.Json(new ApiMessage("dashboard.json missing"), LabJsonContext.Default.ApiMessage, statusCode: 404);
-        return Results.Content(File.ReadAllText(path), "application/json");
+        var node = JsonNode.Parse(File.ReadAllText(path))
+            ?? throw new InvalidOperationException("dashboard.json is empty");
+        return Results.Json(node, LabJsonContext.Default.JsonNode);
     }
     catch (Exception ex)
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
-});
+})
+    .WithName("GetDashboard")
+    .WithTags("Dashboard")
+    .Produces<JsonNode>(StatusCodes.Status200OK, "application/json")
+    .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
-app.MapPut("/api/dashboard", async (HttpRequest request) =>
+app.MapPut("/api/dashboard", (JsonNode? body) =>
 {
     try
     {
-        using var reader = new StreamReader(request.Body);
-        var text = await reader.ReadToEndAsync();
-        SaveDashboardDocument(labRoot, text);
+        if (body is null)
+            return Results.Json(new ApiMessage("Missing body"), LabJsonContext.Default.ApiMessage, statusCode: 400);
+        SaveDashboardDocument(labRoot, body.ToJsonString());
         return Results.Json(new ApiMessage("Settings saved"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 400);
     }
-});
+})
+    .WithName("PutDashboard")
+    .WithTags("Dashboard")
+    .Accepts<JsonNode>("application/json")
+    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status400BadRequest);
 
 // Prefer control-center/wwwroot (dev + Docker mount); fall back to wwwroot beside the binary.
+EnsureDashboardJson(labRoot);
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT"))
     && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ADMIN_WWWROOT")))
 {
@@ -449,6 +517,13 @@ if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CONTROL_CENTER
 
 app.UseControlCenterSpa();
 app.Run();
+
+static bool IsOpenApiDocumentGeneration() =>
+    string.Equals(
+        Environment.GetEnvironmentVariable("DOTNET_GenerateOpenApiDocuments"),
+        "true",
+        StringComparison.OrdinalIgnoreCase)
+    || AppDomain.CurrentDomain.FriendlyName.Contains("GetDocument", StringComparison.OrdinalIgnoreCase);
 
 static string FindLabRoot()
 {
@@ -796,8 +871,30 @@ static string RunCapture(string file, string args, string cwd)
 static string DashboardJsonPath(string labRoot) =>
     Path.Combine(labRoot, "control-center", "wwwroot", "dashboard.json");
 
+static string DashboardDefaultsPath(string labRoot) =>
+    Path.Combine(labRoot, "control-center", "defaults", "dashboard.json");
+
+/// <summary>Ensure wwwroot/dashboard.json exists by copying from tracked defaults.</summary>
+static void EnsureDashboardJson(string labRoot)
+{
+    var path = DashboardJsonPath(labRoot);
+    if (File.Exists(path))
+        return;
+
+    var defaults = DashboardDefaultsPath(labRoot);
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    if (File.Exists(defaults))
+    {
+        File.Copy(defaults, path);
+        return;
+    }
+
+    File.WriteAllText(path, """{"title":"Modulab","pages":[{"id":"home","title":"Home","items":[]}]}""");
+}
+
 static int ImportBookmarkGroups(string labRoot, ImportBookmarksRequest body)
 {
+    EnsureDashboardJson(labRoot);
     var path = DashboardJsonPath(labRoot);
     if (!File.Exists(path))
         throw new InvalidOperationException($"Missing {path}");
@@ -885,6 +982,7 @@ static int ImportBookmarkGroups(string labRoot, ImportBookmarksRequest body)
 
 static int ReplaceBookmarkGroups(string labRoot, ReplaceBookmarksRequest body)
 {
+    EnsureDashboardJson(labRoot);
     var path = DashboardJsonPath(labRoot);
     if (!File.Exists(path))
         throw new InvalidOperationException($"Missing {path}");
@@ -967,6 +1065,7 @@ static void SaveDashboardDocument(string labRoot, string bodyText)
         throw new InvalidOperationException("sidebar.bookmarks must be an array");
 
     var json = incoming.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
     File.WriteAllText(path, json + "\n");
 }
 
@@ -1047,4 +1146,6 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(List<CatalogItem>))]
 [JsonSerializable(typeof(List<int>))]
 [JsonSerializable(typeof(Dictionary<string, JsonElement>))]
+[JsonSerializable(typeof(JsonNode))]
+[JsonSerializable(typeof(JsonObject))]
 internal partial class LabJsonContext : JsonSerializerContext;

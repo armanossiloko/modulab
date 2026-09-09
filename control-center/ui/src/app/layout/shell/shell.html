@@ -1,0 +1,74 @@
+<div class="shell">
+  <aside class="sidebar" aria-label="Shortcuts">
+    <a class="brand" routerLink="/" aria-label="Modulab home">
+      <span class="brand-orb" aria-hidden="true"></span>
+      <span class="brand-name">{{ brand() }}</span>
+    </a>
+    <nav class="nav-pages" aria-label="Main">
+      <a class="page-tab" routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a
+      >
+      <a class="page-tab" routerLink="/library" routerLinkActive="is-active">Library</a>
+      <a class="page-tab" routerLink="/settings" routerLinkActive="is-active">Settings</a>
+    </nav>
+
+    <div class="bookmark-groups">
+      @for (group of bookmarkGroups(); track group.title) {
+        <section class="category-block">
+          <h2 class="category-title" [style.color]="color(group.color)">{{ group.title }}</h2>
+          @for (link of group.links; track link.url) {
+            @if (link.enabled !== false) {
+              <a class="app-link" [href]="link.url" target="_blank" rel="noopener noreferrer">
+                <img
+                  class="app-icon bookmark-link-icon"
+                  [src]="favicon(link.domain, link.url)"
+                  alt=""
+                  width="16"
+                  height="16"
+                />
+                <span class="app-link-text">{{ link.title || link.url }}</span>
+              </a>
+            }
+          }
+        </section>
+      }
+    </div>
+
+    <div class="sidebar-actions">
+      <a class="sidebar-import-btn" routerLink="/settings/sidebar">Edit shortcuts</a>
+    </div>
+    <p class="sidebar-foot">{{ foot() }}</p>
+  </aside>
+
+  <div
+    class="sidebar-resizer"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Resize sidebar"
+    tabindex="0"
+    (pointerdown)="startResize($event)"
+  ></div>
+
+  <div class="page">
+    <header class="search-row">
+      <label class="search-wrap">
+        <span class="sr-only">Search</span>
+        <input
+          type="search"
+          class="search"
+          placeholder="Search stacks or the web…"
+          [(ngModel)]="search"
+          (keydown)="onSearchKey($event)"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </label>
+      <button type="button" class="icon-btn" title="Refresh" aria-label="Refresh" (click)="refresh()">
+        ↻
+      </button>
+    </header>
+    <div class="page-body">
+      <router-outlet />
+    </div>
+  </div>
+</div>

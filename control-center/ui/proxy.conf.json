@@ -1,0 +1,14 @@
+{
+  "/api": {
+    "target": "http://127.0.0.1:8888",
+    "secure": false
+  },
+  "/dashboard.json": {
+    "target": "http://127.0.0.1:8888",
+    "secure": false
+  },
+  "/services.json": {
+    "target": "http://127.0.0.1:8888",
+    "secure": false
+  }
+}

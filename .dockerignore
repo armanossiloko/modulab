@@ -9,3 +9,5 @@ odysseus
 *.md
 control-center/src-backend/Modulab.ControlCenter/bin
 control-center/src-backend/Modulab.ControlCenter/obj
+control-center/ui/node_modules
+control-center/ui/dist
