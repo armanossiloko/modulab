@@ -1094,7 +1094,8 @@ static (HashSet<string> Running, HashSet<string> Present) ProbeContainers(string
                 continue;
             present.Add(recipe.Id);
             if (states.TryGetValue(matchedName, out var state)
-                && state.Equals("running", StringComparison.OrdinalIgnoreCase))
+                && (state.Equals("running", StringComparison.OrdinalIgnoreCase)
+                    || state.Equals("restarting", StringComparison.OrdinalIgnoreCase)))
                 running.Add(recipe.Id);
         }
     }

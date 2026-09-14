@@ -6,7 +6,7 @@
   "compose": "docker-compose.caddy.yml",
   "port": null,
   "installable": true,
-  "core": false,
+  "core": true,
   "dependsOn": ["control-center"],
   "proxy": null,
   "dns": [],
