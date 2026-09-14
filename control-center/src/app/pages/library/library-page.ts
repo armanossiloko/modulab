@@ -35,7 +35,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
                     [class.is-running]="app.status === 'running'"
                     [class.is-available]="app.status === 'available'"
                     [class.is-removed]="app.status === 'removed'"
-                    >{{ app.status }}</span
+                    >{{ statusLabel(app.status) }}</span
                   >
                   @if (hasUpdate(app.id)) {
                     <span class="library-status is-update">update</span>
@@ -44,13 +44,23 @@ import { DashboardService } from '../../core/services/dashboard.service';
               </div>
               <div class="library-actions">
                 @if (app.status === 'available' && app.installable !== false) {
-                  <button type="button" class="btn btn--primary" (click)="install(app)">
-                    Install
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    [disabled]="busyId() === app.id"
+                    (click)="install(app)"
+                  >
+                    {{ busyId() === app.id ? 'Installing…' : 'Install' }}
                   </button>
                 }
                 @if (app.status === 'removed') {
-                  <button type="button" class="btn btn--primary" (click)="start(app)">
-                    Reinstall
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    [disabled]="busyId() === app.id"
+                    (click)="start(app)"
+                  >
+                    {{ busyId() === app.id ? 'Starting…' : 'Start' }}
                   </button>
                 }
                 @if (app.status === 'running' && (app.url || app.port)) {
@@ -251,18 +261,37 @@ export class LibraryPage implements OnInit {
     });
   }
 
+  statusLabel(status: string): string {
+    if (status === 'removed') return 'not running';
+    return status;
+  }
+
   install(app: CatalogItem): void {
     if (!confirm(`Install ${app.name} with default options?`)) return;
+    this.busyId.set(app.id);
     this.dash.installApp(app.id, {}).subscribe({
-      next: () => this.refresh(),
-      error: (err: Error) => alert(err.message),
+      next: () => {
+        this.busyId.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+      },
     });
   }
 
   start(app: CatalogItem): void {
+    this.busyId.set(app.id);
     this.dash.startApp(app.id).subscribe({
-      next: () => this.refresh(),
-      error: (err: Error) => alert(err.message),
+      next: () => {
+        this.busyId.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+      },
     });
   }
 
