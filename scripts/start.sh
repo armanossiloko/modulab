@@ -54,6 +54,12 @@ start_stack() {
       bash "${root}/scripts/ensure-wwwroot.sh" >/dev/null 2>&1 || true
       stack_compose control-center up -d --build "$@"
       ;;
+    jellyfin)
+      # Compose creates missing bind-mount dirs as root; Jellyfin runs as 1000:1000.
+      mkdir -p "${root}/data/jellyfin/config" "${root}/data/jellyfin/cache" "${root}/media"
+      chown -R 1000:1000 "${root}/data/jellyfin" "${root}/media" 2>/dev/null || true
+      stack_compose jellyfin up -d "$@"
+      ;;
     *)
       stack_compose "$name" up -d "$@"
       ;;

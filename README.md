@@ -254,7 +254,7 @@ See install commands above and stack-specific notes in older docs sections:
 
 - Immich: Library or `bash scripts/install.sh immich` — UI on `:2283` or `immich.<domain>`
 - FUTO Notes: sync password from `lab.futoNotesPassword`; URL `:3005` or `notes.<domain>`
-- Jellyfin: container user `1000:1000`; media under `./media`
+- Jellyfin: container user `1000:1000`; `scripts/start.sh` creates `./data/jellyfin` and `./media` owned by UID 1000 before start (Docker would otherwise create them as root and Jellyfin crash-loops)
 - n8n: shared DB `n8n`; host/webhook URLs follow `lab.domain`
 - SearXNG: settings from `searxng/settings.yml.template`
 
