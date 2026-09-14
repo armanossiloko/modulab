@@ -4,15 +4,33 @@ Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can ru
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) with Compose (v2: `docker compose`, or classic `docker-compose` used by VS Code tasks)
+- [Docker Engine](https://docs.docker.com/engine/install/) with Compose v2 (`docker compose`)
+- Linux host recommended (Control Center manages Compose via the Docker socket)
 
 ## Setup
 
-Configure everything from one file — **`lab.config.json`**. A single generated **`.env`** (gitignored) is produced for Compose; do not edit it.
+```bash
+git clone https://github.com/armanossiloko/modulab.git
+cd modulab
+bash scripts/setup.sh          # creates lab.config.json from the example + renders .env
+```
+
+Edit **`lab.config.json`** (gitignored) — at minimum set **`lab.hostIp`** to this machine’s LAN IP — then:
 
 ```bash
-bash scripts/setup.sh
+bash scripts/render-config.sh
+bash scripts/start.sh all      # stacks listed in lab.config.json → enabled
 ```
+
+Default example enables Control Center, Postgres, Redis, Pi-hole, and Caddy (LAN proxy on).
+
+| Open | URL |
+|------|-----|
+| Control Center (IP) | http://&lt;hostIp&gt;:8888 |
+| Control Center (LAN name) | http://home.network.lan *(after clients use &lt;hostIp&gt; as DNS)* |
+| Install apps | Library in Control Center (API key default: `modulab`) |
+
+Configure everything from **`lab.config.json`**. A generated **`.env`** (gitignored) is produced for Compose; do not edit it.
 
 | File | Purpose |
 |------|---------|
@@ -62,11 +80,10 @@ bash scripts/start.sh n8n
 bash scripts/start.sh searxng
 ```
 
-Start the default lab (Control Center, Postgres, Redis). Pi-hole is not included:
+Start everything in **`enabled`**:
 
 ```bash
 bash scripts/start.sh all
-bash scripts/start.sh pihole   # optional — only for network.lan DNS
 ```
 
 Stop a stack (containers removed, volumes kept):
@@ -132,7 +149,7 @@ bash scripts/start.sh pihole
 bash scripts/start.sh caddy
 ```
 
-That publishes DNS on **`lab.hostIp:53`** and Caddy on **host port 80** (host networking → apps on `127.0.0.1`). Point LAN DHCP DNS at **`lab.hostIp`**, then open e.g. **http://jellyfin.network.lan**.
+That publishes DNS on **`lab.hostIp:53`** and Caddy on **host port 80**. App HTTP ports are also published on **`LAB_PUBLISH_IP`** (default all interfaces), so both `http://jellyfin.network.lan` and `http://<hostIp>:8096` work. Point LAN DHCP DNS at **`lab.hostIp`** for the domain names.
 
 | URL | Stack |
 |-----|-------|
