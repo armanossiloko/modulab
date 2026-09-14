@@ -54,7 +54,11 @@ docker_compose() {
 }
 
 ensure_modulab_network() {
-  docker network create modulab >/dev/null 2>&1 || true
+  # Shared bridge used by Immich/n8n/etc. Must be external in compose files —
+  # creating it via `docker network create` (no compose labels) is intentional.
+  if ! docker network inspect modulab >/dev/null 2>&1; then
+    docker network create modulab >/dev/null
+  fi
 }
 
 stack_compose() {

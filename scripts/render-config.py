@@ -197,14 +197,20 @@ def databases_to_create(config: dict[str, Any], recipes: dict[str, dict[str, Any
 
 
 def write_bootstrap(dbs: list[tuple[str, bool]], pg_user: str) -> None:
+    # CREATE DATABASE cannot run inside DO $$ / a transaction block.
+    # \gexec runs the SELECT result as SQL only when a row is returned.
     parts = [BOOTSTRAP_HEADER]
-    for name, _needs_vector in dbs:
+    for name, needs_vector in dbs:
         parts.append(
-            f"DO $$ BEGIN\n"
-            f"  CREATE DATABASE {name} OWNER {pg_user} ENCODING 'UTF8';\n"
-            f"EXCEPTION WHEN duplicate_database THEN NULL;\n"
-            f"END $$;\n"
+            f"SELECT format('CREATE DATABASE %I OWNER %I ENCODING %L', '{name}', '{pg_user}', 'UTF8')\n"
+            f"WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '{name}')\\gexec\n"
         )
+        if needs_vector:
+            parts.append(
+                f"\\c {name}\n"
+                f"CREATE EXTENSION IF NOT EXISTS vector;\n"
+                f"CREATE EXTENSION IF NOT EXISTS vectors;\n"
+            )
     BOOTSTRAP_PATH.parent.mkdir(parents=True, exist_ok=True)
     BOOTSTRAP_PATH.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
 
