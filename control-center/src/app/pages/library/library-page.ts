@@ -53,7 +53,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
                     {{ busyId() === app.id ? 'Installing…' : 'Install' }}
                   </button>
                 }
-                @if (app.status === 'removed') {
+                @if (app.status === 'removed' && !app.core) {
                   <button
                     type="button"
                     class="btn btn--primary"
@@ -63,12 +63,15 @@ import { DashboardService } from '../../core/services/dashboard.service';
                     {{ busyId() === app.id ? 'Starting…' : 'Start' }}
                   </button>
                 }
-                @if (app.status === 'running' && (app.url || app.port)) {
+                @if (
+                  (app.status === 'running' || (app.core && app.status === 'removed')) &&
+                  (app.url || app.port)
+                ) {
                   <a class="btn btn--primary" [href]="openUrl(app)" target="_blank" rel="noopener"
                     >Open</a
                   >
                 }
-                @if (app.status === 'stopped' || app.status === 'installed') {
+                @if ((app.status === 'stopped' || app.status === 'installed') && !app.core) {
                   <button type="button" class="btn" (click)="start(app)">Start</button>
                 }
                 @if (hasUpdate(app.id)) {
