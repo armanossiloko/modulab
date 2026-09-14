@@ -25,8 +25,8 @@ services:
       DB_POSTGRESDB_USER: ${POSTGRES_USER:-modulab}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
     volumes:
-      - ./data/n8n:/home/node/.n8n
-      - ./data/n8n-local-files:/files
+      - ${LAB_HOST_ROOT:-.}/data/n8n:/home/node/.n8n
+      - ${LAB_HOST_ROOT:-.}/data/n8n-local-files:/files
     networks:
       - modulab
 

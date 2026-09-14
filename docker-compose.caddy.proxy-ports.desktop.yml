@@ -1,0 +1,12 @@
+# Merged when ENABLE_LAN_PROXY=true on Docker Desktop (Windows/macOS).
+# Host networking is not available like on Linux — publish :80 and proxy to
+# host-published app ports via host.docker.internal.
+
+services:
+  caddy:
+    ports:
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      UPSTREAM_HOST: "host.docker.internal"

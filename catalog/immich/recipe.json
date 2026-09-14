@@ -13,16 +13,15 @@
   "dns": ["immich"],
   "defaults": {
     "IMMICH_VERSION": "v3",
-    "UPLOAD_LOCATION": "./data/immich/library",
     "IMMICH_DB_NAME": "immich"
   },
   "fields": [
     {
       "key": "UPLOAD_LOCATION",
-      "label": "Photo library path",
+      "label": "Photo library path (host)",
       "type": "string",
-      "default": "./data/immich/library",
-      "required": true
+      "default": "data/immich/library",
+      "required": false
     },
     {
       "key": "IMMICH_VERSION",

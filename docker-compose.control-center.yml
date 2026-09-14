@@ -14,12 +14,11 @@ services:
       LAB_ROOT: /lab
       HOME_PORT: ${HOME_PORT:-8888}
       ASPNETCORE_URLS: http://0.0.0.0:8888
-      CONTROL_CENTER_WWWROOT: /lab/control-center/wwwroot
-      CONTROL_CENTER_ANGULAR_DIST: /lab/control-center/dist/control-center/browser
+      CONTROL_CENTER_WWWROOT: /app/wwwroot
       DOTNET_gcServer: "0"
       DOTNET_EnableDiagnostics: "0"
     ports:
       - "${LAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
     volumes:
-      - ./:/lab
+      - ${LAB_HOST_ROOT:-.}:/lab
       - /var/run/docker.sock:/var/run/docker.sock

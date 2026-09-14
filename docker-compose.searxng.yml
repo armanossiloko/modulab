@@ -8,8 +8,8 @@ services:
     ports:
       - "${LAB_PUBLISH_IP:-0.0.0.0}:${SEARXNG_PORT:-8080}:8080"
     volumes:
-      - ./data/searxng:/etc/searxng
-      - ./searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro
+      - ${LAB_HOST_ROOT:-.}/data/searxng:/etc/searxng
+      - ${LAB_HOST_ROOT:-.}/searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro
     environment:
       SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8080/}
       SEARXNG_SECRET: ${SEARXNG_SECRET:-}
@@ -18,12 +18,26 @@ services:
       - -c
       - |
         set -eu
+        tmpl=/tmp/searxng-settings.yml.template
+        # Docker Desktop creates a *directory* when the host bind path is missing —
+        # that yields an empty settings.yml and KeyError: default_doi_resolver.
+        if [ ! -f "$$tmpl" ]; then
+          echo "searxng: settings template missing or not a file: $$tmpl" >&2
+          echo "searxng: check LAB_HOST_ROOT and recreate the container" >&2
+          ls -la /tmp /etc/searxng >&2 || true
+          exit 1
+        fi
         if [ ! -s /etc/searxng/settings.yml ] || grep -q '__SEARXNG_SECRET__' /etc/searxng/settings.yml; then
           secret="$${SEARXNG_SECRET:-}"
           if [ -z "$$secret" ]; then
             secret="$$(head -c 48 /dev/urandom | base64 | tr -d '/+=' | head -c 48)"
           fi
-          sed "s|__SEARXNG_SECRET__|$$secret|g" /tmp/searxng-settings.yml.template > /etc/searxng/settings.yml
+          # Strip CR so Windows-checked-out templates do not break YAML.
+          sed "s|__SEARXNG_SECRET__|$$secret|g" "$$tmpl" | tr -d '\r' > /etc/searxng/settings.yml
+        fi
+        if [ ! -s /etc/searxng/settings.yml ]; then
+          echo "searxng: failed to seed /etc/searxng/settings.yml" >&2
+          exit 1
         fi
         exec /usr/local/searxng/entrypoint.sh
     cap_drop:

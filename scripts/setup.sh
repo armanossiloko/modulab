@@ -2,12 +2,14 @@
 # First-time / refresh setup: check deps, ensure lab.config.json, render generated files.
 # Run once after clone (or whenever you change lab.config.json).
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
-source "${root}/scripts/common.sh"
+source "${_scripts}/common.sh"
 
-bash "${root}/scripts/check-deps.sh"
+bash "${_scripts}/check-deps.sh"
 
 config="${root}/lab.config.json"
 example="${root}/lab.config.example.json"
@@ -22,7 +24,7 @@ if [[ ! -f "$config" ]]; then
 fi
 
 echo "Lab setup: rendering env files from lab.config.json..." >&2
-bash "${root}/scripts/render-config.sh"
+bash "${_scripts}/render-config.sh"
 
 mkdir -p "${root}/data" "${root}/media" "${root}/secrets"
 
@@ -41,6 +43,8 @@ Next:
 
 Default credentials are modulab / modulab (see lab.config.example.json).
 Anyone who can open Control Center can install/start/stop — keep :8888 on the LAN only.
+
+Cross-platform CLI: python3 scripts/lab.py start all
 
 UI is built into the Control Center image on first start (Docker). For local Angular
 dev: cd control-center && npm start

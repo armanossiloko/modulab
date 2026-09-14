@@ -18,7 +18,8 @@ services:
       BLOB_DIR: /data/blobs
       BLOB_GC_ENABLED: ${FUTO_NOTES_BLOB_GC_ENABLED:-true}
     volumes:
-      - ${FUTO_NOTES_DATA_DIR:-./data/futo-notes}:/data
+      # Absolute host path from render-config (LAB_HOST_ROOT + data/futo-notes).
+      - ${FUTO_NOTES_DATA_DIR}:/data
     networks:
       - modulab
 

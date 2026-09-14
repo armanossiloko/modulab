@@ -1216,12 +1216,19 @@ static string? AppOpenUrl(string labRoot, Recipe recipe)
 
 static async Task RunScriptAsync(string labRoot, string script, string? arg = null)
 {
+    // Always go through run_bash.py so Windows CRLF checkouts work inside Linux bash.
+    var runner = Path.Combine(labRoot, "scripts", "run_bash.py");
+    if (!File.Exists(runner))
+        throw new InvalidOperationException($"Missing {runner}");
+
     var scriptPath = Path.Combine(labRoot, "scripts", script);
     if (!File.Exists(scriptPath))
         throw new InvalidOperationException($"Missing {scriptPath}");
 
-    var args = arg is null ? $"\"{scriptPath}\"" : $"\"{scriptPath}\" {arg}";
-    var (exit, stdout, stderr) = await RunAsync("bash", args, labRoot);
+    var args = arg is null
+        ? $"\"{runner}\" {script}"
+        : $"\"{runner}\" {script} {arg}";
+    var (exit, stdout, stderr) = await RunAsync("python3", args, labRoot);
     if (exit != 0)
         throw new InvalidOperationException($"bash {script} failed ({exit}): {stderr}\n{stdout}".Trim());
 }

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: CRLF check
+      - name: CRLF check (tracked scripts should be LF in git)
         run: |
           if grep -Il $'\r' scripts/*.sh; then
             echo "CRLF line endings found in scripts — use LF" >&2
@@ -19,10 +19,19 @@ jobs:
       - name: Shell syntax
         run: |
           for f in scripts/*.sh; do bash -n "$f"; done
-      - name: Render config from example
+          python3 -m py_compile scripts/run_bash.py scripts/lab.py
+      - name: CRLF-safe runner
         run: |
+          # Simulate a Windows working tree: convert scripts to CRLF, then run via lab.py
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path("scripts").glob("*.sh"):
+              data = p.read_bytes().replace(b"\n", b"\r\n")
+              p.write_bytes(data)
+          PY
+          python3 scripts/lab.py check-deps
           cp lab.config.example.json lab.config.json
-          bash scripts/render-config.sh
+          python3 scripts/lab.py render-config
           test -f .env
           test -f postgres/bootstrap.sql
       - name: Compose config
@@ -30,7 +39,7 @@ jobs:
           docker compose version
           for f in docker-compose.*.yml; do
             case "$f" in
-              *.override.yml|*.dns.yml|*.proxy-ports.yml|*.lan-ports.yml|*.dns-ports.yml) continue ;;
+              *.override.yml|*.dns.yml|*.proxy-ports.yml|*.proxy-ports.desktop.yml|*.lan-ports.yml|*.dns-ports.yml) continue ;;
             esac
             echo "=== $f ==="
             docker compose --env-file .env -f "$f" config >/dev/null

@@ -1,2 +1,20 @@
-# Shell scripts: LF line endings for Linux (and Git Bash on Windows)
+# Force LF in the repo so Linux containers / bash never see CRLF, even on Windows checkouts.
+* text=auto eol=lf
 *.sh text eol=lf
+*.py text eol=lf
+*.caddy text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.cs text eol=lf
+*.ts text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.svg text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary

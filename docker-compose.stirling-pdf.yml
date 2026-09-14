@@ -5,10 +5,10 @@ services:
     ports:
       - "${LAB_PUBLISH_IP:-0.0.0.0}:8082:8080"
     volumes:
-      - ./data/stirling-pdf/tessdata:/usr/share/tessdata
-      - ./data/stirling-pdf/configs:/configs
-      - ./data/stirling-pdf/logs:/logs
-      - ./data/stirling-pdf/pipeline:/pipeline
+      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/tessdata:/usr/share/tessdata
+      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/configs:/configs
+      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/logs:/logs
+      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/pipeline:/pipeline
     environment:
       SECURITY_ENABLELOGIN: ${SECURITY_ENABLELOGIN:-false}
       LANGS: ${LANGS:-en_GB}

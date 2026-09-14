@@ -3,6 +3,9 @@
 
 # Stable project name so Control Center (cwd /lab) and host checkouts share containers.
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-modulab}"
+# Each stack is its own compose file under the same project name — siblings look like
+# "orphans" to Compose. Ignore that noise so install/start errors stay actionable.
+export COMPOSE_IGNORE_ORPHANS="${COMPOSE_IGNORE_ORPHANS:-true}"
 
 # Fallback order when lab.config.json has no "enabled" array.
 LAB_STACKS=(
@@ -28,23 +31,79 @@ require_lab_env() {
   fi
 }
 
-# Host path of the lab checkout for Compose volume binds.
-# Control Center runs with $root=/lab; the Docker daemon needs the real host path.
+# True when LAB_HOST_ROOT is a usable absolute host path for Compose binds.
+# Rejects container-only /lab and corrupted Desktop values like D:Developmentmodulab
+# (slashes stripped — Compose then joins onto /lab → "too many colons").
+lab_host_root_usable() {
+  local p="${1:-}"
+  p="${p//\\//}"
+  [[ -n "$p" ]] || return 1
+  [[ "$p" == "/lab" || "$p" == "/lab/" || "$p" == "." ]] && return 1
+  # Windows: D:/... (slash after drive is required)
+  [[ "$p" =~ ^[A-Za-z]:/ ]] && return 0
+  # Unix absolute (not the Control Center bind target alone)
+  [[ "$p" == /* && "$p" != "/lab" && "$p" != "/lab/" ]] && return 0
+  return 1
+}
+
+# Host path of the lab checkout for Compose volume binds / build context.
+# Control Center runs with $root=/lab; the Docker daemon needs the real host path
+# (Windows Docker Desktop: D:\..., Linux: /home/..., never the container-only /lab).
 compose_root() {
-  if [[ -n "${LAB_HOST_ROOT:-}" ]]; then
-    printf '%s\n' "$LAB_HOST_ROOT"
+  if lab_host_root_usable "${LAB_HOST_ROOT:-}"; then
+    printf '%s\n' "${LAB_HOST_ROOT//\\//}"
     return 0
   fi
-  if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]] && [[ -r /proc/self/mountinfo ]]; then
-    local host_path
-    host_path="$(awk '$5 == "/lab" { print $4; exit }' /proc/self/mountinfo)"
-    host_path="${host_path//\\040/ }"
-    if [[ -n "$host_path" ]]; then
+
+  if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]]; then
+    local host_path=""
+
+    # Most reliable: ask the daemon how /lab was bind-mounted into this container.
+    if command -v docker >/dev/null 2>&1; then
+      host_path="$(
+        docker inspect "$(hostname)" \
+          --format '{{range .Mounts}}{{if eq .Destination "/lab"}}{{.Source}}{{end}}{{end}}' \
+          2>/dev/null || true
+      )"
+    fi
+
+    # Fallback: parse mountinfo (Linux bind mounts). On Docker Desktop this often
+    # yields a drive-relative path like /Development/modulab — not usable as context.
+    if [[ -z "$host_path" && -r /proc/self/mountinfo ]]; then
+      host_path="$(awk '$5 == "/lab" { print $4; exit }' /proc/self/mountinfo)"
+      host_path="${host_path//\\040/ }"
+      # Reject Docker Desktop / WSL-style relative paths (no drive letter, not absolute host).
+      if [[ "$host_path" == /* && "$host_path" != /home/* && "$host_path" != /Users/* && "$host_path" != /mnt/* ]]; then
+        # Try to recover Windows drive from 9p options (path=D:\ …).
+        local opts drive
+        opts="$(awk '$5 == "/lab" { print $0; exit }' /proc/self/mountinfo)"
+        drive="$(printf '%s\n' "$opts" | sed -n 's/.*path=\([A-Za-z]\):.*/\1/p' | head -1)"
+        if [[ -n "$drive" ]]; then
+          host_path="${drive}:$(printf '%s' "$host_path" | tr '/' '\\')"
+        else
+          host_path=""
+        fi
+      fi
+    fi
+
+    if lab_host_root_usable "$host_path"; then
+      # Docker Desktop returns Windows paths with backslashes. Inside the Linux
+      # container those look *relative*, so Compose joins them onto /lab and breaks
+      # build context. Normalize to forward slashes (D:/...).
+      host_path="${host_path//\\//}"
       printf '%s\n' "$host_path"
       return 0
     fi
   fi
+
   printf '%s\n' "$root"
+}
+
+# True when the Docker engine is Docker Desktop (Windows/macOS) — host networking is not Linux-like.
+docker_desktop() {
+  local os
+  os="$(docker info --format '{{.OperatingSystem}}' 2>/dev/null || true)"
+  [[ "$os" == "Docker Desktop" ]]
 }
 
 
@@ -58,12 +117,49 @@ append_stack_override() {
   fi
 }
 
-docker_compose() {
-  local cr
-  cr="$(compose_root)"
-  docker compose --project-directory "$cr" --env-file "${root}/.env" "$@"
+# Ensure .env has LAB_HOST_ROOT (absolute host path). Required when Compose runs
+# from inside Control Center on Docker Desktop — relative binds would otherwise
+# resolve to container paths the daemon cannot use.
+ensure_lab_host_root() {
+  local host_path envf cur
+  envf="${root}/.env"
+  [[ -f "$envf" ]] || return 0
+  cur="$(grep -E '^LAB_HOST_ROOT=' "$envf" 2>/dev/null | head -1 || true)"
+  cur="${cur#LAB_HOST_ROOT=}"
+  if lab_host_root_usable "$cur"; then
+    return 0
+  fi
+  # Avoid compose_root short-circuiting on a bad/container LAB_HOST_ROOT in the env.
+  host_path="$(LAB_HOST_ROOT= compose_root)"
+  host_path="${host_path//\\//}"
+  if ! lab_host_root_usable "$host_path"; then
+    return 0
+  fi
+  LAB_ROOT="$root" NEW_ROOT="$host_path" python3 - <<'PY2'
+import os
+from pathlib import Path
+path = Path(os.environ["LAB_ROOT"]) / ".env"
+new = os.environ["NEW_ROOT"]
+lines = []
+found = False
+for line in path.read_text(encoding="utf-8").splitlines():
+    if line.startswith("LAB_HOST_ROOT="):
+        lines.append(f"LAB_HOST_ROOT={new}")
+        found = True
+    else:
+        lines.append(line)
+if not found:
+    lines.append(f"LAB_HOST_ROOT={new}")
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY2
 }
 
+docker_compose() {
+  # Use $root as project-directory so the CLI can read YAML and upload build
+  # contexts from the bind mount. Absolute host binds use LAB_HOST_ROOT in .env.
+  ensure_lab_host_root
+  docker compose --project-directory "${root}" --env-file "${root}/.env" "$@"
+}
 ensure_modulab_network() {
   # Shared bridge used by Immich/n8n/etc. Must be external in compose files —
   # creating it via `docker network create` (no compose labels) is intentional.
@@ -106,7 +202,13 @@ pihole_compose() {
 caddy_compose() {
   local files=(-f "${root}/docker-compose.caddy.yml")
   if lan_proxy_enabled; then
-    files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
+    # Linux: host networking + 127.0.0.1 upstreams.
+    # Docker Desktop (Windows/macOS): publish :80 and reach apps via host.docker.internal.
+    if docker_desktop; then
+      files+=(-f "${root}/docker-compose.caddy.proxy-ports.desktop.yml")
+    else
+      files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
+    fi
   fi
   append_stack_override caddy files
   docker_compose "${files[@]}" "$@"
@@ -260,10 +362,12 @@ lab_dashboard_url() {
 }
 
 lan_proxy_enabled() {
-  local line
+  local line val
   [[ -f "${root}/.env" ]] || return 1
   line="$(grep -E '^ENABLE_LAN_PROXY=' "${root}/.env" | head -1 || true)"
-  [[ "${line#ENABLE_LAN_PROXY=}" == "true" ]]
+  val="${line#ENABLE_LAN_PROXY=}"
+  val="${val%%$'\r'}"
+  [[ "$val" == "true" ]]
 }
 
 lab_domain() {

@@ -4,10 +4,12 @@
 # Enables dependsOn stacks automatically.
 
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
-source "${root}/scripts/common.sh"
+source "${_scripts}/common.sh"
 
 id="${1:?Usage: bash scripts/install.sh <recipe-id> [json-config]}"
 config_json="${2:-{}}"
@@ -92,6 +94,6 @@ config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 print(f"enabled {', '.join(enabled)}", flush=True)
 PY
 
-bash "${root}/scripts/render-config.sh"
-bash "${root}/scripts/start.sh" "$id"
-bash "${root}/scripts/refresh-edge.sh"
+bash "${_scripts}/render-config.sh"
+bash "${_scripts}/start.sh" "$id"
+bash "${_scripts}/refresh-edge.sh"

@@ -7,13 +7,20 @@ Each stack is a root file `docker-compose.<name>.yml`.
 ## Prerequisites
 
 - **Docker Engine** with Compose v2 (`docker compose`) — not Podman for this project
-- Linux host recommended (Control Center talks to Docker via `/var/run/docker.sock`)
+- **Python 3** (used as the cross-platform CLI entrypoint)
 - Your server’s **LAN IP** (example below uses `192.168.1.10` — replace with yours)
 
 Find your LAN IP:
 
 ```bash
+# Linux
 hostname -I | awk '{print $1}'
+
+# macOS
+ipconfig getifaddr en0
+
+# Windows (PowerShell)
+Get-NetIPAddress -AddressFamily IPv4 | Select-Object IPAddress
 ```
 
 ## Quick start (fresh clone)
@@ -21,7 +28,7 @@ hostname -I | awk '{print $1}'
 ```bash
 git clone https://github.com/armanossiloko/modulab.git
 cd modulab
-bash scripts/setup.sh
+python3 scripts/lab.py setup
 ```
 
 That creates **`lab.config.json`** from [`lab.config.example.json`](lab.config.example.json) and renders `.env`.
@@ -32,9 +39,11 @@ That creates **`lab.config.json`** from [`lab.config.example.json`](lab.config.e
 2. Apply config and start enabled stacks:
 
 ```bash
-bash scripts/render-config.sh
-bash scripts/start.sh all
+python3 scripts/lab.py render-config
+python3 scripts/lab.py start all
 ```
+
+`python3 scripts/lab.py` is the supported entrypoint on **Linux, macOS, and Windows**. It LF-normalizes shell scripts before running them, so Windows checkouts work when Control Center (Linux container) executes the same scripts via the bind mount.
 
 3. Open Control Center:
    - **By IP:** `http://192.168.1.10:8888` (use *your* `hostIp`)
@@ -86,7 +95,7 @@ Anyone who can open Control Center can install/start/stop apps (LAN reachability
 After every edit:
 
 ```bash
-bash scripts/render-config.sh
+python3 scripts/lab.py render-config
 ```
 
 Sensitive values can live under `secrets/` and be referenced, e.g. `"picoshareAdminSecret": "$secret:picoshare-admin"`.
@@ -174,8 +183,8 @@ More detail: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md).
 **CLI:**
 
 ```bash
-bash scripts/install.sh jellyfin
-bash scripts/install.sh it-tools
+python3 scripts/lab.py install jellyfin
+python3 scripts/lab.py install it-tools
 ```
 
 Install / start / uninstall will:
@@ -190,13 +199,13 @@ Recipes live in [`catalog/<id>/recipe.json`](catalog/) (`proxy`, `dns`, `depends
 ## Day-to-day commands
 
 ```bash
-bash scripts/start.sh all              # start enabled[]
-bash scripts/start.sh jellyfin         # one stack
-bash scripts/stop.sh jellyfin          # stop one (volumes kept)
-bash scripts/stop.sh all
-bash scripts/render-config.sh          # after editing lab.config.json
-bash scripts/refresh-edge.sh           # reload Pi-hole DNS + Caddy proxy
-bash scripts/update.sh <stack>         # pull + recreate
+python3 scripts/lab.py start all              # start enabled[]
+python3 scripts/lab.py start jellyfin         # one stack
+python3 scripts/lab.py stop jellyfin          # stop one (volumes kept)
+python3 scripts/lab.py stop all
+python3 scripts/lab.py render-config          # after editing lab.config.json
+python3 scripts/lab.py refresh-edge           # reload Pi-hole DNS + Caddy proxy
+python3 scripts/lab.py update <stack>         # pull + recreate
 ```
 
 VS Code / Cursor tasks: **lab: setup**, **lab: render config**, **docker-compose: all up/down**.
@@ -214,7 +223,7 @@ Modulab.slnx
 
 - Production UI is built **inside the Docker image**
 - Local UI dev: `cd control-center && npm start` (proxies `/api` to `:8888`)
-- After API changes: `bash scripts/generate-api.sh`
+- After API changes: `bash scripts/generate-api.sh` (dev machine; LF scripts or run via `python3 scripts/run_bash.py generate-api.sh`)
 
 ## Stacks overview
 
@@ -240,7 +249,7 @@ Modulab.slnx
 ### Postgres
 
 ```bash
-bash scripts/start.sh postgres
+python3 scripts/lab.py start postgres
 ```
 
 - Host: `127.0.0.1:5432` · Docker hostname: `postgres` on **`modulab`**
@@ -252,9 +261,9 @@ bash scripts/start.sh postgres
 
 See install commands above and stack-specific notes in older docs sections:
 
-- Immich: Library or `bash scripts/install.sh immich` — UI on `:2283` or `immich.<domain>`
+- Immich: Library or `python3 scripts/lab.py install immich` — UI on `:2283` or `immich.<domain>`
 - FUTO Notes: sync password from `lab.futoNotesPassword`; URL `:3005` or `notes.<domain>`
-- Jellyfin: container user `1000:1000`; `scripts/start.sh` creates `./data/jellyfin` and `./media` owned by UID 1000 before start (Docker would otherwise create them as root and Jellyfin crash-loops)
+- Jellyfin: start ensures config/cache dirs exist; `media/` may be a real folder or host symlink. On Linux you may set `user: "1000:1000"` via `docker-compose.jellyfin.override.yml` (avoid that on Docker Desktop — bind mounts break with fixed UIDs)
 - n8n: shared DB `n8n`; host/webhook URLs follow `lab.domain`
 - SearXNG: settings from `searxng/settings.yml.template`
 
@@ -273,6 +282,10 @@ See install commands above and stack-specific notes in older docs sections:
 |---------|----------------|
 | `*.network.lan` does not resolve | Client DNS is not `lab.hostIp` |
 | `http://<ip>/` shows a short stub text | That is Caddy’s default on port 80 — use a hostname or `http://<ip>:<port>` |
+| App shows **Removed** after install (Docker Desktop) | Compose bind path was wrong (`LAB_HOST_ROOT`). Reinstall after `python3 scripts/lab.py render-config`; Control Center should repair host paths automatically |
+| Immich crash-loops with `corrupted migrations` | Shared Postgres DB was partially migrated. Drop and recreate only the `immich` database, then reinstall Immich (photo files under `data/immich/library` are kept) |
+| SearXNG **500** / `KeyError: default_doi_resolver` | Empty or missing `settings.yml` (bad Desktop bind turned the template into a directory). Recreate: `python3 scripts/lab.py install searxng` — UI is `http://127.0.0.1:8080` |
+| Install from Control Center fails with `$'\r': command not found` | Fixed: Control Center runs scripts via `scripts/run_bash.py` (LF-normalized). Rebuild/restart control-center on an older image. |
 | Install from Control Center fails on bind mounts | Fixed via `COMPOSE_PROJECT_NAME` + host project directory detection; ensure you are on a current `master` |
 | Port 53 conflict | Pi-hole LAN mode binds DNS to **`lab.hostIp:53`** only (avoids systemd-resolved on `127.0.0.53`) |
 

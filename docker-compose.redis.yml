@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - ./data/redis:/data
+      - ${LAB_HOST_ROOT:-.}/data/redis:/data
 
 networks:
   modulab:

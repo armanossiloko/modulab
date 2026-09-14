@@ -2,7 +2,10 @@
 # Create control-center/wwwroot and seed dashboard.json from tracked defaults.
 # Safe to re-run: never overwrites an existing dashboard.json.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
+cd "$ROOT"
 WWW="$ROOT/control-center/wwwroot"
 DEFAULTS="$ROOT/control-center/defaults"
 

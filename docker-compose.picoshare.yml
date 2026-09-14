@@ -6,7 +6,7 @@ services:
       - "${LAB_PUBLISH_IP:-0.0.0.0}:${PORT:-4001}:${PORT:-4001}/tcp"
     command: -db /data/store.db
     volumes:
-      - ./data/picoshare:/data
+      - ${LAB_HOST_ROOT:-.}/data/picoshare:/data
     environment:
       PORT: ${PORT:-4001}
       PS_SHARED_SECRET: ${PS_SHARED_SECRET:?Set picoshareAdminSecret in lab.config.json}
