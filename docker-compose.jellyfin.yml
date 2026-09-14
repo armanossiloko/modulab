@@ -5,8 +5,8 @@ services:
     user: "1000:1000"
     network_mode: "bridge"
     ports:
-      - "0.0.0.0:8096:8096"
-      - "0.0.0.0:8920:8920"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:8096:8096"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:8920:8920"
     volumes:
       - ./data/jellyfin/config:/config
       - ./data/jellyfin/cache:/cache

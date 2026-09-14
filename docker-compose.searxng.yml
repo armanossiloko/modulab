@@ -6,7 +6,7 @@ services:
     container_name: searxng
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${SEARXNG_PORT:-8080}:8080"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:${SEARXNG_PORT:-8080}:8080"
     volumes:
       - ./data/searxng:/etc/searxng
       - ./searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro

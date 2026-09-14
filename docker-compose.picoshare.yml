@@ -3,7 +3,7 @@ services:
     image: mtlynch/picoshare:latest
     container_name: picoshare
     ports:
-      - "${PORT:-4001}:${PORT:-4001}/tcp"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:${PORT:-4001}:${PORT:-4001}/tcp"
     command: -db /data/store.db
     volumes:
       - ./data/picoshare:/data

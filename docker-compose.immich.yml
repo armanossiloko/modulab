@@ -17,7 +17,7 @@ services:
       REDIS_HOSTNAME: redis
       TZ: ${TZ:-UTC}
     ports:
-      - "127.0.0.1:2283:2283"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:2283:2283"
     networks:
       - modulab
     depends_on: []

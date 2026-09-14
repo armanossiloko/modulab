@@ -7,7 +7,7 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5678:5678"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:5678:5678"
     environment:
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
       N8N_HOST: ${N8N_HOST:-localhost}

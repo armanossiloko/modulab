@@ -110,8 +110,8 @@ Install (UI or CLI) runs `render-config.sh`, starts the app (and `dependsOn`), t
 
 | Mode | What to run | How you reach services |
 |------|-------------|-------------------------|
-| **Direct** (default) | App stacks only | `http://127.0.0.1:8096`, `:5678`, … |
-| **Control Center** | `control-center` | **http://127.0.0.1:8888** (UI + `/api`) |
+| **Direct** (default) | App stacks only | `http://<host-ip>:8096`, `:5678`, … (published on `LAB_PUBLISH_IP`, default all interfaces) |
+| **Control Center** | `control-center` | **http://127.0.0.1:8888** or **http://&lt;host-ip&gt;:8888** |
 | **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
 
 Config: [catalog/](catalog/) · [control-center/](control-center/)

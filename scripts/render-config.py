@@ -117,7 +117,9 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "DOTNET_gcServer": "0",
         "DOTNET_EnableDiagnostics": "0",
         "ENABLE_LAN_PROXY": False,
-        # LAN Caddy overlay forces 127.0.0.1 (host network). Keep the same default here.
+        # Publish HTTP apps on all interfaces so http://<LAB_HOST_IP>:<port> works on the LAN.
+        # Postgres stays on loopback. Caddy still proxies via 127.0.0.1.
+        "LAB_PUBLISH_IP": "0.0.0.0",
         "UPSTREAM_HOST": "127.0.0.1",
         "CADDY_TAG": "2-alpine",
         "N8N_HOST": f"n8n.{domain}",

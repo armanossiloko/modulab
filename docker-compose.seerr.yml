@@ -7,7 +7,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       TZ: ${TZ:-UTC}
     ports:
-      - "127.0.0.1:5055:5055"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:5055:5055"
     volumes:
       - ./data/seerr/config:/app/config
     healthcheck:

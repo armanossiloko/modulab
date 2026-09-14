@@ -3,7 +3,7 @@ services:
     image: ghcr.io/alam00000/bentopdf-simple:latest
     container_name: bentopdf
     ports:
-      - "127.0.0.1:8084:8080"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:8084:8080"
     environment:
       DISABLE_IPV6: ${DISABLE_IPV6:-false}
     restart: unless-stopped

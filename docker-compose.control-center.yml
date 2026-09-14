@@ -1,5 +1,5 @@
 # Control Center — UI + API in one directory (Native AOT .NET 10).
-# Open http://127.0.0.1:8888
+# Open http://127.0.0.1:8888 or http://<LAB_HOST_IP>:8888 when published on LAN.
 
 services:
   control-center:
@@ -18,7 +18,7 @@ services:
       DOTNET_EnableDiagnostics: "0"
       CONTROL_CENTER_API_KEY: ${CONTROL_CENTER_API_KEY:-${LAB_API_KEY:-}}
     ports:
-      - "127.0.0.1:${HOME_PORT:-8888}:8888"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
     volumes:
       - ./:/lab
       - /var/run/docker.sock:/var/run/docker.sock

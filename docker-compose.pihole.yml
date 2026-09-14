@@ -14,7 +14,7 @@ services:
     ports:
       # DNS ports come from docker-compose.pihole.dns-ports.yml (loopback)
       # or docker-compose.pihole.lan-ports.yml when ENABLE_LAN_PROXY=true.
-      - "127.0.0.1:5080:80/tcp"
+      - "${LAB_PUBLISH_IP:-0.0.0.0}:5080:80/tcp"
     volumes:
       - ./data/pihole/etc-pihole:/etc/pihole
     cap_add:
