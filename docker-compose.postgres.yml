@@ -54,4 +54,5 @@ services:
 
 networks:
   modulab:
+    external: true
     name: modulab
