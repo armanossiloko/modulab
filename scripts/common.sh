@@ -47,6 +47,17 @@ compose_root() {
   printf '%s\n' "$root"
 }
 
+
+# Append optional per-stack override if present (explicit -f; Compose will not auto-merge).
+append_stack_override() {
+  local name="$1"
+  local -n files_ref=$2
+  local override="${root}/docker-compose.${name}.override.yml"
+  if [[ -f "$override" ]]; then
+    files_ref+=(-f "$override")
+  fi
+}
+
 docker_compose() {
   local cr
   cr="$(compose_root)"
@@ -72,7 +83,9 @@ stack_compose() {
     caddy_compose "$@"
     return
   fi
-  docker_compose -f "${root}/docker-compose.${name}.yml" "$@"
+  local files=(-f "${root}/docker-compose.${name}.yml")
+  append_stack_override "$name" files
+  docker_compose "${files[@]}" "$@"
 }
 
 pihole_compose() {
@@ -86,6 +99,7 @@ pihole_compose() {
   else
     files+=(-f "${root}/docker-compose.pihole.dns-ports.yml")
   fi
+  append_stack_override pihole files
   docker_compose "${files[@]}" "$@"
 }
 
@@ -94,6 +108,7 @@ caddy_compose() {
   if lan_proxy_enabled; then
     files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
   fi
+  append_stack_override caddy files
   docker_compose "${files[@]}" "$@"
 }
 
@@ -147,7 +162,9 @@ stack_down() {
     pihole) pihole_compose down "$@" ;;
     *)
       if [[ -f "${root}/docker-compose.${name}.yml" ]]; then
-        docker_compose -f "${root}/docker-compose.${name}.yml" down "$@"
+        local files=(-f "${root}/docker-compose.${name}.yml")
+        append_stack_override "$name" files
+        docker_compose "${files[@]}" down "$@"
       fi
       ;;
   esac

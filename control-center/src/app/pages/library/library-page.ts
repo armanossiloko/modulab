@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
-import { CatalogItem } from '../../api/generated';
+import { CatalogItem, RecipeField } from '../../api/generated';
 import { DashboardService } from '../../core/services/dashboard.service';
 
 @Component({
@@ -44,13 +44,8 @@ import { DashboardService } from '../../core/services/dashboard.service';
               </div>
               <div class="library-actions">
                 @if (app.status === 'available' && app.installable !== false) {
-                  <button
-                    type="button"
-                    class="btn btn--primary"
-                    [disabled]="busyId() === app.id"
-                    (click)="install(app)"
-                  >
-                    {{ busyId() === app.id ? 'Installing…' : 'Install' }}
+                  <button type="button" class="btn btn--primary" (click)="beginInstall(app)">
+                    Install
                   </button>
                 }
                 @if (app.status === 'removed' && !app.core) {
@@ -72,7 +67,14 @@ import { DashboardService } from '../../core/services/dashboard.service';
                   >
                 }
                 @if ((app.status === 'stopped' || app.status === 'installed') && !app.core) {
-                  <button type="button" class="btn" (click)="start(app)">Start</button>
+                  <button
+                    type="button"
+                    class="btn"
+                    [disabled]="busyId() === app.id"
+                    (click)="start(app)"
+                  >
+                    {{ busyId() === app.id ? 'Starting…' : 'Start' }}
+                  </button>
                 }
                 @if (hasUpdate(app.id)) {
                   <button
@@ -101,6 +103,49 @@ import { DashboardService } from '../../core/services/dashboard.service';
             <li class="empty-note">No recipes found.</li>
           }
         </ul>
+      }
+
+      @if (installing()) {
+        <div class="modal-backdrop" (click)="cancelInstall()"></div>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+          <h2 id="install-title">Install {{ installing()!.name }}</h2>
+          @if ((installing()!.fields.length) === 0) {
+            <p class="modal-note">No extra options — install with recipe defaults?</p>
+          } @else {
+            <div class="field-list">
+              @for (field of installing()!.fields; track field.key) {
+                <label class="field">
+                  <span
+                    >{{ field.label || field.key
+                    }}@if (field.required) {
+                      <span aria-hidden="true">*</span>
+                    }</span
+                  >
+                  @if (field.type === 'boolean') {
+                    <input type="checkbox" [(ngModel)]="installDraft[field.key!]" />
+                  } @else {
+                    <input
+                      [type]="field.type === 'password' ? 'password' : 'text'"
+                      [(ngModel)]="installDraft[field.key!]"
+                      [required]="!!field.required"
+                    />
+                  }
+                </label>
+              }
+            </div>
+          }
+          <div class="modal-actions">
+            <button type="button" class="btn" (click)="cancelInstall()">Cancel</button>
+            <button
+              type="button"
+              class="btn btn--primary"
+              [disabled]="busyId() === installing()!.id"
+              (click)="confirmInstall()"
+            >
+              {{ busyId() === installing()!.id ? 'Installing…' : 'Install' }}
+            </button>
+          </div>
+        </div>
       }
     </section>
   `,
@@ -202,6 +247,61 @@ import { DashboardService } from '../../core/services/dashboard.service';
       gap: 0.4rem;
       align-items: flex-start;
     }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 40;
+    }
+    .modal {
+      position: fixed;
+      z-index: 50;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(420px, calc(100vw - 2rem));
+      padding: 1.1rem 1.2rem;
+      border-radius: var(--radius);
+      background: var(--widget);
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    }
+    .modal h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+    }
+    .modal-note {
+      margin: 0 0 1rem;
+      color: var(--text-dim);
+      font-size: 0.92rem;
+    }
+    .field-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-bottom: 1rem;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.88rem;
+    }
+    .field input[type='text'],
+    .field input[type='password'] {
+      height: var(--control-h);
+      padding: 0 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg, #111);
+      color: var(--text);
+      font: inherit;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
   `,
 })
 export class LibraryPage implements OnInit {
@@ -210,6 +310,8 @@ export class LibraryPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly apps = signal<CatalogItem[]>([]);
   readonly busyId = signal<string | null>(null);
+  readonly installing = signal<CatalogItem | null>(null);
+  installDraft: Record<string, string | boolean> = {};
 
   filteredApps(): CatalogItem[] {
     const q = this.query().trim().toLowerCase();
@@ -248,10 +350,35 @@ export class LibraryPage implements OnInit {
     return this.dash.updateAvailable(id);
   }
 
+  /** Prefer LAN hostname when the UI is opened remotely; keep port for direct access. */
   openUrl(app: CatalogItem): string {
-    if (app.url) return app.url;
     const path = app.path || '';
-    return `http://127.0.0.1:${app.port}${path}`;
+    const host = window.location.hostname || '127.0.0.1';
+    const port = app.port;
+    if (!port) return `http://${host}${path}`;
+
+    // If Control Center is reached via home.network.lan, open peer hostnames on the same domain.
+    const parts = host.split('.');
+    if (parts.length >= 2 && host !== '127.0.0.1' && host !== 'localhost') {
+      const domain = parts.slice(1).join('.');
+      const label = this.proxyLabel(app);
+      if (label && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+        return `http://${label}.${domain}${path}`;
+      }
+    }
+
+    return `http://${host}:${port}${path}`;
+  }
+
+  private proxyLabel(app: CatalogItem): string | null {
+    // Recipe proxy host usually matches dns label; fall back to id with common aliases.
+    const aliases: Record<string, string> = {
+      'stirling-pdf': 'stirling',
+      'futo-notes': 'notes',
+      'control-center': 'home',
+      'it-tools': 'it-tools',
+    };
+    return aliases[app.id] || app.id;
   }
 
   refresh(): void {
@@ -269,12 +396,38 @@ export class LibraryPage implements OnInit {
     return status;
   }
 
-  install(app: CatalogItem): void {
-    if (!confirm(`Install ${app.name} with default options?`)) return;
+  beginInstall(app: CatalogItem): void {
+    this.installDraft = {};
+    for (const field of app.fields || []) {
+      this.installDraft[field.key || ''] = this.defaultFieldValue(field);
+    }
+    this.installing.set(app);
+  }
+
+  cancelInstall(): void {
+    this.installing.set(null);
+    this.installDraft = {};
+  }
+
+  confirmInstall(): void {
+    const app = this.installing();
+    if (!app) return;
+
+    for (const field of app.fields || []) {
+      if (!field.required || !field.key) continue;
+      const value = this.installDraft[field.key];
+      if (field.type === 'boolean') continue;
+      if (value === undefined || value === null || String(value).trim() === '') {
+        alert(`${field.label || field.key} is required`);
+        return;
+      }
+    }
+
     this.busyId.set(app.id);
-    this.dash.installApp(app.id, {}).subscribe({
+    this.dash.installApp(app.id, { ...this.installDraft }).subscribe({
       next: () => {
         this.busyId.set(null);
+        this.cancelInstall();
         this.refresh();
       },
       error: (err: Error) => {
@@ -282,6 +435,19 @@ export class LibraryPage implements OnInit {
         alert(err.message);
       },
     });
+  }
+
+  private defaultFieldValue(field: RecipeField): string | boolean {
+    if (field.type === 'boolean') {
+      const d = field.default;
+      if (typeof d === 'boolean') return d;
+      if (d && typeof d === 'object' && 'valueKind' in d) return false;
+      return d === true || d === 'true';
+    }
+    const d = field.default;
+    if (d == null) return '';
+    if (typeof d === 'string' || typeof d === 'number' || typeof d === 'boolean') return String(d);
+    return '';
   }
 
   start(app: CatalogItem): void {

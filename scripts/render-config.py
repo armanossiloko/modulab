@@ -129,13 +129,13 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "IMMICH_VERSION": "v3",
         "UPLOAD_LOCATION": "./data/immich/library",
         "PIHOLE_UPSTREAM_DNS": "1.1.1.1;1.0.0.1",
-        "PIHOLE_TAG": "latest",
+        "PIHOLE_TAG": "2025.03.0",
         "PORT": 4001,
         "PS_BEHIND_PROXY": bool(lab.get("enableLanProxy") is True),
         "SECURITY_ENABLELOGIN": False,
         "LANGS": "en_GB",
         "DISABLE_IPV6": False,
-        "LOG_LEVEL": "debug",
+        "LOG_LEVEL": "info",
     }
 
     # Recipe defaults (non-install form) then per-stack config overrides
@@ -162,6 +162,14 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
     env["PIHOLE_LOCAL_DOMAIN"] = domain
     env["LAB_HOST_IP"] = lab.get("hostIp", "127.0.0.1")
     env["GENERIC_TIMEZONE"] = timezone
+
+    # When LAN proxy is on, prefer *.domain URLs for apps that advertise a public base URL.
+    lan = env.get("ENABLE_LAN_PROXY")
+    lan_on = lan is True or str(lan).lower() == "true"
+    if lan_on:
+        env["PS_BEHIND_PROXY"] = True
+        if env.get("SEARXNG_BASE_URL") in ("http://localhost:8080/", "http://127.0.0.1:8080/"):
+            env["SEARXNG_BASE_URL"] = f"http://searxng.{domain}/"
 
     return env
 

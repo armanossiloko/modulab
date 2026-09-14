@@ -1,4 +1,6 @@
-# Control Center — UI + API in one directory (Native AOT .NET 10).
+# Control Center — UI + API (Native AOT .NET 10).
+# SPA is baked into the image at /app/wwwroot (do not override to host wwwroot).
+# Dashboard JSON lives on the host at control-center/wwwroot/dashboard.json via LAB_ROOT.
 # Open http://127.0.0.1:8888 or http://<LAB_HOST_IP>:8888 when published on LAN.
 
 services:

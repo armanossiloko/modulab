@@ -42,16 +42,16 @@ start_stack() {
       wait_for_redis
       ;;
     caddy)
-      python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
+      python3 "${root}/scripts/generate-edge.py"
       caddy_compose up -d "$@"
       ;;
     pihole)
-      python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
+      python3 "${root}/scripts/generate-edge.py"
       stack_compose pihole up -d "$@"
       ;;
     control-center)
-      python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
-      bash "${root}/scripts/ensure-wwwroot.sh" >/dev/null 2>&1 || true
+      python3 "${root}/scripts/generate-edge.py"
+      bash "${root}/scripts/ensure-wwwroot.sh"
       stack_compose control-center up -d --build "$@"
       ;;
     jellyfin)

@@ -1,15 +1,30 @@
 #!/usr/bin/env bash
-# Copy lab.config.example.json → lab.config.json (if missing), render all generated files.
+# First-time / refresh setup: check deps, ensure lab.config.json, render generated files.
 # Run once after clone (or whenever you change lab.config.json).
-
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 # shellcheck source=common.sh
 source "${root}/scripts/common.sh"
 
+bash "${root}/scripts/check-deps.sh"
+
+config="${root}/lab.config.json"
+example="${root}/lab.config.example.json"
+
+if [[ ! -f "$config" ]]; then
+  if [[ ! -f "$example" ]]; then
+    echo "Missing ${example}" >&2
+    exit 1
+  fi
+  cp "$example" "$config"
+  echo "Created lab.config.json from lab.config.example.json" >&2
+fi
+
 echo "Lab setup: rendering env files from lab.config.json..." >&2
 bash "${root}/scripts/render-config.sh"
+
+mkdir -p "${root}/data" "${root}/media" "${root}/secrets"
 
 host_ip="$(grep -E '^LAB_HOST_IP=' "${root}/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r"' || true)"
 host_ip="${host_ip:-<your-lan-ip>}"
@@ -25,7 +40,7 @@ Next:
   4. Open http://${host_ip}:8888  (or http://home.network.lan if clients use ${host_ip} as DNS)
 
 Default credentials are modulab / modulab (see lab.config.example.json).
-Control Center mutating API calls need header X-Lab-Key: modulab (the UI prompts for it).
+Anyone who can open Control Center can install/start/stop — keep :8888 on the LAN only.
 
 UI is built into the Control Center image on first start (Docker). For local Angular
 dev: cd control-center && npm start

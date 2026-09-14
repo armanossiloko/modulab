@@ -27,13 +27,19 @@ lab.config.json
 .env.*
 !.env.example
 
-# Optional per-machine Compose overrides (Linux: docker compose merges these automatically)
+# Optional per-machine Compose overlays (merged explicitly by scripts/common.sh).
+# With `docker compose -f …`, Compose does NOT auto-merge docker-compose.override.yml.
 docker-compose.override.yml
 docker-compose.*.override.yml
 
 # Logs and temp files
 *.log
 *.tmp
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
 
 # Generated Control Center UI + runtime configs (seeded by scripts/ensure-wwwroot.sh)
 control-center/wwwroot/
