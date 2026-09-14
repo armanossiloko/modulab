@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Shared helpers for scripts/setup.sh, scripts/start.sh, and scripts/stop.sh
 
+# Stable project name so Control Center (cwd /lab) and host checkouts share containers.
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-modulab}"
+
 # Fallback order when lab.config.json has no "enabled" array.
 LAB_STACKS=(
   control-center
@@ -25,6 +28,31 @@ require_lab_env() {
   fi
 }
 
+# Host path of the lab checkout for Compose volume binds.
+# Control Center runs with $root=/lab; the Docker daemon needs the real host path.
+compose_root() {
+  if [[ -n "${LAB_HOST_ROOT:-}" ]]; then
+    printf '%s\n' "$LAB_HOST_ROOT"
+    return 0
+  fi
+  if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]] && [[ -r /proc/self/mountinfo ]]; then
+    local host_path
+    host_path="$(awk '$5 == "/lab" { print $4; exit }' /proc/self/mountinfo)"
+    host_path="${host_path//\\040/ }"
+    if [[ -n "$host_path" ]]; then
+      printf '%s\n' "$host_path"
+      return 0
+    fi
+  fi
+  printf '%s\n' "$root"
+}
+
+docker_compose() {
+  local cr
+  cr="$(compose_root)"
+  docker compose --project-directory "$cr" --env-file "${root}/.env" "$@"
+}
+
 ensure_modulab_network() {
   docker network create modulab >/dev/null 2>&1 || true
 }
@@ -40,7 +68,7 @@ stack_compose() {
     caddy_compose "$@"
     return
   fi
-  docker compose --env-file "${root}/.env" -f "${root}/docker-compose.${name}.yml" "$@"
+  docker_compose -f "${root}/docker-compose.${name}.yml" "$@"
 }
 
 pihole_compose() {
@@ -54,7 +82,7 @@ pihole_compose() {
   else
     files+=(-f "${root}/docker-compose.pihole.dns-ports.yml")
   fi
-  docker compose --env-file "${root}/.env" "${files[@]}" "$@"
+  docker_compose "${files[@]}" "$@"
 }
 
 caddy_compose() {
@@ -62,7 +90,49 @@ caddy_compose() {
   if lan_proxy_enabled; then
     files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
   fi
-  docker compose --env-file "${root}/.env" "${files[@]}" "$@"
+  docker_compose "${files[@]}" "$@"
+}
+
+# True if id is listed in lab.config.json enabled[].
+stack_is_enabled() {
+  local id="$1"
+  LAB_ROOT="$root" STACK_ID="$id" python3 - <<'PY'
+import json, os
+from pathlib import Path
+root = Path(os.environ["LAB_ROOT"])
+want = os.environ["STACK_ID"]
+path = root / "lab.config.json"
+if not path.is_file():
+    raise SystemExit(1)
+data = json.loads(path.read_text(encoding="utf-8"))
+enabled = data.get("enabled") or []
+raise SystemExit(0 if want in enabled else 1)
+PY
+}
+
+container_exists() {
+  local name="$1"
+  docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$name"
+}
+
+# After install/uninstall/render: recreate Pi-hole + Caddy when LAN proxy is on
+# and those stacks are enabled or already present, so DNS/proxy pick up new recipes.
+refresh_edge_stacks() {
+  if ! lan_proxy_enabled; then
+    echo "LAN proxy disabled — skip edge refresh" >&2
+    return 0
+  fi
+
+  python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
+
+  if stack_is_enabled pihole || container_exists pihole; then
+    echo "Refreshing Pi-hole (LAN DNS)..." >&2
+    pihole_compose up -d --force-recreate || echo "warning: Pi-hole refresh failed" >&2
+  fi
+  if stack_is_enabled caddy || container_exists caddy; then
+    echo "Refreshing Caddy (LAN proxy)..." >&2
+    caddy_compose up -d --force-recreate || echo "warning: Caddy refresh failed" >&2
+  fi
 }
 
 stack_down() {
@@ -73,7 +143,7 @@ stack_down() {
     pihole) pihole_compose down "$@" ;;
     *)
       if [[ -f "${root}/docker-compose.${name}.yml" ]]; then
-        docker compose --env-file "${root}/.env" -f "${root}/docker-compose.${name}.yml" down "$@"
+        docker_compose -f "${root}/docker-compose.${name}.yml" down "$@"
       fi
       ;;
   esac

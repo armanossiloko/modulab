@@ -106,6 +106,8 @@ Apps are defined as **recipes** (`catalog/<id>/recipe.json`). `lab.config.json` 
 bash scripts/install.sh jellyfin
 ```
 
+Install (UI or CLI) runs `render-config.sh`, starts the app (and `dependsOn`), then **`refresh-edge.sh`**: when `ENABLE_LAN_PROXY=true` and Pi-hole/Caddy are enabled or already running, they are recreated so new `*.<domain>` DNS/proxy routes apply immediately.
+
 | Mode | What to run | How you reach services |
 |------|-------------|-------------------------|
 | **Direct** (default) | App stacks only | `http://127.0.0.1:8096`, `:5678`, … |

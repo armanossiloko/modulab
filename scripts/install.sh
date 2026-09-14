@@ -94,3 +94,4 @@ PY
 
 bash "${root}/scripts/render-config.sh"
 bash "${root}/scripts/start.sh" "$id"
+bash "${root}/scripts/refresh-edge.sh"

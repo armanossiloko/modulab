@@ -34,6 +34,7 @@ export type CatalogItem = {
     category: string;
     port: null | number | string;
     path: null | string;
+    url: null | string;
     installable: boolean;
     core: boolean;
     dependsOn: Array<string>;

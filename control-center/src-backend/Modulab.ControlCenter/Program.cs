@@ -293,7 +293,7 @@ app.MapGet("/api/catalog", () =>
         var (running, present) = ProbeContainers(labRoot, recipes);
         var items = recipes
             .Where(r => !string.Equals(r.Id, "control-center", StringComparison.OrdinalIgnoreCase))
-            .Select(r => ToCatalogItem(r, enabled, running, present))
+            .Select(r => ToCatalogItem(labRoot, r, enabled, running, present))
             .ToList();
         return Results.Json(new CatalogResponse(items), LabJsonContext.Default.CatalogResponse);
     }
@@ -315,7 +315,7 @@ app.MapGet("/api/apps/{id}", (string id) =>
 
     var enabled = LoadEnabled(labRoot);
     var (running, present) = ProbeContainers(labRoot, [recipe]);
-    return Results.Json(ToCatalogItem(recipe, enabled, running, present), LabJsonContext.Default.CatalogItem);
+    return Results.Json(ToCatalogItem(labRoot, recipe, enabled, running, present), LabJsonContext.Default.CatalogItem);
 })
     .WithName("GetApp")
     .WithTags("Apps")
@@ -359,6 +359,8 @@ app.MapPost("/api/apps/{id}/start", async (string id) =>
         EnsureEnabled(labRoot, id);
         await RunScriptAsync(labRoot, "render-config.sh");
         await RunScriptAsync(labRoot, "start.sh", id);
+        try { await RunScriptAsync(labRoot, "refresh-edge.sh"); }
+        catch (Exception ex) { Console.Error.WriteLine($"refresh-edge after start: {ex.Message}"); }
         return Results.Json(new ApiMessage($"Started {id}"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
@@ -466,6 +468,8 @@ app.MapDelete("/api/apps/{id}", async (string id) =>
         await RunScriptAsync(labRoot, "stop.sh", id);
         DisableApp(labRoot, id);
         await RunScriptAsync(labRoot, "render-config.sh");
+        try { await RunScriptAsync(labRoot, "refresh-edge.sh"); }
+        catch (Exception ex) { Console.Error.WriteLine($"refresh-edge after uninstall: {ex.Message}"); }
         return Results.Json(new ApiMessage($"Uninstalled {id} (volumes kept)"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
@@ -753,8 +757,12 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
 
     var config = LoadConfigObject(labRoot);
     var section = config[recipe.Id] as JsonObject ?? new JsonObject();
+    // Match install.sh: defaults fill missing keys only (do not clobber user config).
     foreach (var (key, value) in recipe.Defaults)
-        section[key] = JsonNode.Parse(value.GetRawText());
+    {
+        if (!section.ContainsKey(key))
+            section[key] = JsonNode.Parse(value.GetRawText());
+    }
 
     var lab = config["lab"] as JsonObject ?? new JsonObject();
     foreach (var field in recipe.Fields)
@@ -778,6 +786,15 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
 
     await RunScriptAsync(labRoot, "render-config.sh");
     await RunScriptAsync(labRoot, "start.sh", recipe.Id);
+    try
+    {
+        await RunScriptAsync(labRoot, "refresh-edge.sh");
+    }
+    catch (Exception ex)
+    {
+        // Install succeeded; LAN DNS/proxy reload is best-effort when edge stacks exist.
+        Console.Error.WriteLine($"refresh-edge after install: {ex.Message}");
+    }
 }
 
 static void InvalidateUpdatesCache()
@@ -1173,6 +1190,7 @@ static bool TryMatchContainer(HashSet<string> names, string recipeId, out string
 }
 
 static CatalogItem ToCatalogItem(
+    string labRoot,
     Recipe recipe,
     HashSet<string> enabled,
     HashSet<string> running,
@@ -1200,6 +1218,7 @@ static CatalogItem ToCatalogItem(
         recipe.Category,
         recipe.Port,
         recipe.Path,
+        AppOpenUrl(labRoot, recipe),
         recipe.Installable,
         recipe.Core,
         recipe.DependsOn,
@@ -1207,6 +1226,53 @@ static CatalogItem ToCatalogItem(
         isEnabled,
         isRunning,
         status);
+}
+
+static bool EnvFlagTrue(string labRoot, string key)
+{
+    var envFile = Path.Combine(labRoot, ".env");
+    if (!File.Exists(envFile))
+        return false;
+    foreach (var raw in File.ReadLines(envFile))
+    {
+        var line = raw.Trim();
+        if (line.StartsWith($"{key}=", StringComparison.Ordinal))
+        {
+            var value = line[$"{key}=".Length..].Trim().Trim('"');
+            return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+    return false;
+}
+
+static string LabDomainFromEnv(string labRoot)
+{
+    var envFile = Path.Combine(labRoot, ".env");
+    if (File.Exists(envFile))
+    {
+        foreach (var raw in File.ReadLines(envFile))
+        {
+            var line = raw.Trim();
+            if (line.StartsWith("PIHOLE_LOCAL_DOMAIN=", StringComparison.Ordinal))
+            {
+                var value = line["PIHOLE_LOCAL_DOMAIN=".Length..].Trim().Trim('"');
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
+            }
+        }
+    }
+    return "network.lan";
+}
+
+static string? AppOpenUrl(string labRoot, Recipe recipe)
+{
+    var path = recipe.Path ?? "";
+    var proxyHost = recipe.Proxy?.Host;
+    if (EnvFlagTrue(labRoot, "ENABLE_LAN_PROXY") && !string.IsNullOrWhiteSpace(proxyHost))
+        return $"http://{proxyHost}.{LabDomainFromEnv(labRoot)}{path}";
+    if (recipe.Port is int port)
+        return $"http://127.0.0.1:{port}{path}";
+    return null;
 }
 
 static async Task RunScriptAsync(string labRoot, string script, string? arg = null)
@@ -1496,6 +1562,7 @@ internal sealed record CatalogItem(
     string Category,
     int? Port,
     string? Path,
+    string? Url,
     bool Installable,
     bool Core,
     List<string> DependsOn,
@@ -1541,6 +1608,13 @@ internal sealed class Recipe
     public List<string> DependsOn { get; set; } = [];
     public Dictionary<string, JsonElement> Defaults { get; set; } = new();
     public List<RecipeField> Fields { get; set; } = [];
+    public RecipeProxy? Proxy { get; set; }
+}
+
+internal sealed class RecipeProxy
+{
+    public string? Host { get; set; }
+    public int? Port { get; set; }
 }
 
 internal sealed class RecipeField
@@ -1576,6 +1650,7 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(List<BookmarkLinkDto>))]
 [JsonSerializable(typeof(List<BookmarkGroupDto>))]
 [JsonSerializable(typeof(Recipe))]
+[JsonSerializable(typeof(RecipeProxy))]
 [JsonSerializable(typeof(RecipeField))]
 [JsonSerializable(typeof(List<Recipe>))]
 [JsonSerializable(typeof(List<RecipeField>))]

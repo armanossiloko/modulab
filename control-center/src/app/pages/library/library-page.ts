@@ -53,7 +53,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
                     Reinstall
                   </button>
                 }
-                @if (app.status === 'running' && app.port) {
+                @if (app.status === 'running' && (app.url || app.port)) {
                   <a class="btn btn--primary" [href]="openUrl(app)" target="_blank" rel="noopener"
                     >Open</a
                   >
@@ -236,6 +236,7 @@ export class LibraryPage implements OnInit {
   }
 
   openUrl(app: CatalogItem): string {
+    if (app.url) return app.url;
     const path = app.path || '';
     return `http://127.0.0.1:${app.port}${path}`;
   }

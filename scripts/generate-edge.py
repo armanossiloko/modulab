@@ -111,8 +111,9 @@ def collect_dns_labels(recipes: list[dict[str, Any]]) -> list[str]:
 def write_proxy(targets: list[tuple[str, int]]) -> None:
     blocks: list[str] = [PROXY_HEADER]
     for host, port in targets:
+        # http:// prefix keeps routes on :80 (LAN). Bare hostnames default to :443.
         blocks.append(
-            f"{host}.{{$LOCAL_DOMAIN}} {{\n"
+            f"http://{host}.{{$LOCAL_DOMAIN}} {{\n"
             f"\treverse_proxy {{$UPSTREAM_HOST:127.0.0.1}}:{port}\n"
             f"}}\n"
         )

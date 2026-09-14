@@ -11,7 +11,7 @@
   "proxy": null,
   "dns": [],
   "defaults": {
-    "ENABLE_LAN_PROXY": false,
+    "ENABLE_LAN_PROXY": true,
     "UPSTREAM_HOST": "127.0.0.1",
     "CADDY_TAG": "2-alpine"
   },

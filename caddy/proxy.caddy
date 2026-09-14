@@ -5,50 +5,50 @@
 # UPSTREAM_HOST=127.0.0.1 so loopback-published app ports work on Linux.
 
 
-bentopdf.{$LOCAL_DOMAIN} {
+http://bentopdf.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8084
 }
 
-home.{$LOCAL_DOMAIN} {
+http://home.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8888
 }
 
-notes.{$LOCAL_DOMAIN} {
+http://notes.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:3005
 }
 
-immich.{$LOCAL_DOMAIN} {
+http://immich.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:2283
 }
 
-it-tools.{$LOCAL_DOMAIN} {
+http://it-tools.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8083
 }
 
-jellyfin.{$LOCAL_DOMAIN} {
+http://jellyfin.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8096
 }
 
-n8n.{$LOCAL_DOMAIN} {
+http://n8n.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5678
 }
 
-picoshare.{$LOCAL_DOMAIN} {
+http://picoshare.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:4001
 }
 
-pihole.{$LOCAL_DOMAIN} {
+http://pihole.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5080
 }
 
-searxng.{$LOCAL_DOMAIN} {
+http://searxng.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8080
 }
 
-seerr.{$LOCAL_DOMAIN} {
+http://seerr.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5055
 }
 
-stirling.{$LOCAL_DOMAIN} {
+http://stirling.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8082
 }
