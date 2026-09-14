@@ -1,0 +1,66 @@
+---
+description: Use Conventional Commits format for all git commit messages
+alwaysApply: true
+---
+
+# Conventional Commits
+
+When creating git commit messages, always use [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Format
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- **type**: what kind of change this is (required)
+- **scope**: optional area of the codebase (e.g. `control-center`, `library`, `pihole`, `caddy`, `compose`)
+- **description**: imperative, lowercase, no trailing period (required)
+- **body**: optional; explain what and why, not how
+- **footer**: optional; e.g. `BREAKING CHANGE: ...` or `Refs #123`
+
+## Allowed types
+
+| Type | Use for |
+|------|---------|
+| `feat` | New user-facing feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting, whitespace, no logic change |
+| `refactor` | Code change that is neither a fix nor a feature |
+| `perf` | Performance improvement |
+| `test` | Adding or updating tests |
+| `build` | Build system or dependencies |
+| `ci` | CI/CD configuration |
+| `chore` | Maintenance, tooling, misc |
+| `revert` | Reverting a prior commit |
+
+## Examples
+
+```
+feat(library): add install options modal for recipe fields
+```
+
+```
+fix(immich): use shared modulab network and fix DB bootstrap
+```
+
+```
+docs(readme): clarify LAN DNS and proxy setup
+```
+
+```
+chore(cursor): add conventional commits rule
+```
+
+## Rules
+
+- Use imperative mood: `add`, `fix`, `update` — not `added`, `fixes`, `updating`
+- Keep the subject line ≤ 72 characters
+- Do not capitalize the first word after the colon (unless a proper noun)
+- If the change is breaking, add a `BREAKING CHANGE:` footer or use `feat!` / `fix!`
+- Match the scope to the area touched when it aids clarity; omit if unclear
