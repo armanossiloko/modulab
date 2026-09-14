@@ -1,43 +1,69 @@
-# Lab — modular homelab stacks
+# Modulab — modular homelab stacks
 
-Independent [Docker Compose](https://docs.docker.com/compose/) stacks you can run alone or together on one host. Each stack has a `docker-compose.<name>.yml` at the repo root.
+Independent [Docker Compose](https://docs.docker.com/compose/) stacks for a personal lab. Run Control Center (dashboard + install API), shared Postgres/Redis, optional Pi-hole + Caddy for `*.network.lan` names, and install apps from a catalog.
+
+Each stack is a root file `docker-compose.<name>.yml`.
 
 ## Prerequisites
 
-- [Docker Engine](https://docs.docker.com/engine/install/) with Compose v2 (`docker compose`)
-- Linux host recommended (Control Center manages Compose via the Docker socket)
+- **Docker Engine** with Compose v2 (`docker compose`) — not Podman for this project
+- Linux host recommended (Control Center talks to Docker via `/var/run/docker.sock`)
+- Your server’s **LAN IP** (example below uses `192.168.1.10` — replace with yours)
 
-## Setup
+Find your LAN IP:
+
+```bash
+hostname -I | awk '{print $1}'
+```
+
+## Quick start (fresh clone)
 
 ```bash
 git clone https://github.com/armanossiloko/modulab.git
 cd modulab
-bash scripts/setup.sh          # creates lab.config.json from the example + renders .env
+bash scripts/setup.sh
 ```
 
-Edit **`lab.config.json`** (gitignored) — at minimum set **`lab.hostIp`** to this machine’s LAN IP — then:
+That creates **`lab.config.json`** from [`lab.config.example.json`](lab.config.example.json) and renders `.env`.
+
+1. Edit **`lab.config.json`** and set at least:
+   - `lab.hostIp` → this machine’s LAN IP (not `127.0.0.1`)
+   - `lab.timezone` / passwords if you want something other than the defaults
+2. Apply config and start enabled stacks:
 
 ```bash
 bash scripts/render-config.sh
-bash scripts/start.sh all      # stacks listed in lab.config.json → enabled
+bash scripts/start.sh all
 ```
 
-Default example enables Control Center, Postgres, Redis, Pi-hole, and Caddy (LAN proxy on).
+3. Open Control Center:
+   - **By IP:** `http://192.168.1.10:8888` (use *your* `hostIp`)
+   - **By name:** `http://home.network.lan` (only after clients use your host as DNS — see [LAN DNS](#lan-dns-required-for-networklan-names))
 
-| Open | URL |
-|------|-----|
-| Control Center (IP) | http://&lt;hostIp&gt;:8888 |
-| Control Center (LAN name) | http://home.network.lan *(after clients use &lt;hostIp&gt; as DNS)* |
-| Install apps | Library in Control Center (API key default: `modulab`) |
+First Control Center start **builds a Docker image** (can take several minutes).
 
-Configure everything from **`lab.config.json`**. A generated **`.env`** (gitignored) is produced for Compose; do not edit it.
+## Default credentials
+
+All example secrets default to **`modulab`** (change them in `lab.config.json` for anything exposed beyond a trusted LAN):
+
+| What | Value |
+|------|--------|
+| Postgres user / password / DB | `modulab` / `modulab` / `modulab` |
+| Pi-hole admin password | `modulab` |
+| PicoShare admin secret | `modulab` |
+| FUTO Notes sync password | `modulab` |
+| Control Center API key (`X-Lab-Key`) | `modulab` |
+
+The Library UI prompts for the API key on first mutating action (install/start/stop).
+
+## Config files
 
 | File | Purpose |
 |------|---------|
-| **`lab.config.json`** | Only hand-edited config (gitignored) |
+| **`lab.config.json`** | Only hand-edited config (**gitignored**) |
 | **`lab.config.example.json`** | Tracked template |
-| **`.env`** | Generated — Docker Compose variable source |
-| **`secrets/`** | Optional secrets via `"$secret:filename"` |
+| **`.env`** | Generated for Compose (**gitignored** — do not edit) |
+| **`secrets/`** | Optional files referenced as `"$secret:filename"` |
 
 ```json
 {
@@ -45,111 +71,67 @@ Configure everything from **`lab.config.json`**. A generated **`.env`** (gitigno
     "domain": "network.lan",
     "hostIp": "192.168.1.10",
     "timezone": "Europe/Berlin",
+    "postgresUser": "modulab",
     "postgresPassword": "modulab",
+    "postgresDb": "modulab",
     "piholePassword": "modulab",
-    "picoshareAdminSecret": "modulab"
+    "picoshareAdminSecret": "modulab",
+    "futoNotesPassword": "modulab",
+    "searxngSecret": "modulab",
+    "controlCenterApiKey": "modulab"
   },
   "caddy": { "ENABLE_LAN_PROXY": true },
   "enabled": ["control-center", "postgres", "redis", "pihole", "caddy"]
 }
 ```
 
-**Shared infra:** one Postgres (vector-capable) and one Redis on Docker network `modulab`. Apps that need a database get their own DB name on that Postgres (see `catalog/*/recipe.json` → `database` + `dependsOn`). Installing Immich or n8n starts Postgres/Redis if needed — never a second Postgres.
-
-**Control Center:** everything under [`control-center/`](control-center/) — `src/` (Angular) next to `src-backend/` (.NET), defaults in `defaults/`, generated `wwwroot/` (not in git). Open **`Modulab.slnx`**.
-
-After editing config:
+After every edit:
 
 ```bash
 bash scripts/render-config.sh
 ```
 
-For sensitive values, put the secret in `secrets/picoshare-admin` and reference `"picoshareAdminSecret": "$secret:picoshare-admin"` under `lab`, or set `"PS_SHARED_SECRET": "$secret:picoshare-admin"` under `picoshare`.
+Sensitive values can live under `secrets/` and be referenced, e.g. `"picoshareAdminSecret": "$secret:picoshare-admin"`.
 
-Generated `.env` files are overwritten on each render — edit **`lab.config.json`**, not `.env`.
+## How you reach apps
 
-VS Code: run task **lab: setup** or **lab: render config**.
+Two ways, both supported when stacks are running:
 
-## Quick start
+| Method | Example (replace IP / names) | Needs LAN DNS? |
+|--------|------------------------------|----------------|
+| **IP + port** | `http://192.168.1.10:8083` | No |
+| **Hostname** | `http://it-tools.network.lan` | **Yes** — client DNS must be your `lab.hostIp` |
 
-Start one stack:
+HTTP app ports publish on **`LAB_PUBLISH_IP`** (default `0.0.0.0`), so they listen on the LAN. **Postgres stays on `127.0.0.1:5432` only.**
 
-```bash
-bash scripts/start.sh jellyfin
-bash scripts/start.sh n8n
-bash scripts/start.sh searxng
-```
+With **`caddy.ENABLE_LAN_PROXY: true`** (example default):
 
-Start everything in **`enabled`**:
+- Caddy listens on **host port 80** (host networking) and routes `http://<label>.<domain>` → the app port
+- Pi-hole answers DNS for `*.<domain>` → `lab.hostIp`
 
-```bash
-bash scripts/start.sh all
-```
+### Port map (IP access)
 
-Stop a stack (containers removed, volumes kept):
+Use `http://<lab.hostIp>:<port>`:
 
-```bash
-bash scripts/stop.sh jellyfin
-bash scripts/stop.sh all
-```
+| Port | Service |
+|------|---------|
+| **8888** | Control Center |
+| **80** | Caddy (hostname routes only — bare IP shows a stub) |
+| **8083** | IT-Tools |
+| **8084** | BentoPDF |
+| **8082** | Stirling PDF |
+| **8080** | SearXNG |
+| **8096** / **8920** | Jellyfin |
+| **5678** | n8n |
+| **5055** | Seerr |
+| **4001** | PicoShare |
+| **3005** | FUTO Notes |
+| **2283** | Immich |
+| **5080** | Pi-hole admin |
+| **53** tcp/udp | Pi-hole DNS (bound to `lab.hostIp`) |
+| **5432** | Postgres (**localhost only**) |
 
-Or use **Run and Debug** → **All stacks up** / **&lt;Stack&gt; up** (and matching **down** tasks) in VS Code.
-
-## Control Center
-
-The **control-center** stack is Modulab.ControlCenter (.NET 10): static UI from [`control-center/`](control-center/) plus `/api` for install/start/stop. Optional **network.lan** proxy is the separate **caddy** stack.
-
-```bash
-bash scripts/start.sh control-center
-```
-
-Open **http://127.0.0.1:8888**. Solution file: **[`Modulab.slnx`](Modulab.slnx)**.
-
-```text
-control-center/
-  src/                                  # Angular 21 SPA
-  src-backend/Modulab.ControlCenter/    # API + SPA host
-  defaults/                             # tracked dashboard templates
-  wwwroot/                              # generated at setup (gitignored)
-Modulab.slnx
-```
-
-UI is generated by `bash scripts/setup.sh` / `ensure-wwwroot.sh` (+ `publish-ui.sh` or Docker build). Dev: `cd control-center && npm start` (proxies `/api` to :8888).
-After API changes: `bash scripts/generate-api.sh` (OpenAPI + Angular HTTP client).
-
-Apps are defined as **recipes** (`catalog/<id>/recipe.json`). `lab.config.json` → **`enabled`** controls what `start.sh all` starts. Install from the Library UI or:
-
-```bash
-bash scripts/install.sh jellyfin
-```
-
-Install (UI or CLI) runs `render-config.sh`, starts the app (and `dependsOn`), then **`refresh-edge.sh`**: when `ENABLE_LAN_PROXY=true` and Pi-hole/Caddy are enabled or already running, they are recreated so new `*.<domain>` DNS/proxy routes apply immediately.
-
-| Mode | What to run | How you reach services |
-|------|-------------|-------------------------|
-| **Direct** (default) | App stacks only | `http://<host-ip>:8096`, `:5678`, … (published on `LAB_PUBLISH_IP`, default all interfaces) |
-| **Control Center** | `control-center` | **http://127.0.0.1:8888** or **http://&lt;host-ip&gt;:8888** |
-| **network.lan** | Pi-hole + `caddy` with `ENABLE_LAN_PROXY=true` | Portless `http://jellyfin.network.lan` on port 80 |
-
-Config: [catalog/](catalog/) · [control-center/](control-center/)
-
-### Optional: network.lan URLs
-
-Enable for portless LAN hostnames. In **`lab.config.json`**:
-
-```json
-"caddy": { "ENABLE_LAN_PROXY": true }
-```
-
-Set **`lab.hostIp`** to this host’s LAN IP, add `pihole` / `caddy` to **`enabled`** (or start them explicitly), then:
-
-```bash
-bash scripts/render-config.sh
-bash scripts/start.sh pihole
-bash scripts/start.sh caddy
-```
-
-That publishes DNS on **`lab.hostIp:53`** and Caddy on **host port 80**. App HTTP ports are also published on **`LAB_PUBLISH_IP`** (default all interfaces), so both `http://jellyfin.network.lan` and `http://<hostIp>:8096` work. Point LAN DHCP DNS at **`lab.hostIp`** for the domain names.
+### Hostname map (`lab.domain`, default `network.lan`)
 
 | URL | Stack |
 |-----|-------|
@@ -165,53 +147,97 @@ That publishes DNS on **`lab.hostIp:53`** and Caddy on **host port 80**. App HTT
 | http://immich.network.lan | Immich |
 | http://searxng.network.lan | SearXNG |
 | http://pihole.network.lan/admin | Pi-hole admin |
-| `postgres.network.lan:5432` | Shared Postgres (TCP, not HTTP) |
 
-Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
+Replace `network.lan` with whatever you set in `lab.domain`.
 
-## Stacks
+## LAN DNS (required for `*.network.lan` names)
 
-| Stack | Compose file | Default URL | Role |
-|--------|----------------|-------------|------|
-| **Control Center** | `docker-compose.control-center.yml` | http://127.0.0.1:8888 | Home UI + install API (.NET 10) |
-| **Caddy** | `docker-compose.caddy.yml` | port 80 when enabled | Optional network.lan proxy |
-| **n8n** | `docker-compose.n8n.yml` | http://127.0.0.1:5678 | Workflow automation ([n8n](https://n8n.io/)) |
-| **Jellyfin** | `docker-compose.jellyfin.yml` | http://localhost:8096 | Media server ([Jellyfin](https://jellyfin.org/)) |
-| **Seerr** | `docker-compose.seerr.yml` | http://localhost:5055 | Requests & discovery ([Seerr](https://docs.seerr.dev/)) |
-| **IT-Tools** | `docker-compose.it-tools.yml` | http://localhost:8083 | Dev utilities ([it-tools](https://github.com/CorentinTh/it-tools)) |
-| **Stirling PDF** | `docker-compose.stirling-pdf.yml` | http://localhost:8082 | PDF toolkit ([Stirling PDF](https://docs.stirlingpdf.com/)) |
-| **BentoPDF** | `docker-compose.bentopdf.yml` | http://localhost:8084 | PDF toolkit ([BentoPDF](https://github.com/alam00000/bentopdf)) |
-| **PicoShare** | `docker-compose.picoshare.yml` | http://localhost:4001 | File sharing ([PicoShare](https://github.com/mtlynch/picoshare)) |
-| **FUTO Notes** | `docker-compose.futo-notes.yml` | http://127.0.0.1:3005 | Encrypted notes sync ([FUTO Notes](https://notes.futo.tech/)) |
-| **Postgres** | `docker-compose.postgres.yml` | `127.0.0.1:5432` | Shared Postgres (vector image; many DBs) |
-| **Redis** | `docker-compose.redis.yml` | `redis:6379` (Docker) | Shared Valkey/Redis |
-| **Immich** | `docker-compose.immich.yml` | http://127.0.0.1:2283 | Photos (uses shared Postgres + Redis) |
-| **SearXNG** | `docker-compose.searxng.yml` | http://127.0.0.1:8080 | Private metasearch ([SearXNG](https://docs.searxng.org/)) |
-| **Pi-hole** | `docker-compose.pihole.yml` | http://127.0.0.1:5080/admin | DNS ([Pi-hole](https://pi-hole.net/)); optional |
+Hostname URLs **do not work** until devices use this server as DNS.
 
-Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run together: SearXNG (8080), Stirling PDF (8082), IT-Tools (8083), BentoPDF (8084).
+1. Set **`lab.hostIp`** to the Docker host’s LAN address and start Pi-hole + Caddy (`enabled` in the example already includes them).
+2. Point **router DHCP DNS** (or each client’s DNS) at that same IP.
+3. Test from a client:
 
-### Port map
+```bash
+dig @192.168.1.10 it-tools.network.lan   # use your hostIp
+curl -I http://it-tools.network.lan
+```
 
-| Port | Stack / service | Compose file |
-|------|-----------------|--------------|
-| 8888 | Control Center UI + API (loopback) | `docker-compose.control-center.yml` |
-| 80 | LAN proxy (host network, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
-| 5055 | Seerr | `docker-compose.seerr.yml` |
-| 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
-| 8080 | SearXNG (loopback) | `docker-compose.searxng.yml` |
-| 8082 | Stirling PDF | `docker-compose.stirling-pdf.yml` |
-| 8083 | IT-Tools | `docker-compose.it-tools.yml` |
-| 8084 | BentoPDF | `docker-compose.bentopdf.yml` |
-| 4001 | PicoShare | `docker-compose.picoshare.yml` |
-| 3005 | FUTO Notes (loopback) | `docker-compose.futo-notes.yml` |
-| 8096, 8920 | Jellyfin | `docker-compose.jellyfin.yml` |
-| 2283 | Immich (loopback) | `docker-compose.immich.yml` |
-| 5080 | Pi-hole admin (loopback) | `docker-compose.pihole.yml` |
-| 53 | Pi-hole DNS (loopback tcp/udp) | `docker-compose.pihole.yml` |
-| 5432 | Postgres (loopback) | `docker-compose.postgres.yml` |
+On the server itself, OS DNS may still be your ISP resolver until you set it (NetworkManager / `resolvectl`) to `lab.hostIp` or add a routing domain for `network.lan`.
 
-## Stack notes
+Pi-hole forwards unknown queries upstream (default Cloudflare `1.1.1.1` / `1.0.0.1` via `PIHOLE_UPSTREAM_DNS`).
+
+More detail: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md).
+
+## Install apps (Control Center or CLI)
+
+**Library UI:** open Control Center → **Library** → **Install**. Enter API key `modulab` when prompted.
+
+**CLI:**
+
+```bash
+bash scripts/install.sh jellyfin
+bash scripts/install.sh it-tools
+```
+
+Install / start / uninstall will:
+
+1. Enable the app (and `dependsOn`) in `lab.config.json`
+2. Run `render-config.sh` (`.env` + Caddy/Pi-hole edge files)
+3. Start the stack
+4. Run **`refresh-edge.sh`** when LAN proxy is on and Pi-hole/Caddy are present, so new DNS/proxy routes apply immediately
+
+Recipes live in [`catalog/<id>/recipe.json`](catalog/) (`proxy`, `dns`, `dependsOn`, …).
+
+## Day-to-day commands
+
+```bash
+bash scripts/start.sh all              # start enabled[]
+bash scripts/start.sh jellyfin         # one stack
+bash scripts/stop.sh jellyfin          # stop one (volumes kept)
+bash scripts/stop.sh all
+bash scripts/render-config.sh          # after editing lab.config.json
+bash scripts/refresh-edge.sh           # reload Pi-hole DNS + Caddy proxy
+bash scripts/update.sh <stack>         # pull + recreate
+```
+
+VS Code / Cursor tasks: **lab: setup**, **lab: render config**, **docker-compose: all up/down**.
+
+## Control Center layout
+
+```text
+control-center/
+  src/                                  # Angular SPA
+  src-backend/Modulab.ControlCenter/    # API + SPA host (.NET)
+  defaults/                             # tracked dashboard templates
+  wwwroot/                              # generated / image-baked (gitignored)
+Modulab.slnx
+```
+
+- Production UI is built **inside the Docker image**
+- Local UI dev: `cd control-center && npm start` (proxies `/api` to `:8888`)
+- After API changes: `bash scripts/generate-api.sh`
+
+## Stacks overview
+
+| Stack | Compose file | Role |
+|--------|----------------|------|
+| **Control Center** | `docker-compose.control-center.yml` | Home UI + install API |
+| **Caddy** | `docker-compose.caddy.yml` | Optional `*.domain` reverse proxy on port 80 |
+| **Pi-hole** | `docker-compose.pihole.yml` | LAN DNS for `*.domain` |
+| **Postgres** | `docker-compose.postgres.yml` | Shared DB (vector image; localhost only) |
+| **Redis** | `docker-compose.redis.yml` | Shared cache (Docker network) |
+| **Jellyfin** | `docker-compose.jellyfin.yml` | Media |
+| **n8n** | `docker-compose.n8n.yml` | Automation |
+| **Seerr** | `docker-compose.seerr.yml` | Requests |
+| **IT-Tools** | `docker-compose.it-tools.yml` | Utilities |
+| **Stirling PDF** / **BentoPDF** | `docker-compose.stirling-pdf.yml` / `.bentopdf.yml` | PDF tools |
+| **PicoShare** | `docker-compose.picoshare.yml` | File sharing |
+| **FUTO Notes** | `docker-compose.futo-notes.yml` | Encrypted notes sync |
+| **Immich** | `docker-compose.immich.yml` | Photos |
+| **SearXNG** | `docker-compose.searxng.yml` | Metasearch |
+
+**Shared infra:** one Postgres and one Redis on Docker network `modulab`. Apps get their own DB name via recipes — never a second Postgres for Immich/n8n.
 
 ### Postgres
 
@@ -219,91 +245,38 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 bash scripts/start.sh postgres
 ```
 
-- Host: `127.0.0.1:5432` · Docker hostname: `postgres` on network **`modulab`**
-- Image: Immich vector/pgvectors (so Immich can share this instance)
-- Data: `data/postgres/` — if you previously used stock Postgres 18, wipe/migrate this volume before first start
-- Credentials: `lab.postgresUser` / `postgresPassword` / `postgresDb` in `lab.config.json`
-- **Every `up`:** generated `postgres/bootstrap.sql` creates app databases (`immich`, `n8n`, …) — see [postgres/README.md](postgres/README.md)
+- Host: `127.0.0.1:5432` · Docker hostname: `postgres` on **`modulab`**
+- Credentials from `lab.postgresUser` / `postgresPassword` / `postgresDb`
+- Data: `data/postgres/` — see [postgres/README.md](postgres/README.md)
+- Each `up` runs generated `postgres/bootstrap.sql` for app databases
 
-Apps join:
+### Immich / FUTO Notes / Jellyfin / n8n / SearXNG
 
-```yaml
-networks:
-  modulab:
-    external: true
-    name: modulab
-```
+See install commands above and stack-specific notes in older docs sections:
 
-### Immich
+- Immich: Library or `bash scripts/install.sh immich` — UI on `:2283` or `immich.<domain>`
+- FUTO Notes: sync password from `lab.futoNotesPassword`; URL `:3005` or `notes.<domain>`
+- Jellyfin: container user `1000:1000`; media under `./media`
+- n8n: shared DB `n8n`; host/webhook URLs follow `lab.domain`
+- SearXNG: settings from `searxng/settings.yml.template`
 
-```bash
-bash scripts/install.sh immich
-# or Library → Install (starts shared Postgres + Redis automatically)
-```
-
-- UI: http://127.0.0.1:2283
-- Library data: `data/immich/library/` (DB lives in shared Postgres database `immich`)
-- Cache: shared Redis
-- ML container is commented out by default (RAM). Uncomment in `docker-compose.immich.yml` if needed
-- Pin version: `"immich": { "IMMICH_VERSION": "v3" }` in `lab.config.json`
-
-### FUTO Notes
-
-```bash
-bash scripts/install.sh futo-notes
-# or Library → Install (set sync password in the form)
-```
-
-- Sync URL: http://127.0.0.1:3005 (or `http://notes.<domain>` with Pi-hole + Caddy)
-- Data: `data/futo-notes/` (SQLite + encrypted blobs; no shared Postgres)
-- In the app: Settings → Self-hosted sync → paste the URL and the same password
-- Password: install form, or `lab.futoNotesPassword` / `"FUTO_NOTES_PASSWORD": "$secret:futo-notes-password"` under `futo-notes`
-
-### Pi-hole
-
-```bash
-bash scripts/install.sh pihole
-```
-
-- Admin: http://127.0.0.1:5080/admin
-- Set **`lab.hostIp`** / **`lab.domain`** — see [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md)
-
-### SearXNG
-
-Private metasearch at [`searxng/`](searxng/). Settings are seeded from `searxng/settings.yml.template` on first start (optional `lab.searxngSecret`).
-
-```bash
-bash scripts/install.sh searxng
-```
-
-### Jellyfin
-
-Container runs as `1000:1000`. On Linux, align ownership of `./data/jellyfin/*` and `./media` if you hit permission errors.
-
-### n8n
-
-Uses shared Postgres database `n8n` (`dependsOn: ["postgres"]`). Host/webhook URLs come from `lab.domain`.
-
-### Local data
+### Local data (gitignored)
 
 | Path | Used by |
 |------|---------|
-| `data/` | Runtime volumes (Postgres, Redis, Immich library, Jellyfin, SearXNG, …) |
+| `data/` | Runtime volumes |
 | `media/` | Jellyfin library |
-| `secrets/` | Optional sensitive files |
+| `secrets/` | Optional secret files |
+| `lab.config.json`, `.env` | Local config |
 
-## VS Code / Cursor
+## Troubleshooting
 
-| Task | Script | Purpose |
-|------|--------|---------|
-| **lab: setup** | `scripts/setup.sh` | Create `lab.config.json` and render `.env` |
-| **lab: render config** | `scripts/render-config.sh` | Re-render `.env` + edge/DNS from `lab.config.json` |
-| **docker-compose: all up** | `scripts/start.sh all` | Start `enabled` stacks |
-| **docker-compose: all down** | `scripts/stop.sh all` | Stop enabled stacks (keeps volumes) |
-
-Image updates: Control Center **Library** and the **Updates** widget call `GET /api/updates` (digest compare via `docker buildx imagetools`). Apply with **Update** or `bash scripts/update.sh <stack>` (pull + recreate).
-
-Config flow: `lab.config.json` → generated `.env`. Tracked template: `lab.config.example.json`. Add apps via `catalog/<id>/recipe.json` (see `.cursor/rules`).
+| Symptom | Likely cause |
+|---------|----------------|
+| `*.network.lan` does not resolve | Client DNS is not `lab.hostIp` |
+| `http://<ip>/` shows a short stub text | That is Caddy’s default on port 80 — use a hostname or `http://<ip>:<port>` |
+| Install from Control Center fails on bind mounts | Fixed via `COMPOSE_PROJECT_NAME` + host project directory detection; ensure you are on a current `master` |
+| Port 53 conflict | Pi-hole LAN mode binds DNS to **`lab.hostIp:53`** only (avoids systemd-resolved on `127.0.0.53`) |
 
 ## License
 
