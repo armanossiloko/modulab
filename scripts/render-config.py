@@ -117,7 +117,8 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "DOTNET_gcServer": "0",
         "DOTNET_EnableDiagnostics": "0",
         "ENABLE_LAN_PROXY": False,
-        "UPSTREAM_HOST": "host.docker.internal",
+        # LAN Caddy overlay forces 127.0.0.1 (host network). Keep the same default here.
+        "UPSTREAM_HOST": "127.0.0.1",
         "CADDY_TAG": "2-alpine",
         "N8N_HOST": f"n8n.{domain}",
         "WEBHOOK_URL": f"http://n8n.{domain}/",

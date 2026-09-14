@@ -1,0 +1,7 @@
+# Default DNS publish — loopback only (local testing without LAN exposure).
+
+services:
+  pihole:
+    ports:
+      - "127.0.0.1:53:53/tcp"
+      - "127.0.0.1:53:53/udp"

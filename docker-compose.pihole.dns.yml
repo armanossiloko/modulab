@@ -1,21 +1,22 @@
 # GENERATED from catalog/*/recipe.json — do not edit by hand.
 # Regenerate: bash scripts/render-config.sh
+# LAB_HOST_IP / PIHOLE_LOCAL_DOMAIN come from generated .env.
 # Merged when starting Pi-hole (see scripts/common.sh).
 services:
   pihole:
     environment:
       FTLCONF_dns_hosts: |-
-        192.168.1.10 bentopdf.network.lan
-        192.168.1.10 home.network.lan
-        192.168.1.10 notes.network.lan
-        192.168.1.10 futo-notes.network.lan
-        192.168.1.10 immich.network.lan
-        192.168.1.10 it-tools.network.lan
-        192.168.1.10 jellyfin.network.lan
-        192.168.1.10 n8n.network.lan
-        192.168.1.10 picoshare.network.lan
-        192.168.1.10 pihole.network.lan
-        192.168.1.10 postgres.network.lan
-        192.168.1.10 searxng.network.lan
-        192.168.1.10 seerr.network.lan
-        192.168.1.10 stirling.network.lan
+        ${LAB_HOST_IP} bentopdf.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} home.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} notes.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} futo-notes.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} immich.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} it-tools.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} jellyfin.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} n8n.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} picoshare.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} postgres.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} searxng.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} seerr.${PIHOLE_LOCAL_DOMAIN}
+        ${LAB_HOST_IP} stirling.${PIHOLE_LOCAL_DOMAIN}

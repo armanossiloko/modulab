@@ -12,8 +12,8 @@ services:
       FTLCONF_dns_listeningMode: ALL
       FTLCONF_dns_upstreams: ${PIHOLE_UPSTREAM_DNS:-1.1.1.1;1.0.0.1}
     ports:
-      - "127.0.0.1:53:53/tcp"
-      - "127.0.0.1:53:53/udp"
+      # DNS ports come from docker-compose.pihole.dns-ports.yml (loopback)
+      # or docker-compose.pihole.lan-ports.yml when ENABLE_LAN_PROXY=true.
       - "127.0.0.1:5080:80/tcp"
     volumes:
       - ./data/pihole/etc-pihole:/etc/pihole

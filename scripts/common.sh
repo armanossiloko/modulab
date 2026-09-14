@@ -48,6 +48,12 @@ pihole_compose() {
   if [[ -f "${root}/docker-compose.pihole.dns.yml" ]]; then
     files+=(-f "${root}/docker-compose.pihole.dns.yml")
   fi
+  # LAN proxy: publish DNS on LAB_HOST_IP. Otherwise keep DNS on loopback only.
+  if lan_proxy_enabled; then
+    files+=(-f "${root}/docker-compose.pihole.lan-ports.yml")
+  else
+    files+=(-f "${root}/docker-compose.pihole.dns-ports.yml")
+  fi
   docker compose --env-file "${root}/.env" "${files[@]}" "$@"
 }
 
@@ -144,6 +150,10 @@ PY
 }
 
 lab_control_center_url() {
+  if lan_proxy_enabled; then
+    lab_url home
+    return 0
+  fi
   local port="8888"
   if [[ -f "${root}/.env" ]]; then
     local line
@@ -202,7 +212,17 @@ print_stack_url() {
     control-center) echo "Control Center: $(lab_control_center_url)" ;;
     pihole)
       echo "Pi-hole admin: $(lab_url pihole /admin)"
-      echo "DNS (loopback): 127.0.0.1:53"
+      if lan_proxy_enabled; then
+        local host_ip=127.0.0.1
+        if [[ -f "${root}/.env" ]]; then
+          local line
+          line="$(grep -E '^LAB_HOST_IP=' "${root}/.env" | head -1 || true)"
+          [[ -n "$line" ]] && host_ip="${line#LAB_HOST_IP=}" && host_ip="${host_ip%%$'\r'}"
+        fi
+        echo "DNS (LAN): ${host_ip}:53"
+      else
+        echo "DNS (loopback): 127.0.0.1:53"
+      fi
       ;;
     caddy)
       echo "Caddy LAN proxy: $(lan_proxy_enabled && echo enabled || echo disabled)"

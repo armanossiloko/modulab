@@ -1,6 +1,9 @@
-# Extra port when ENABLE_LAN_PROXY=true (merged by scripts/start.sh / stop.sh).
+# Merged when ENABLE_LAN_PROXY=true (see scripts/common.sh).
+# Host networking so reverse_proxy can reach apps bound to 127.0.0.1 on Linux.
+# Listens on host :80 for http://*.<domain> from the LAN.
 
 services:
   caddy:
-    ports:
-      - "127.0.0.1:80:80"
+    network_mode: host
+    environment:
+      UPSTREAM_HOST: "127.0.0.1"

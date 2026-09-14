@@ -31,7 +31,8 @@ bash scripts/setup.sh
     "piholePassword": "change-me",
     "picoshareAdminSecret": "change-me"
   },
-  "enabled": ["control-center", "postgres", "redis"]
+  "caddy": { "ENABLE_LAN_PROXY": true },
+  "enabled": ["control-center", "postgres", "redis", "pihole", "caddy"]
 }
 ```
 
@@ -115,13 +116,13 @@ Config: [catalog/](catalog/) · [control-center/](control-center/)
 
 ### Optional: network.lan URLs
 
-Enable only if you want portless LAN hostnames. In **`lab.config.json`**:
+Enable for portless LAN hostnames. In **`lab.config.json`**:
 
 ```json
 "caddy": { "ENABLE_LAN_PROXY": true }
 ```
 
-Set **`lab.hostIp`**, then:
+Set **`lab.hostIp`** to this host’s LAN IP, add `pihole` / `caddy` to **`enabled`** (or start them explicitly), then:
 
 ```bash
 bash scripts/render-config.sh
@@ -129,8 +130,11 @@ bash scripts/start.sh pihole
 bash scripts/start.sh caddy
 ```
 
+That publishes DNS on **`lab.hostIp:53`** and Caddy on **host port 80** (host networking → apps on `127.0.0.1`). Point LAN DHCP DNS at **`lab.hostIp`**, then open e.g. **http://jellyfin.network.lan**.
+
 | URL | Stack |
 |-----|-------|
+| http://home.network.lan | Control Center |
 | http://jellyfin.network.lan | Jellyfin |
 | http://n8n.network.lan | n8n |
 | http://seerr.network.lan | Seerr |
@@ -173,7 +177,7 @@ Ports **8080**, **8082**, **8083**, and **8084** are chosen so stacks can run to
 | Port | Stack / service | Compose file |
 |------|-----------------|--------------|
 | 8888 | Control Center UI + API (loopback) | `docker-compose.control-center.yml` |
-| 80 | LAN proxy (loopback, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
+| 80 | LAN proxy (host network, if `ENABLE_LAN_PROXY=true`) | `docker-compose.caddy.proxy-ports.yml` |
 | 5055 | Seerr | `docker-compose.seerr.yml` |
 | 5678 | n8n (loopback) | `docker-compose.n8n.yml` |
 | 8080 | SearXNG (loopback) | `docker-compose.searxng.yml` |

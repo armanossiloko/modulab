@@ -12,7 +12,7 @@
   "dns": [],
   "defaults": {
     "ENABLE_LAN_PROXY": false,
-    "UPSTREAM_HOST": "host.docker.internal",
+    "UPSTREAM_HOST": "127.0.0.1",
     "CADDY_TAG": "2-alpine"
   },
   "fields": [

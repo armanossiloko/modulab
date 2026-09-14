@@ -19,8 +19,8 @@ PROXY_HEADER = """\
 # GENERATED from catalog/*/recipe.json — do not edit by hand.
 # Regenerate: bash scripts/render-config.sh
 # Included when ENABLE_LAN_PROXY=true — port 80, host-based routing.
-# UPSTREAM_HOST: host.docker.internal (Docker Desktop / bridge). On native Linux
-# homelab, 127.0.0.1 often works via host-gateway; override in .env.caddy if needed.
+# With docker-compose.caddy.proxy-ports.yml, Caddy uses host networking and
+# UPSTREAM_HOST=127.0.0.1 so loopback-published app ports work on Linux.
 
 """
 
@@ -113,7 +113,7 @@ def write_proxy(targets: list[tuple[str, int]]) -> None:
     for host, port in targets:
         blocks.append(
             f"{host}.{{$LOCAL_DOMAIN}} {{\n"
-            f"\treverse_proxy {{$UPSTREAM_HOST:host.docker.internal}}:{port}\n"
+            f"\treverse_proxy {{$UPSTREAM_HOST:127.0.0.1}}:{port}\n"
             f"}}\n"
         )
     PROXY_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -126,12 +126,20 @@ def write_dns_hosts(labels: list[str]) -> None:
     DNS_HOSTS_PATH.write_text(DNS_HEADER + body, encoding="utf-8")
 
 
-def write_pihole_override(labels: list[str], domain: str, host_ip: str) -> None:
-    lines = [f"        {host_ip} {label}.{domain}" for label in labels]
-    hosts_block = "\n".join(lines) if lines else f"        {host_ip} pihole.{domain}"
+def write_pihole_override(labels: list[str]) -> None:
+    # Use Compose env interpolation so this file is not machine-specific.
+    lines = [
+        f"        ${{LAB_HOST_IP}} {label}.${{PIHOLE_LOCAL_DOMAIN}}" for label in labels
+    ]
+    hosts_block = (
+        "\n".join(lines)
+        if lines
+        else "        ${LAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}"
+    )
     content = (
         "# GENERATED from catalog/*/recipe.json — do not edit by hand.\n"
         "# Regenerate: bash scripts/render-config.sh\n"
+        "# LAB_HOST_IP / PIHOLE_LOCAL_DOMAIN come from generated .env.\n"
         "# Merged when starting Pi-hole (see scripts/common.sh).\n"
         "services:\n"
         "  pihole:\n"
@@ -148,13 +156,13 @@ def main() -> int:
         print("No catalog recipes found.", file=sys.stderr)
         return 1
 
-    domain, host_ip = lab_settings()
+    _domain, _host_ip = lab_settings()
     targets = collect_proxy_targets(recipes)
     labels = collect_dns_labels(recipes)
 
     write_proxy(targets)
     write_dns_hosts(labels)
-    write_pihole_override(labels, domain, host_ip)
+    write_pihole_override(labels)
 
     print(
         f"Generated edge config from {len(recipes)} recipe(s): "

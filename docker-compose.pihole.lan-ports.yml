@@ -1,0 +1,8 @@
+# Merged when ENABLE_LAN_PROXY=true (see scripts/common.sh).
+# Bind DNS to the lab host LAN IP so systemd-resolved on 127.0.0.53 stays free.
+
+services:
+  pihole:
+    ports:
+      - "${LAB_HOST_IP}:53:53/tcp"
+      - "${LAB_HOST_IP}:53:53/udp"

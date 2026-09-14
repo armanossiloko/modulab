@@ -1,54 +1,54 @@
 # GENERATED from catalog/*/recipe.json — do not edit by hand.
 # Regenerate: bash scripts/render-config.sh
 # Included when ENABLE_LAN_PROXY=true — port 80, host-based routing.
-# UPSTREAM_HOST: host.docker.internal (Docker Desktop / bridge). On native Linux
-# homelab, 127.0.0.1 often works via host-gateway; override in .env.caddy if needed.
+# With docker-compose.caddy.proxy-ports.yml, Caddy uses host networking and
+# UPSTREAM_HOST=127.0.0.1 so loopback-published app ports work on Linux.
 
 
 bentopdf.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8084
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8084
 }
 
 home.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8888
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8888
 }
 
 notes.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:3005
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:3005
 }
 
 immich.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:2283
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:2283
 }
 
 it-tools.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8083
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8083
 }
 
 jellyfin.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8096
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8096
 }
 
 n8n.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5678
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5678
 }
 
 picoshare.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:4001
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:4001
 }
 
 pihole.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5080
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5080
 }
 
 searxng.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8080
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8080
 }
 
 seerr.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:5055
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5055
 }
 
 stirling.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:host.docker.internal}:8082
+	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8082
 }

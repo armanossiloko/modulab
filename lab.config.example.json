@@ -13,6 +13,9 @@
     "searxngSecret": "",
     "controlCenterApiKey": ""
   },
+  "caddy": {
+    "ENABLE_LAN_PROXY": true
+  },
   "futo-notes": {
     "FUTO_NOTES_PORT": 3005
   },
@@ -23,6 +26,8 @@
   "enabled": [
     "control-center",
     "postgres",
-    "redis"
+    "redis",
+    "pihole",
+    "caddy"
   ]
 }
