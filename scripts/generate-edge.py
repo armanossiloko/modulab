@@ -27,7 +27,7 @@ PROXY_HEADER = """\
 DNS_HEADER = """\
 # GENERATED from catalog/*/recipe.json — do not edit by hand.
 # Regenerate: bash scripts/render-config.sh
-# FQDN: <label>.<PIHOLE_LOCAL_DOMAIN>  ·  IP: LAB_HOST_IP in .env.pihole
+# FQDN: <label>.<PIHOLE_LOCAL_DOMAIN>  ·  IP: LAB_HOST_IP in .env
 
 """
 
