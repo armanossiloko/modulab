@@ -109,8 +109,6 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "FUTO_NOTES_COOKIE_SECURE": False,
         "FUTO_NOTES_BLOB_GC_ENABLED": True,
         "FUTO_NOTES_DATA_DIR": "./data/futo-notes",
-        "CONTROL_CENTER_API_KEY": lab.get("controlCenterApiKey") or lab.get("labApiKey") or "modulab",
-        "LAB_API_KEY": lab.get("controlCenterApiKey") or lab.get("labApiKey") or "modulab",
         "LAB_ROOT": "/lab",
         "HOME_PORT": 8888,
         "ASPNETCORE_URLS": "http://0.0.0.0:8888",
@@ -174,7 +172,7 @@ def write_env(env: dict[str, Any]) -> None:
         value = env[key]
         if value is None:
             continue
-        if isinstance(value, str) and value == "" and key != "LAB_API_KEY":
+        if isinstance(value, str) and value == "":
             continue
         lines.append(f"{key}={stringify(value)}")
     ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
