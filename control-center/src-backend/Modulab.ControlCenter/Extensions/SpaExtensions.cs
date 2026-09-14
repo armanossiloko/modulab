@@ -18,7 +18,9 @@ public static class SpaExtensions
         else
         {
             var alt = Environment.GetEnvironmentVariable("CONTROL_CENTER_WWWROOT");
-            if (!string.IsNullOrWhiteSpace(alt) && Directory.Exists(alt))
+            // Require index.html so a seeded host wwwroot (dashboard.json only) does not
+            // shadow the SPA baked into the image at ContentRoot/wwwroot.
+            if (!string.IsNullOrWhiteSpace(alt) && File.Exists(Path.Combine(alt, "index.html")))
                 wwwroot = Path.GetFullPath(alt);
         }
 

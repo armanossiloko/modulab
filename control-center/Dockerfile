@@ -21,10 +21,13 @@ WORKDIR /src
 COPY control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj control-center/src-backend/Modulab.ControlCenter/
 RUN dotnet restore control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj
 COPY control-center/src-backend/Modulab.ControlCenter/ control-center/src-backend/Modulab.ControlCenter/
+# Skip OpenAPI regen in image builds — committed openapi/openapi.json is used by the UI stage.
 RUN dotnet publish control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj -c Release -r linux-x64 -o /app/publish \
     -p:PublishAot=true \
     -p:StripSymbols=true \
     -p:OptimizationPreference=Size \
+    -p:OpenApiGenerateDocuments=false \
+    -p:OpenApiGenerateDocumentsOnBuild=false \
     --self-contained true
 
 FROM docker:27-cli AS dockercli

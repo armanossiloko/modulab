@@ -1581,6 +1581,8 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(List<RecipeField>))]
 [JsonSerializable(typeof(List<CatalogItem>))]
 [JsonSerializable(typeof(List<int>))]
+[JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(double?))]
 [JsonSerializable(typeof(Dictionary<string, JsonElement>))]
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]
