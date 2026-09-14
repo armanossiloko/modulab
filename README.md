@@ -28,8 +28,8 @@ bash scripts/setup.sh
     "hostIp": "192.168.1.10",
     "timezone": "Europe/Berlin",
     "postgresPassword": "modulab",
-    "piholePassword": "change-me",
-    "picoshareAdminSecret": "change-me"
+    "piholePassword": "modulab",
+    "picoshareAdminSecret": "modulab"
   },
   "caddy": { "ENABLE_LAN_PROXY": true },
   "enabled": ["control-center", "postgres", "redis", "pihole", "caddy"]

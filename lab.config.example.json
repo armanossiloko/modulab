@@ -7,11 +7,11 @@
     "postgresUser": "modulab",
     "postgresPassword": "modulab",
     "postgresDb": "modulab",
-    "piholePassword": "change-me",
-    "picoshareAdminSecret": "change-me",
-    "futoNotesPassword": "change-me",
-    "searxngSecret": "",
-    "controlCenterApiKey": ""
+    "piholePassword": "modulab",
+    "picoshareAdminSecret": "modulab",
+    "futoNotesPassword": "modulab",
+    "searxngSecret": "modulab",
+    "controlCenterApiKey": "modulab"
   },
   "caddy": {
     "ENABLE_LAN_PROXY": true
