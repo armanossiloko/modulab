@@ -18,27 +18,6 @@ public static class OpenApiExtensions
                     Description = "Lab install/control API and dashboard config.",
                 };
 
-                document.Components ??= new OpenApiComponents();
-                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-                document.Components.SecuritySchemes["LabKey"] = new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.ApiKey,
-                    In = ParameterLocation.Header,
-                    Name = "X-Lab-Key",
-                    Description = "Optional shared secret from lab.controlCenterApiKey / CONTROL_CENTER_API_KEY.",
-                };
-
-                return Task.CompletedTask;
-            });
-
-            options.AddOperationTransformer((operation, _, _) =>
-            {
-                // Mutating /api routes require the key when configured; document it for all /api ops.
-                operation.Security ??= [];
-                operation.Security.Add(new OpenApiSecurityRequirement
-                {
-                    [new OpenApiSecuritySchemeReference("LabKey")] = [],
-                });
                 return Task.CompletedTask;
             });
         });

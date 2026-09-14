@@ -33,13 +33,6 @@ import { DashboardBoard, DashboardDocument, PageItem } from '../models/dashboard
 async function unwrap<T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>): Promise<T> {
   const result = await promise;
   if (result.error != null || result.data === undefined) {
-    if (result.response?.status === 401) {
-      const key = window.prompt('Control Center API key (lab.controlCenterApiKey)');
-      if (key) {
-        sessionStorage.setItem('modulab.apiKey', key);
-        throw new Error('Unauthorized — retry the action after setting the API key.');
-      }
-    }
     throw new Error(apiErrorMessage(result.error, `Request failed (${result.response?.status ?? '?'})`));
   }
   return result.data;

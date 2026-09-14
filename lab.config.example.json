@@ -10,8 +10,7 @@
     "piholePassword": "modulab",
     "picoshareAdminSecret": "modulab",
     "futoNotesPassword": "modulab",
-    "searxngSecret": "modulab",
-    "controlCenterApiKey": "modulab"
+    "searxngSecret": "modulab"
   },
   "caddy": {
     "ENABLE_LAN_PROXY": true

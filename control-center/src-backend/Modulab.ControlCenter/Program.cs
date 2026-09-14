@@ -16,11 +16,6 @@ var labRoot = Path.GetFullPath(
     Environment.GetEnvironmentVariable("LAB_ROOT")
     ?? (Directory.Exists("/lab") ? "/lab" : FindLabRoot()));
 
-var apiKey = Environment.GetEnvironmentVariable("CONTROL_CENTER_API_KEY")
-    ?? Environment.GetEnvironmentVariable("LAB_API_KEY")
-    ?? ReadApiKey(labRoot)
-    ?? "";
-
 // Control Center UI + /api on HOME_PORT (default 8888).
 var port = int.TryParse(Environment.GetEnvironmentVariable("HOME_PORT"), out var homePort) ? homePort
     : int.TryParse(Environment.GetEnvironmentVariable("LAB_API_PORT"), out var apiPort) ? apiPort
@@ -129,38 +124,8 @@ List<FeedItem> ParseLemmy(JsonElement root, int take)
     return items;
 }
 
-// Protect mutating API routes only — UI and health stay open on loopback.
-app.Use(async (ctx, next) =>
-{
-    var path = ctx.Request.Path;
-    if (!path.StartsWithSegments("/api"))
-    {
-        await next();
-        return;
-    }
-
-    if (path.StartsWithSegments("/api/health") || ctx.Request.Method == HttpMethods.Get)
-    {
-        await next();
-        return;
-    }
-
-    if (string.IsNullOrEmpty(apiKey))
-    {
-        await next();
-        return;
-    }
-
-    if (!ctx.Request.Headers.TryGetValue("X-Lab-Key", out var provided)
-        || !FixedTimeEquals(provided.ToString(), apiKey))
-    {
-        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await ctx.Response.WriteAsJsonAsync(new ApiMessage("Unauthorized"), LabJsonContext.Default.ApiMessage);
-        return;
-    }
-
-    await next();
-});
+// Lab is a home LAN appliance: anyone who can open Control Center can install/start/stop.
+// Network reachability is the trust boundary (do not expose :8888 to the public internet).
 
 app.MapGet("/api/health", () => Results.Json(new HealthResponse("ok", labRoot), LabJsonContext.Default.HealthResponse))
     .WithName("GetHealth")
@@ -601,33 +566,6 @@ static string FindLabRoot()
     }
 
     return Directory.GetCurrentDirectory();
-}
-
-static string? ReadApiKey(string labRoot)
-{
-    var configPath = Path.Combine(labRoot, "lab.config.json");
-    if (!File.Exists(configPath))
-        return null;
-    try
-    {
-        var node = JsonNode.Parse(File.ReadAllText(configPath));
-        return node?["lab"]?["controlCenterApiKey"]?.GetValue<string>()
-            ?? node?["lab"]?["labApiKey"]?.GetValue<string>();
-    }
-    catch
-    {
-        return null;
-    }
-}
-
-static bool FixedTimeEquals(string a, string b)
-{
-    if (a.Length != b.Length)
-        return false;
-    var diff = 0;
-    for (var i = 0; i < a.Length; i++)
-        diff |= a[i] ^ b[i];
-    return diff == 0;
 }
 
 static List<Recipe> LoadRecipes(string labRoot)

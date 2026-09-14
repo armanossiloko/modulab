@@ -16,7 +16,6 @@ services:
       CONTROL_CENTER_ANGULAR_DIST: /lab/control-center/dist/control-center/browser
       DOTNET_gcServer: "0"
       DOTNET_EnableDiagnostics: "0"
-      CONTROL_CENTER_API_KEY: ${CONTROL_CENTER_API_KEY:-${LAB_API_KEY:-}}
     ports:
       - "${LAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
     volumes:

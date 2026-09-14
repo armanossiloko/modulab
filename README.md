@@ -52,9 +52,8 @@ All example secrets default to **`modulab`** (change them in `lab.config.json` f
 | Pi-hole admin password | `modulab` |
 | PicoShare admin secret | `modulab` |
 | FUTO Notes sync password | `modulab` |
-| Control Center API key (`X-Lab-Key`) | `modulab` |
 
-The Library UI prompts for the API key on first mutating action (install/start/stop).
+Anyone who can open Control Center can install/start/stop apps (LAN reachability is the trust boundary — do not expose port 8888 to the public internet).
 
 ## Config files
 
@@ -77,8 +76,7 @@ The Library UI prompts for the API key on first mutating action (install/start/s
     "piholePassword": "modulab",
     "picoshareAdminSecret": "modulab",
     "futoNotesPassword": "modulab",
-    "searxngSecret": "modulab",
-    "controlCenterApiKey": "modulab"
+    "searxngSecret": "modulab"
   },
   "caddy": { "ENABLE_LAN_PROXY": true },
   "enabled": ["control-center", "postgres", "redis", "pihole", "caddy"]
@@ -171,7 +169,7 @@ More detail: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md).
 
 ## Install apps (Control Center or CLI)
 
-**Library UI:** open Control Center → **Library** → **Install**. Enter API key `modulab` when prompted.
+**Library UI:** open Control Center → **Library** → **Install**.
 
 **CLI:**
 
