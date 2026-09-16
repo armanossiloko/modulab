@@ -2,7 +2,7 @@
 # Build Angular UI and publish into control-center/wwwroot (keeps *.json config).
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-ROOT="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+ROOT="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$ROOT"
 CC="$ROOT/control-center"

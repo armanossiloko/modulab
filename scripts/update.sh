@@ -3,7 +3,7 @@
 
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
@@ -50,6 +50,13 @@ update_stack() {
       stack_compose redis pull "$@"
       stack_compose redis up -d "$@"
       wait_for_redis
+      ;;
+    immich)
+      stack_compose immich pull "$@"
+      stack_compose immich up -d "$@"
+      if immich_uses_sidecar_redis; then
+        wait_for_immich_redis
+      fi
       ;;
     *)
       stack_compose "$name" pull "$@"

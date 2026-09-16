@@ -3,7 +3,7 @@
 
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
@@ -38,7 +38,7 @@ compose="${root}/docker-compose.${name}.yml"
 if [[ ! -f "$compose" ]]; then
   echo "Unknown stack '${name}'. No ${compose}" >&2
   echo "Usage: bash scripts/stop.sh <stack>|all" >&2
-  echo "Default stacks: ${LAB_STACKS[*]} (+ pihole)" >&2
+  echo "Default stacks: ${MODULAB_STACKS[*]} (+ pihole)" >&2
   exit 1
 fi
 

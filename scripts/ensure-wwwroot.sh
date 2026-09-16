@@ -3,7 +3,7 @@
 # Safe to re-run: never overwrites an existing dashboard.json.
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-ROOT="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+ROOT="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$ROOT"
 WWW="$ROOT/control-center/wwwroot"

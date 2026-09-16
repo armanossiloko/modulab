@@ -39,8 +39,19 @@ jobs:
           docker compose version
           for f in docker-compose.*.yml; do
             case "$f" in
-              *.override.yml|*.dns.yml|*.proxy-ports.yml|*.proxy-ports.desktop.yml|*.lan-ports.yml|*.dns-ports.yml) continue ;;
+              *.override.yml|*.dns.yml|*.proxy-ports.yml|*.proxy-ports.desktop.yml|*.lan-ports.yml|*.dns-ports.yml|*.redis.yml) continue ;;
             esac
             echo "=== $f ==="
             docker compose --env-file .env -f "$f" config >/dev/null
           done
+          echo "=== docker-compose.immich.yml + immich.redis overlay ==="
+          docker compose --env-file .env -f docker-compose.immich.yml -f docker-compose.immich.redis.yml config >/dev/null
+          echo "=== compose.yaml (appliance bootstrap) ==="
+          mkdir -p /tmp/modulab-data
+          MODULAB_HOST_ROOT=/tmp/modulab-data docker compose -f compose.yaml config >/dev/null
+          python3 -m py_compile scripts/seed-lab-state.py
+          python3 scripts/seed-lab-state.py
+        env:
+          MODULAB_ROOT: /tmp/modulab-seed-test
+          MODULAB_KIT: ${{ github.workspace }}
+          MODULAB_SEED: "true"

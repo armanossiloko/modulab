@@ -3,12 +3,12 @@ services:
     image: stirlingtools/stirling-pdf:latest-fat
     container_name: stirling-pdf
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:8082:8080"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8082:8080"
     volumes:
-      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/tessdata:/usr/share/tessdata
-      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/configs:/configs
-      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/logs:/logs
-      - ${LAB_HOST_ROOT:-.}/data/stirling-pdf/pipeline:/pipeline
+      - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/tessdata:/usr/share/tessdata
+      - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/configs:/configs
+      - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/logs:/logs
+      - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/pipeline:/pipeline
     environment:
       SECURITY_ENABLELOGIN: ${SECURITY_ENABLELOGIN:-false}
       LANGS: ${LANGS:-en_GB}

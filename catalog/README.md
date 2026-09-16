@@ -6,13 +6,14 @@ Each subdirectory is a **recipe**: catalog metadata, install form, proxy/DNS, an
 catalog/<id>/recipe.json
 ```
 
-Hand-edit **`lab.config.json` only**. `bash scripts/render-config.sh` generates root `.env`, `postgres/bootstrap.sql`, and edge proxy/DNS.
+Hand-edit **`lab.config.json` only** (or use Control Center → Settings → Lab). `python3 scripts/lab.py render-config` generates root `.env`, `postgres/bootstrap.sql`, and edge proxy/DNS.
 
 ## Important fields
 
 | Field | Purpose |
 |-------|---------|
-| `dependsOn` | Other stacks started first if missing (e.g. `["postgres","redis"]`) |
+| `dependsOn` | Other stacks started first if missing (e.g. `["postgres"]`) |
+| `preferShared` | Soft deps: use shared stack if already enabled/running (e.g. `["redis"]`), else app-local sidecar |
 | `database` | DB name created on the **shared** Postgres (one container, many DBs) |
 | `databaseNeedsVector` | Hint that the app needs the vector-capable Postgres image (already the shared image) |
 | `installable` / `core` | Library Install vs always-on infra |
@@ -21,7 +22,6 @@ Hand-edit **`lab.config.json` only**. `bash scripts/render-config.sh` generates 
 
 ## Shared infra rule
 
-- **One** Postgres, **one** Redis.
-- Apps that need a DB get a database on shared Postgres — they must not ship their own Postgres.
-- Apps that need cache use shared Redis.
-- Declaring `dependsOn` is enough; install/start will enable and run dependencies.
+- **One** shared Postgres for all apps — apps must not ship their own Postgres.
+- **Redis** is optional: prefer the shared Redis stack when it is already enabled or running; otherwise apps such as Immich may start a sidecar Redis.
+- Declaring `dependsOn` is enough for hard deps; `preferShared` does not auto-enable the shared stack.

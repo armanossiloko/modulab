@@ -1,15 +1,19 @@
 # Local names for lab stacks (optional)
 
-Pi-hole is optional. **Control Center** is **http://127.0.0.1:8888**. Set **`caddy.ENABLE_LAN_PROXY=true`** in `lab.config.json` for portless **`http://<label>.<domain>`** URLs on your LAN.
+**Pi-hole is optional.** Enable it from Control Center → **Settings → Lab** (or Library), or `python3 scripts/lab.py install pihole`.
+
+Control Center is **http://127.0.0.1:8888**. Set **`caddy.ENABLE_LAN_PROXY=true`** (default) for portless **`http://<label>.<domain>`** URLs on your LAN. Hostname URLs also need Pi-hole (or another DNS) pointing clients at `lab.hostIp`.
 
 ## network.lan URLs (Pi-hole + Caddy)
 
 ```bash
-bash scripts/render-config.sh
-bash scripts/start.sh pihole
-bash scripts/start.sh caddy
-bash scripts/install.sh jellyfin   # example — repeat per stack
+python3 scripts/lab.py render-config
+python3 scripts/lab.py start pihole
+python3 scripts/lab.py start caddy
+python3 scripts/lab.py install jellyfin   # example
 ```
+
+Or appliance users: Settings → Lab → enable Pi-hole, then Library → Install.
 
 With **`ENABLE_LAN_PROXY=true`**, start scripts automatically:
 
@@ -36,25 +40,25 @@ Replace `network.lan` with your **`lab.domain`**. Routes: **`caddy/proxy.caddy`*
 
 ## Configuration
 
-Set in **`lab.config.json`** (then `bash scripts/render-config.sh`):
+Set in **Settings → Lab** or **`lab.config.json`** (then `python3 scripts/lab.py render-config`):
 
 | Key | Example | Purpose |
 |-----|---------|---------|
-| `lab.hostIp` | `192.168.1.10` | LAN IP of the Docker host — DNS names point here; Pi-hole binds `:53` here |
+| `lab.hostIp` | `192.168.1.50` | LAN IP of the Docker host — DNS names point here; Pi-hole binds `:53` here |
 | `lab.domain` | `network.lan` | Private zone suffix |
 | `caddy.ENABLE_LAN_PROXY` | `true` | Caddy on port 80 + LAN DNS publish |
 
-DNS host labels come from **catalog recipes** → generated `pihole/dns-hosts.conf` + `docker-compose.pihole.dns.yml` (uses `${LAB_HOST_IP}` / `${PIHOLE_LOCAL_DOMAIN}` from `.env`).
+DNS host labels come from **catalog recipes** → generated `pihole/dns-hosts.conf` + `docker-compose.pihole.dns.yml` (uses `${MODULAB_HOST_IP}` / `${PIHOLE_LOCAL_DOMAIN}` from `.env`).
 
 After changing IP, domain, or recipes:
 
 ```bash
-bash scripts/render-config.sh
-bash scripts/start.sh pihole
-bash scripts/start.sh caddy
+python3 scripts/lab.py render-config
+python3 scripts/lab.py start pihole
+python3 scripts/lab.py start caddy
 ```
 
-### Direct port access (no Caddy)
+### Direct port access (no Caddy / no Pi-hole)
 
 | Label | Stack / service | URL |
 |-------|-----------------|-----|
@@ -71,14 +75,9 @@ bash scripts/start.sh caddy
 
 ## LAN DNS
 
-1. Set **`lab.hostIp`** to this machine’s LAN address.
-2. Set **`caddy.ENABLE_LAN_PROXY`: true** and render config.
+1. Set **`lab.hostIp`** (Settings → Lab).
+2. Enable Pi-hole and keep **`caddy.ENABLE_LAN_PROXY`: true**.
 3. Point router DHCP DNS (or each client) at **`lab.hostIp`**.
-4. `bash scripts/start.sh pihole` and `bash scripts/start.sh caddy`
+4. Start Pi-hole + Caddy if not already running.
 
 Optional per-machine tweaks (firewall, extra ports) can still use gitignored `docker-compose.override.yml`.
-
-## Related
-
-- [Pi-hole Docker configuration](https://docs.pi-hole.net/docker/configuration/)
-- [README.md](../README.md#port-map-host-bindings)

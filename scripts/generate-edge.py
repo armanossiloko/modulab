@@ -27,7 +27,7 @@ PROXY_HEADER = """\
 DNS_HEADER = """\
 # GENERATED from catalog/*/recipe.json — do not edit by hand.
 # Regenerate: bash scripts/render-config.sh
-# FQDN: <label>.<PIHOLE_LOCAL_DOMAIN>  ·  IP: LAB_HOST_IP in .env
+# FQDN: <label>.<PIHOLE_LOCAL_DOMAIN>  ·  IP: MODULAB_HOST_IP in .env
 
 """
 
@@ -130,17 +130,17 @@ def write_dns_hosts(labels: list[str]) -> None:
 def write_pihole_override(labels: list[str]) -> None:
     # Use Compose env interpolation so this file is not machine-specific.
     lines = [
-        f"        ${{LAB_HOST_IP}} {label}.${{PIHOLE_LOCAL_DOMAIN}}" for label in labels
+        f"        ${{MODULAB_HOST_IP}} {label}.${{PIHOLE_LOCAL_DOMAIN}}" for label in labels
     ]
     hosts_block = (
         "\n".join(lines)
         if lines
-        else "        ${LAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}"
+        else "        ${MODULAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}"
     )
     content = (
         "# GENERATED from catalog/*/recipe.json — do not edit by hand.\n"
         "# Regenerate: bash scripts/render-config.sh\n"
-        "# LAB_HOST_IP / PIHOLE_LOCAL_DOMAIN come from generated .env.\n"
+        "# MODULAB_HOST_IP / PIHOLE_LOCAL_DOMAIN come from generated .env.\n"
         "# Merged when starting Pi-hole (see scripts/common.sh).\n"
         "services:\n"
         "  pihole:\n"

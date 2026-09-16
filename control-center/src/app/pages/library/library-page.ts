@@ -1,12 +1,13 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CatalogItem, RecipeField } from '../../api/generated';
 import { DashboardService } from '../../core/services/dashboard.service';
 
 @Component({
   selector: 'app-library-page',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <section class="library">
       <header class="library-head">
@@ -19,6 +20,14 @@ import { DashboardService } from '../../core/services/dashboard.service';
           (ngModelChange)="query.set($event)"
         />
       </header>
+
+      @if (setupBlocked()) {
+        <p class="setup-banner">
+          Set your LAN host IP in
+          <a routerLink="/settings/lab">Settings → Lab</a>
+          before installing apps.
+        </p>
+      }
 
       @if (error()) {
         <p class="empty-note">{{ error() }}</p>
@@ -44,7 +53,12 @@ import { DashboardService } from '../../core/services/dashboard.service';
               </div>
               <div class="library-actions">
                 @if (app.status === 'available' && app.installable !== false) {
-                  <button type="button" class="btn btn--primary" (click)="beginInstall(app)">
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    [disabled]="setupBlocked()"
+                    (click)="beginInstall(app)"
+                  >
                     Install
                   </button>
                 }
@@ -162,6 +176,18 @@ import { DashboardService } from '../../core/services/dashboard.service';
       margin: 0;
       font-size: 1.25rem;
       letter-spacing: -0.02em;
+    }
+    .setup-banner {
+      margin: 0 0 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+      background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent));
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+    .setup-banner a {
+      color: var(--accent);
     }
     .search {
       min-width: min(280px, 100%);
@@ -312,6 +338,7 @@ export class LibraryPage implements OnInit {
   readonly busyId = signal<string | null>(null);
   readonly installing = signal<CatalogItem | null>(null);
   installDraft: Record<string, string | boolean> = {};
+  readonly setupBlocked = computed(() => this.dash.labStatus()?.needsHostIp === true);
 
   filteredApps(): CatalogItem[] {
     const q = this.query().trim().toLowerCase();
@@ -344,6 +371,7 @@ export class LibraryPage implements OnInit {
       },
       error: (err: Error) => this.error.set(err.message),
     });
+    this.dash.loadLabStatus().subscribe({ error: () => undefined });
   }
 
   hasUpdate(id: string): boolean {
@@ -397,6 +425,7 @@ export class LibraryPage implements OnInit {
   }
 
   beginInstall(app: CatalogItem): void {
+    if (this.setupBlocked()) return;
     this.installDraft = {};
     for (const field of app.fields || []) {
       this.installDraft[field.key || ''] = this.defaultFieldValue(field);

@@ -5,7 +5,7 @@
 
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
@@ -43,6 +43,22 @@ start_stack() {
     redis)
       stack_compose redis up -d "$@"
       wait_for_redis
+      ;;
+    immich)
+      mkdir -p "${root}/data/immich/library"
+      if immich_uses_sidecar_redis; then
+        mkdir -p "${root}/data/immich/redis"
+      elif stack_is_enabled redis || container_exists redis; then
+        # preferShared: shared Redis is enabled or already present
+        echo "dependency: ensuring redis (preferred by immich)..." >&2
+        start_stack redis
+      else
+        echo "warning: immich expects shared redis but it is not enabled; starting sidecar overlay if configured" >&2
+      fi
+      stack_compose immich up -d "$@"
+      if immich_uses_sidecar_redis; then
+        wait_for_immich_redis
+      fi
       ;;
     caddy)
       python3 "${root}/scripts/generate-edge.py"
@@ -126,7 +142,7 @@ compose="${root}/docker-compose.${name}.yml"
 if [[ ! -f "$compose" ]]; then
   echo "Unknown stack '${name}'. No ${compose}" >&2
   echo "Usage: bash scripts/start.sh <stack>|all" >&2
-  echo "Default stacks: ${LAB_STACKS[*]} (+ pihole)" >&2
+  echo "Default stacks: ${MODULAB_STACKS[*]} (+ pihole)" >&2
   exit 1
 fi
 

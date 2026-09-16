@@ -22,7 +22,7 @@ services:
           sleep infinity
         fi
     volumes:
-      - ${LAB_HOST_ROOT:-.}/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${LAB_HOST_ROOT:-.}/caddy/proxy.caddy:/etc/caddy/proxy.caddy:ro
-      - ${LAB_HOST_ROOT:-.}/data/caddy/data:/data
-      - ${LAB_HOST_ROOT:-.}/data/caddy/config:/config
+      - ${MODULAB_HOST_ROOT:-.}/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MODULAB_HOST_ROOT:-.}/caddy/proxy.caddy:/etc/caddy/proxy.caddy:ro
+      - ${MODULAB_HOST_ROOT:-.}/data/caddy/data:/data
+      - ${MODULAB_HOST_ROOT:-.}/data/caddy/config:/config

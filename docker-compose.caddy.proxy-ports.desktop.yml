@@ -5,7 +5,7 @@
 services:
   caddy:
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:80:80"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:80:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

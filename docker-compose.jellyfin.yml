@@ -7,12 +7,12 @@ services:
     # add docker-compose.jellyfin.override.yml with user: "1000:1000" if desired.
     network_mode: "bridge"
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:8096:8096"
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:8920:8920"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8096:8096"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8920:8920"
     volumes:
-      - ${LAB_HOST_ROOT:-.}/data/jellyfin/config:/config
-      - ${LAB_HOST_ROOT:-.}/data/jellyfin/cache:/cache
-      - ${LAB_HOST_ROOT:-.}/media:/media
+      - ${MODULAB_HOST_ROOT:-.}/data/jellyfin/config:/config
+      - ${MODULAB_HOST_ROOT:-.}/data/jellyfin/cache:/cache
+      - ${MODULAB_HOST_ROOT:-.}/media:/media
     environment:
       TZ: ${TZ:-UTC}
     restart: unless-stopped

@@ -15,7 +15,7 @@ control-center/
 
 ```bash
 bash scripts/start.sh control-center
-# http://127.0.0.1:8888 (or http://<LAB_HOST_IP>:8888 on the LAN)
+# http://127.0.0.1:8888 (or http://<MODULAB_HOST_IP>:8888 on the LAN)
 ```
 
 Compose must keep `CONTROL_CENTER_WWWROOT=/app/wwwroot` so the baked UI is served. Do not point that env at an empty host `wwwroot/`.

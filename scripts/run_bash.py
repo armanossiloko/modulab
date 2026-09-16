@@ -6,7 +6,7 @@ Center Linux container (and some Git Bash setups) then fails with:
   $'\\r': command not found
 
 This runner copies every scripts/*.sh into a temp dir with Unix newlines and
-executes from there. LAB_ROOT still points at the real lab checkout so compose
+executes from there. MODULAB_ROOT still points at the real lab checkout so compose
 files, .env, and catalog stay correct.
 """
 
@@ -21,7 +21,7 @@ from pathlib import Path
 
 def lab_root_from_env_or_here() -> Path:
     here = Path(__file__).resolve().parent
-    override = os.environ.get("LAB_ROOT", "").strip()
+    override = os.environ.get("MODULAB_ROOT", "").strip()
     if override:
         return Path(override).resolve()
     return here.parent.resolve()
@@ -58,7 +58,7 @@ def run_bash_script(script_name: str, script_args: list[str], lab_root: Path | N
             return 1
 
         env = os.environ.copy()
-        env["LAB_ROOT"] = str(root)
+        env["MODULAB_ROOT"] = str(root)
         env["MODULAB_SCRIPTS"] = str(tmp_scripts)
 
         return subprocess.call(

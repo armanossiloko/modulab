@@ -4,11 +4,14 @@ import {
   getCatalog,
   getDashboard,
   getHackerNewsFeed,
+  getLabSettings,
+  getLabStatus,
   getRedditFeed,
   getUpdates,
   getWeather,
   installApp as apiInstallApp,
   putDashboard,
+  putLabSettings,
   startApp as apiStartApp,
   stopApp as apiStopApp,
   uninstallApp as apiUninstallApp,
@@ -18,6 +21,9 @@ import {
   type CatalogItem,
   type CatalogResponse,
   type FeedResponse,
+  type LabSettingsResponse,
+  type LabSettingsUpdate,
+  type LabStatusResponse,
   type UpdatesResponse,
   type WeatherResponse,
 } from '../../api/generated';
@@ -58,6 +64,7 @@ export class DashboardService {
   readonly activeDashboardId = signal('home');
   /** Bumped when layout is force-reset so the grid re-binds items. */
   readonly layoutEpoch = signal(0);
+  readonly labStatus = signal<LabStatusResponse | null>(null);
 
   /** @deprecated use activeDashboardId */
   readonly activePageId = this.activeDashboardId;
@@ -316,6 +323,27 @@ export class DashboardService {
         })
       )
     );
+  }
+
+  loadLabStatus(): Observable<LabStatusResponse> {
+    return from(unwrap(getLabStatus({ throwOnError: false }))).pipe(
+      tap((status) => this.labStatus.set(status))
+    );
+  }
+
+  getLabSettings(): Observable<LabSettingsResponse> {
+    return from(unwrap(getLabSettings({ throwOnError: false })));
+  }
+
+  saveLabSettings(body: LabSettingsUpdate): Observable<LabSettingsResponse> {
+    return from(
+      unwrap(
+        putLabSettings({
+          throwOnError: false,
+          body,
+        })
+      )
+    ).pipe(tap(() => this.loadLabStatus().subscribe()));
   }
 
   updateApp(id: string): Observable<ApiMessage> {

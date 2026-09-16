@@ -1,9 +1,8 @@
-# Shared Valkey/Redis — optional lab-wide cache (hostname on network "modulab": redis).
-# Immich prefers this stack when enabled/running; otherwise it uses a sidecar Redis.
+# Merged when Immich runs without shared Redis (useSidecarRedis=true).
 
 services:
-  redis:
-    container_name: redis
+  immich-redis:
+    container_name: immich_redis
     image: docker.io/valkey/valkey:9
     restart: unless-stopped
     networks:
@@ -14,7 +13,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - ${MODULAB_HOST_ROOT:-.}/data/redis:/data
+      - ${MODULAB_HOST_ROOT:-.}/data/immich/redis:/data
 
 networks:
   modulab:

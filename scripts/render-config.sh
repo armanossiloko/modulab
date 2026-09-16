@@ -3,7 +3,7 @@
 
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-root="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 

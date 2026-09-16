@@ -2,7 +2,7 @@
 # Regenerate OpenAPI from the .NET API, then the Angular HTTP client.
 set -euo pipefail
 _scripts="$(cd "$(dirname "$0")" && pwd)"
-ROOT="${LAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+ROOT="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
 _scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$ROOT"
 

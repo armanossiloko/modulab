@@ -7,7 +7,7 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:5678:5678"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:5678:5678"
     environment:
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
       N8N_HOST: ${N8N_HOST:-localhost}
@@ -25,8 +25,8 @@ services:
       DB_POSTGRESDB_USER: ${POSTGRES_USER:-modulab}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
     volumes:
-      - ${LAB_HOST_ROOT:-.}/data/n8n:/home/node/.n8n
-      - ${LAB_HOST_ROOT:-.}/data/n8n-local-files:/files
+      - ${MODULAB_HOST_ROOT:-.}/data/n8n:/home/node/.n8n
+      - ${MODULAB_HOST_ROOT:-.}/data/n8n-local-files:/files
     networks:
       - modulab
 

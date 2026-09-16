@@ -1,13 +1,13 @@
-# Immich — uses shared Postgres + Redis on network "modulab" (no nested DB/cache).
-# Install starts postgres + redis first via recipe dependsOn.
-# UI: http://127.0.0.1:2283
+# Immich — photos/videos on shared Postgres; Redis shared or sidecar.
+# Install starts postgres via recipe dependsOn. Redis: prefer shared stack, else
+# docker-compose.immich.redis.yml (see useSidecarRedis / REDIS_HOSTNAME).
 
 services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     volumes:
-      # Absolute host path from render-config (LAB_HOST_ROOT + data/immich/library).
+      # Absolute host path from render-config (MODULAB_HOST_ROOT + data/immich/library).
       - ${UPLOAD_LOCATION}:/data
     environment:
       IMMICH_VERSION: ${IMMICH_VERSION:-release}
@@ -15,10 +15,10 @@ services:
       DB_USERNAME: ${POSTGRES_USER:-modulab}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
       DB_DATABASE_NAME: ${IMMICH_DB_NAME:-immich}
-      REDIS_HOSTNAME: redis
+      REDIS_HOSTNAME: ${REDIS_HOSTNAME:-redis}
       TZ: ${TZ:-UTC}
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:2283:2283"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:2283:2283"
     networks:
       - modulab
     depends_on: []

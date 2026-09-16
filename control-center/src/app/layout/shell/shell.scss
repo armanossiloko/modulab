@@ -83,6 +83,20 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.lab-setup-banner {
+  margin: 0 1.25rem 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent));
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.lab-setup-banner a {
+  color: var(--accent);
+}
+
 .search-wrap::before {
   content: '';
   position: absolute;

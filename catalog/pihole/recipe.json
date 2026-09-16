@@ -7,7 +7,7 @@
   "port": 5080,
   "path": "/admin",
   "installable": true,
-  "core": true,
+  "core": false,
   "dependsOn": [],
   "proxy": {
     "host": "pihole",

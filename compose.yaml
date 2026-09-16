@@ -1,0 +1,37 @@
+# Modulab appliance — Control Center + state volume (no full repo clone).
+#
+# First-time install (full guide): README.md → "Install guide (first time)"
+#
+# Quick start:
+#   mkdir -p "$HOME/modulab-data"
+#   export MODULAB_HOST_ROOT="$HOME/modulab-data"   # absolute path required
+#   curl -fsSL -o compose.yaml https://raw.githubusercontent.com/armanossiloko/modulab/master/compose.yaml
+#   docker compose up -d
+#   open http://localhost:8888 → Settings → Lab → set Host IP → Library
+#
+# Windows (PowerShell):
+#   $env:MODULAB_HOST_ROOT = (Resolve-Path "$HOME\modulab-data").Path
+
+name: modulab
+
+services:
+  control-center:
+    image: ghcr.io/armanossiloko/modulab:${MODULAB_TAG:-latest}
+    container_name: control-center
+    restart: unless-stopped
+    environment:
+      MODULAB_ROOT: /lab
+      MODULAB_KIT: /opt/modulab
+      MODULAB_HOST_ROOT: ${MODULAB_HOST_ROOT:?Set MODULAB_HOST_ROOT to the absolute host path of your state directory}
+      HOME_PORT: ${HOME_PORT:-8888}
+      ASPNETCORE_URLS: http://0.0.0.0:8888
+      CONTROL_CENTER_WWWROOT: /app/wwwroot
+      DOTNET_gcServer: "0"
+      DOTNET_EnableDiagnostics: "0"
+      COMPOSE_PROJECT_NAME: modulab
+      COMPOSE_IGNORE_ORPHANS: "true"
+    ports:
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
+    volumes:
+      - ${MODULAB_HOST_ROOT}:/lab
+      - /var/run/docker.sock:/var/run/docker.sock

@@ -23,7 +23,7 @@ BOOTSTRAP_PATH = ROOT / "postgres" / "bootstrap.sql"
 
 # Keys that must be absolute host paths for Docker Desktop bind mounts.
 HOST_PATH_KEYS = (
-    "LAB_HOST_ROOT",
+    "MODULAB_HOST_ROOT",
     "UPLOAD_LOCATION",
     "FUTO_NOTES_DATA_DIR",
 )
@@ -85,7 +85,7 @@ def read_env_lab_host_root() -> str | None:
     if not ENV_PATH.is_file():
         return None
     for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
-        if line.startswith("LAB_HOST_ROOT="):
+        if line.startswith("MODULAB_HOST_ROOT="):
             value = line.split("=", 1)[1].strip().strip('"').strip("'")
             return value or None
     return None
@@ -117,7 +117,7 @@ def detect_lab_host_root_from_docker() -> str | None:
 def resolve_lab_host_root() -> str:
     """Absolute host checkout path for Compose volume binds (never container-only /lab)."""
     for candidate in (
-        os.environ.get("LAB_HOST_ROOT", "").strip(),
+        os.environ.get("MODULAB_HOST_ROOT", "").strip(),
         read_env_lab_host_root() or "",
     ):
         if candidate and is_usable_host_root(candidate):
@@ -194,9 +194,9 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "POSTGRES_PASSWORD": pg_pass,
         "POSTGRES_DB": pg_db,
         "PIHOLE_LOCAL_DOMAIN": domain,
-        "LAB_HOST_IP": lab.get("hostIp", "127.0.0.1"),
+        "MODULAB_HOST_IP": lab.get("hostIp", "127.0.0.1"),
         # Absolute host checkout path for Compose bind mounts (set again below).
-        "LAB_HOST_ROOT": host_root,
+        "MODULAB_HOST_ROOT": host_root,
         "PIHOLE_PASSWORD": lab.get("piholePassword", "modulab"),
         "PS_SHARED_SECRET": lab.get("picoshareAdminSecret", "modulab"),
         "SEARXNG_SECRET": lab.get("searxngSecret", "modulab"),
@@ -208,15 +208,15 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "FUTO_NOTES_COOKIE_SECURE": False,
         "FUTO_NOTES_BLOB_GC_ENABLED": True,
         "FUTO_NOTES_DATA_DIR": f"{host_root}/data/futo-notes",
-        "LAB_ROOT": "/lab",
+        "MODULAB_ROOT": "/lab",
         "HOME_PORT": 8888,
         "ASPNETCORE_URLS": "http://0.0.0.0:8888",
         "DOTNET_gcServer": "0",
         "DOTNET_EnableDiagnostics": "0",
         "ENABLE_LAN_PROXY": False,
-        # Publish HTTP apps on all interfaces so http://<LAB_HOST_IP>:<port> works on the LAN.
+        # Publish HTTP apps on all interfaces so http://<MODULAB_HOST_IP>:<port> works on the LAN.
         # Postgres stays on loopback. Caddy still proxies via 127.0.0.1.
-        "LAB_PUBLISH_IP": "0.0.0.0",
+        "MODULAB_PUBLISH_IP": "0.0.0.0",
         "UPSTREAM_HOST": "127.0.0.1",
         "CADDY_TAG": "2-alpine",
         "N8N_HOST": f"n8n.{domain}",
@@ -259,15 +259,15 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
     env["POSTGRES_PASSWORD"] = pg_pass
     env["POSTGRES_DB"] = pg_db
     env["PIHOLE_LOCAL_DOMAIN"] = domain
-    env["LAB_HOST_IP"] = lab.get("hostIp", "127.0.0.1")
-    env["LAB_HOST_ROOT"] = host_root
+    env["MODULAB_HOST_IP"] = lab.get("hostIp", "127.0.0.1")
+    env["MODULAB_HOST_ROOT"] = host_root
     env["GENERIC_TIMEZONE"] = timezone
 
     # Relative path overrides from lab.config / recipes must become host binds.
     for key in HOST_PATH_KEYS:
         if key in env:
             env[key] = absolutize_host_path(env[key], host_root)
-    env["LAB_HOST_ROOT"] = host_root
+    env["MODULAB_HOST_ROOT"] = host_root
 
     # When LAN proxy is on, prefer *.domain URLs for apps that advertise a public base URL.
     lan = env.get("ENABLE_LAN_PROXY")

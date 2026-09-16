@@ -6,10 +6,10 @@ services:
     container_name: searxng
     restart: unless-stopped
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:${SEARXNG_PORT:-8080}:8080"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:${SEARXNG_PORT:-8080}:8080"
     volumes:
-      - ${LAB_HOST_ROOT:-.}/data/searxng:/etc/searxng
-      - ${LAB_HOST_ROOT:-.}/searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro
+      - ${MODULAB_HOST_ROOT:-.}/data/searxng:/etc/searxng
+      - ${MODULAB_HOST_ROOT:-.}/searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro
     environment:
       SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://localhost:8080/}
       SEARXNG_SECRET: ${SEARXNG_SECRET:-}
@@ -23,7 +23,7 @@ services:
         # that yields an empty settings.yml and KeyError: default_doi_resolver.
         if [ ! -f "$$tmpl" ]; then
           echo "searxng: settings template missing or not a file: $$tmpl" >&2
-          echo "searxng: check LAB_HOST_ROOT and recreate the container" >&2
+          echo "searxng: check MODULAB_HOST_ROOT and recreate the container" >&2
           ls -la /tmp /etc/searxng >&2 || true
           exit 1
         fi

@@ -7,9 +7,9 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-debug}
       TZ: ${TZ:-UTC}
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:5055:5055"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:5055:5055"
     volumes:
-      - ${LAB_HOST_ROOT:-.}/data/seerr/config:/app/config
+      - ${MODULAB_HOST_ROOT:-.}/data/seerr/config:/app/config
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
       start_period: 20s

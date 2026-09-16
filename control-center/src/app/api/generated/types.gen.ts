@@ -91,6 +91,39 @@ export type JsonElement = unknown;
 
 export type JsonNode = unknown;
 
+export type LabSettingsResponse = {
+    hostIp: string;
+    domain: string;
+    timezone: string;
+    postgresUser: string;
+    postgresPassword: string;
+    postgresDb: string;
+    piholePassword: string;
+    enableLanProxy: boolean;
+    enablePihole: boolean;
+};
+
+export type LabSettingsUpdate = {
+    hostIp: null | string;
+    domain: null | string;
+    timezone: null | string;
+    postgresUser: null | string;
+    postgresPassword: null | string;
+    postgresDb: null | string;
+    piholePassword: null | string;
+    enableLanProxy: null | boolean;
+    enablePihole: null | boolean;
+};
+
+export type LabStatusResponse = {
+    ready: boolean;
+    needsHostIp: boolean;
+    baseStacksRunning: boolean;
+    hostIp: null | string;
+    suggestedHostIp: null | string;
+    domain: string;
+};
+
 export type RecipeField = {
     key?: string;
     label?: string;
@@ -135,6 +168,72 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type GetLabStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/lab/status';
+};
+
+export type GetLabStatusResponses = {
+    /**
+     * OK
+     */
+    200: LabStatusResponse;
+};
+
+export type GetLabStatusResponse = GetLabStatusResponses[keyof GetLabStatusResponses];
+
+export type GetLabSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/lab/settings';
+};
+
+export type GetLabSettingsErrors = {
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type GetLabSettingsError = GetLabSettingsErrors[keyof GetLabSettingsErrors];
+
+export type GetLabSettingsResponses = {
+    /**
+     * OK
+     */
+    200: LabSettingsResponse;
+};
+
+export type GetLabSettingsResponse = GetLabSettingsResponses[keyof GetLabSettingsResponses];
+
+export type PutLabSettingsData = {
+    body?: null | LabSettingsUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/lab/settings';
+};
+
+export type PutLabSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+};
+
+export type PutLabSettingsError = PutLabSettingsErrors[keyof PutLabSettingsErrors];
+
+export type PutLabSettingsResponses = {
+    /**
+     * OK
+     */
+    200: LabSettingsResponse;
+};
+
+export type PutLabSettingsResponse = PutLabSettingsResponses[keyof PutLabSettingsResponses];
 
 export type GetRedditFeedData = {
     body?: never;

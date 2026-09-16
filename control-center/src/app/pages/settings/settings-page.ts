@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardDocument } from '../../core/models/dashboard';
 
-type SettingsSection = 'general' | 'sidebar';
+type SettingsSection = 'general' | 'sidebar' | 'lab';
 
 const COLOR_TOKEN_HEX: Record<string, string> = {
   productivity: '#5b9bd9',
@@ -36,6 +36,12 @@ function toColorInput(value?: string): string {
               >General</a
             >
             <a
+              routerLink="/settings/lab"
+              class="settings-tab"
+              [class.is-active]="section() === 'lab'"
+              >Lab</a
+            >
+            <a
               routerLink="/settings/sidebar"
               class="settings-tab"
               [class.is-active]="section() === 'sidebar'"
@@ -50,6 +56,54 @@ function toColorInput(value?: string): string {
 
       @if (error()) {
         <p class="empty-note">{{ error() }}</p>
+      } @else if (section() === 'lab') {
+        <div class="panel">
+          <p class="lede">
+            Host and network settings for the appliance. Set a LAN IP before installing apps from the
+            Library.
+          </p>
+          @if (labSuggested()) {
+            <p class="muted">Suggested host IP from this request: {{ labSuggested() }}</p>
+          }
+          <div class="settings-grid">
+            <label class="field">
+              <span>Host IP (LAN)</span>
+              <input [(ngModel)]="labDraft.hostIp" (ngModelChange)="markDirty()" placeholder="192.168.1.50" />
+            </label>
+            <label class="field">
+              <span>Domain</span>
+              <input [(ngModel)]="labDraft.domain" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field">
+              <span>Timezone</span>
+              <input [(ngModel)]="labDraft.timezone" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field field--inline">
+              <span>LAN reverse proxy (Caddy :80)</span>
+              <input type="checkbox" [(ngModel)]="labDraft.enableLanProxy" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field field--inline">
+              <span>Enable Pi-hole (DNS)</span>
+              <input type="checkbox" [(ngModel)]="labDraft.enablePihole" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field">
+              <span>Postgres user</span>
+              <input [(ngModel)]="labDraft.postgresUser" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field">
+              <span>Postgres password</span>
+              <input type="password" [(ngModel)]="labDraft.postgresPassword" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field">
+              <span>Postgres database</span>
+              <input [(ngModel)]="labDraft.postgresDb" (ngModelChange)="markDirty()" />
+            </label>
+            <label class="field">
+              <span>Pi-hole admin password</span>
+              <input type="password" [(ngModel)]="labDraft.piholePassword" (ngModelChange)="markDirty()" />
+            </label>
+          </div>
+        </div>
       } @else if (draft) {
         @if (section() === 'general') {
           <div class="panel">
@@ -360,18 +414,32 @@ export class SettingsPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   draft: DashboardDocument | null = null;
+  labDraft = {
+    hostIp: '',
+    domain: 'network.lan',
+    timezone: 'UTC',
+    postgresUser: 'modulab',
+    postgresPassword: 'modulab',
+    postgresDb: 'modulab',
+    piholePassword: 'modulab',
+    enableLanProxy: true,
+    enablePihole: false,
+  };
   accent = '#d9a441';
   searchEngine = 'https://duckduckgo.com/?q=%s';
   readonly dirty = signal(false);
   readonly error = signal<string | null>(null);
   readonly section = signal<SettingsSection>('general');
+  readonly labSuggested = signal<string | null>(null);
 
   readonly toColorInput = toColorInput;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
       const section = params.get('section');
-      this.section.set(section === 'sidebar' ? 'sidebar' : 'general');
+      if (section === 'sidebar') this.section.set('sidebar');
+      else if (section === 'lab') this.section.set('lab');
+      else this.section.set('general');
     });
 
     this.dash.load().subscribe({
@@ -383,6 +451,29 @@ export class SettingsPage implements OnInit {
         this.searchEngine = doc.search?.engine || 'https://duckduckgo.com/?q=%s';
       },
       error: (err: Error) => this.error.set(err.message),
+    });
+
+    this.dash.getLabSettings().subscribe({
+      next: (s) => {
+        this.labDraft = {
+          hostIp: s.hostIp ?? '',
+          domain: s.domain ?? 'network.lan',
+          timezone: s.timezone ?? 'UTC',
+          postgresUser: s.postgresUser ?? 'modulab',
+          postgresPassword: s.postgresPassword ?? 'modulab',
+          postgresDb: s.postgresDb ?? 'modulab',
+          piholePassword: s.piholePassword ?? 'modulab',
+          enableLanProxy: s.enableLanProxy ?? true,
+          enablePihole: s.enablePihole ?? false,
+        };
+      },
+      error: () => {
+        /* Lab settings optional if API older */
+      },
+    });
+    this.dash.loadLabStatus().subscribe({
+      next: (st) => this.labSuggested.set(st.suggestedHostIp ?? null),
+      error: () => undefined,
     });
   }
 
@@ -476,6 +567,25 @@ export class SettingsPage implements OnInit {
   }
 
   save(): void {
+    if (this.section() === 'lab') {
+      this.dash
+        .saveLabSettings({
+          hostIp: this.labDraft.hostIp,
+          domain: this.labDraft.domain,
+          timezone: this.labDraft.timezone,
+          postgresUser: this.labDraft.postgresUser,
+          postgresPassword: this.labDraft.postgresPassword,
+          postgresDb: this.labDraft.postgresDb,
+          piholePassword: this.labDraft.piholePassword,
+          enableLanProxy: this.labDraft.enableLanProxy,
+          enablePihole: this.labDraft.enablePihole,
+        })
+        .subscribe({
+          next: () => this.dirty.set(false),
+          error: (err: Error) => alert(err.message),
+        });
+      return;
+    }
     if (!this.draft) return;
     // Drop empty links/groups
     const bookmarks = (this.draft.sidebar?.bookmarks || [])
