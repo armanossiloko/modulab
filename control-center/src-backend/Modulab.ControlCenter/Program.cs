@@ -64,6 +64,40 @@ string WeatherLabel(int code) => code switch
     _ => "Clouds",
 };
 
+static string? FeedHost(string? url)
+{
+    if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        return null;
+    var host = uri.IdnHost;
+    return host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? host[4..] : host;
+}
+
+static int ReadFeedInt(JsonElement el)
+{
+    if (el.ValueKind != JsonValueKind.Number) return 0;
+    if (el.TryGetInt32(out var n)) return n;
+    return el.TryGetDouble(out var d) ? (int)d : 0;
+}
+
+static DateTimeOffset? ReadFeedTime(JsonElement el)
+{
+    if (el.ValueKind == JsonValueKind.Number && el.TryGetDouble(out var sec))
+        return DateTimeOffset.FromUnixTimeSeconds((long)sec);
+    if (el.ValueKind == JsonValueKind.String
+        && DateTimeOffset.TryParse(el.GetString(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var dto))
+        return dto;
+    return null;
+}
+
+static string? HttpImage(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    if (!value.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+        && !value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        return null;
+    return value;
+}
+
 List<FeedItem> ParseReddit(JsonElement root, string name, int take)
 {
     var items = new List<FeedItem>();
@@ -76,17 +110,35 @@ List<FeedItem> ParseReddit(JsonElement root, string name, int take)
     {
         if (!child.TryGetProperty("data", out var post)) continue;
         var title = post.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
-        var permalink = post.TryGetProperty("permalink", out var p) ? p.GetString() ?? "" : "";
-        var author = post.TryGetProperty("author", out var a) ? a.GetString() ?? "" : "";
-        var score = post.TryGetProperty("score", out var s) && s.TryGetInt32(out var scoreVal) ? scoreVal : 0;
-        var thumb = post.TryGetProperty("thumbnail", out var th) ? th.GetString() ?? "" : "";
         if (string.IsNullOrWhiteSpace(title)) continue;
-        string? thumbUrl = thumb.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? thumb : null;
+        var permalink = post.TryGetProperty("permalink", out var p) ? p.GetString() ?? "" : "";
+        var discussion = string.IsNullOrEmpty(permalink)
+            ? $"https://www.reddit.com/r/{name}"
+            : $"https://www.reddit.com{permalink}";
+        var author = post.TryGetProperty("author", out var a) ? a.GetString() ?? "" : "";
+        var score = post.TryGetProperty("score", out var s) ? ReadFeedInt(s) : 0;
+        var comments = post.TryGetProperty("num_comments", out var nc) ? ReadFeedInt(nc) : 0;
+        var published = post.TryGetProperty("created_utc", out var created) ? ReadFeedTime(created) : null;
+        var selfPost = post.TryGetProperty("is_self", out var self) && self.ValueKind == JsonValueKind.True;
+        var external = post.TryGetProperty("url", out var u) ? u.GetString() : null;
+        var link = !selfPost && !string.IsNullOrWhiteSpace(external) ? external! : discussion;
+        var domain = post.TryGetProperty("domain", out var d) ? d.GetString() : null;
+        if (string.IsNullOrWhiteSpace(domain) || domain.StartsWith("self.", StringComparison.Ordinal))
+            domain = FeedHost(link);
+        else if (domain.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+            domain = domain[4..];
+        var thumb = post.TryGetProperty("thumbnail", out var th) ? HttpImage(th.GetString()) : null;
         items.Add(new FeedItem(
             title,
-            string.IsNullOrEmpty(permalink) ? $"https://www.reddit.com/r/{name}" : $"https://www.reddit.com{permalink}",
-            $"u/{author} · {score}",
-            thumbUrl));
+            link,
+            string.IsNullOrWhiteSpace(author) ? $"{score}" : $"u/{author} · {score}",
+            thumb,
+            string.IsNullOrWhiteSpace(author) ? null : author,
+            score,
+            comments,
+            published,
+            domain,
+            discussion));
         if (items.Count >= take) break;
     }
 
@@ -108,16 +160,30 @@ List<FeedItem> ParseLemmy(JsonElement root, int take)
         if (string.IsNullOrWhiteSpace(url))
             url = post.TryGetProperty("ap_id", out var ap) ? ap.GetString() : null;
         if (string.IsNullOrWhiteSpace(url)) continue;
-        var score = entry.TryGetProperty("counts", out var counts)
-            && counts.TryGetProperty("score", out var sc)
-            && sc.TryGetInt32(out var scoreVal)
-            ? scoreVal
-            : 0;
+        var score = 0;
+        var comments = 0;
+        if (entry.TryGetProperty("counts", out var counts))
+        {
+            if (counts.TryGetProperty("score", out var sc)) score = ReadFeedInt(sc);
+            if (counts.TryGetProperty("comments", out var cc)) comments = ReadFeedInt(cc);
+        }
         var creator = entry.TryGetProperty("creator", out var cr) && cr.TryGetProperty("name", out var cn)
             ? cn.GetString() ?? ""
             : "";
-        var thumb = post.TryGetProperty("thumbnail_url", out var th) ? th.GetString() : null;
-        items.Add(new FeedItem(title, url!, $"{score} · {creator}", string.IsNullOrWhiteSpace(thumb) ? null : thumb));
+        var published = post.TryGetProperty("published", out var pub) ? ReadFeedTime(pub) : null;
+        var discussion = post.TryGetProperty("ap_id", out var apId) ? apId.GetString() : null;
+        var thumb = post.TryGetProperty("thumbnail_url", out var th) ? HttpImage(th.GetString()) : null;
+        items.Add(new FeedItem(
+            title,
+            url!,
+            string.IsNullOrWhiteSpace(creator) ? $"{score}" : $"{score} · {creator}",
+            thumb,
+            string.IsNullOrWhiteSpace(creator) ? null : creator,
+            score,
+            comments,
+            published,
+            FeedHost(url),
+            string.IsNullOrWhiteSpace(discussion) ? url : discussion));
         if (items.Count >= take) break;
     }
 
@@ -243,8 +309,21 @@ app.MapGet("/api/feeds/hn", async (int? limit, CancellationToken ct) =>
             var url = root.TryGetProperty("url", out var u) ? u.GetString() : null;
             if (string.IsNullOrWhiteSpace(url)) url = $"https://news.ycombinator.com/item?id={id}";
             var by = root.TryGetProperty("by", out var b) ? b.GetString() ?? "" : "";
-            var score = root.TryGetProperty("score", out var s) && s.TryGetInt32(out var scoreVal) ? scoreVal : 0;
-            items.Add(new FeedItem(title, url!, $"{score} pts · {by}", null));
+            var score = root.TryGetProperty("score", out var s) ? ReadFeedInt(s) : 0;
+            var comments = root.TryGetProperty("descendants", out var descendants) ? ReadFeedInt(descendants) : 0;
+            var published = root.TryGetProperty("time", out var time) ? ReadFeedTime(time) : null;
+            var discussion = $"https://news.ycombinator.com/item?id={id}";
+            items.Add(new FeedItem(
+                title,
+                url!,
+                string.IsNullOrWhiteSpace(by) ? $"{score} pts" : $"{score} pts · {by}",
+                null,
+                string.IsNullOrWhiteSpace(by) ? null : by,
+                score,
+                comments,
+                published,
+                FeedHost(url),
+                discussion));
             if (items.Count >= take) break;
         }
 
@@ -1924,7 +2003,17 @@ internal sealed record LabSettingsUpdate(
     bool? EnableLanProxy,
     bool? EnablePihole);
 internal sealed record CatalogResponse(List<CatalogItem> Apps);
-internal sealed record FeedItem(string Title, string Url, string Meta, string? Thumb);
+internal sealed record FeedItem(
+    string Title,
+    string Url,
+    string Meta,
+    string? Thumb,
+    string? Author = null,
+    int? Score = null,
+    int? Comments = null,
+    DateTimeOffset? PublishedAt = null,
+    string? Domain = null,
+    string? DiscussionUrl = null);
 internal sealed record FeedResponse(string Source, string Channel, List<FeedItem> Items);
 internal sealed record WeatherResponse(string Label, double TemperatureC, int WeatherCode, string Summary, double WindKmh, int Humidity);
 internal sealed record CatalogItem(

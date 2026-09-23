@@ -16,25 +16,26 @@ export interface WidgetDefinition {
 
 /** Built-in widgets (same types as the default home layout). */
 export const BUILTIN_WIDGETS: WidgetDefinition[] = [
-  { type: 'stacks', label: 'Lab stacks', description: 'Installed lab apps and status', kind: 'builtin', w: 10, h: 3 },
+  { type: 'stacks', label: 'Lab stacks', description: 'Installed lab apps and status', kind: 'builtin', w: 11, h: 6 },
   {
     type: 'updates',
     label: 'Updates',
     description: 'Docker image updates for installed stacks',
     kind: 'builtin',
     w: 8,
-    h: 3,
+    h: 6,
   },
-  { type: 'community', label: 'Community', description: 'Reddit / Lemmy feed', kind: 'builtin', w: 8, h: 3 },
-  { type: 'hackerNews', label: 'Hacker News', description: 'Top HN stories', kind: 'builtin', w: 10, h: 3 },
-  { type: 'media', label: 'Media', description: 'Media stack highlights', kind: 'builtin', w: 8, h: 3 },
-  { type: 'clock', label: 'Clock', description: 'Local time and date', kind: 'builtin', w: 4, h: 1 },
-  { type: 'weather', label: 'Weather', description: 'Current conditions', kind: 'builtin', w: 4, h: 1 },
-  { type: 'yearProgress', label: 'Year progress', description: 'Progress through the year', kind: 'builtin', w: 4, h: 1 },
-  { type: 'stackUsage', label: 'Stack usage', description: 'Installed vs running counts', kind: 'builtin', w: 4, h: 1 },
-  { type: 'network', label: 'Network', description: 'Online / ping summary', kind: 'builtin', w: 4, h: 1 },
-  { type: 'nowRunning', label: 'Now running', description: 'Featured running app', kind: 'builtin', w: 4, h: 1 },
-  { type: 'calendar', label: 'Calendar', description: 'Month calendar', kind: 'builtin', w: 4, h: 4 },
+  { type: 'community', label: 'Community', description: 'Reddit / Lemmy feed', kind: 'builtin', w: 8, h: 8 },
+  { type: 'hackerNews', label: 'Hacker News', description: 'Top HN stories', kind: 'builtin', w: 11, h: 8 },
+  { type: 'media', label: 'Media', description: 'Media stack highlights', kind: 'builtin', w: 8, h: 6 },
+  { type: 'now', label: 'Now', description: 'Time, date, and local weather', kind: 'builtin', w: 5, h: 3 },
+  { type: 'clock', label: 'Clock', description: 'Local time and date', kind: 'builtin', w: 4, h: 2 },
+  { type: 'weather', label: 'Weather', description: 'Current conditions', kind: 'builtin', w: 4, h: 2 },
+  { type: 'yearProgress', label: 'Year progress', description: 'Progress through the year', kind: 'builtin', w: 4, h: 2 },
+  { type: 'stackUsage', label: 'Stack usage', description: 'Installed vs running counts', kind: 'builtin', w: 5, h: 2 },
+  { type: 'network', label: 'Network', description: 'Online / ping summary', kind: 'builtin', w: 5, h: 2 },
+  { type: 'nowRunning', label: 'Now running', description: 'Featured running app', kind: 'builtin', w: 5, h: 2 },
+  { type: 'calendar', label: 'Calendar', description: 'Month calendar', kind: 'builtin', w: 5, h: 8 },
 ];
 
 /** Custom widgets you configure when adding. */

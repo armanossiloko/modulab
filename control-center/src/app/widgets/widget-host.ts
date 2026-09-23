@@ -13,6 +13,7 @@ import { NetworkWidget } from './network-widget';
 import { NowRunningWidget } from './now-running-widget';
 import { CalendarWidget } from './calendar-widget';
 import { UpdatesWidget } from './updates-widget';
+import { NowWidget } from './now-widget';
 
 @Component({
   selector: 'app-widget-host',
@@ -31,6 +32,7 @@ import { UpdatesWidget } from './updates-widget';
     NowRunningWidget,
     CalendarWidget,
     UpdatesWidget,
+    NowWidget,
   ],
   template: `
     <header class="widget-head">
@@ -38,6 +40,9 @@ import { UpdatesWidget } from './updates-widget';
     </header>
     <div class="widget-body">
       @switch (type) {
+        @case ('now') {
+          <app-now-widget [config]="config" />
+        }
         @case ('clock') {
           <app-clock-widget [config]="config" />
         }

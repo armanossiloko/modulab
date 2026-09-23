@@ -2,8 +2,8 @@
   "title": "Modulab",
   "search": {
     "engine": "https://duckduckgo.com/?q=%s",
-    "placeholder": "Search stacks or the web…",
-    "libraryPlaceholder": "Filter library…"
+    "placeholder": "Search stacks or the web\u2026",
+    "libraryPlaceholder": "Filter library\u2026"
   },
   "theme": {
     "accent": "#d9a441"
@@ -181,12 +181,12 @@
         "homelab",
         "linux"
       ],
-      "limit": 6
+      "limit": 4
     },
     "hackerNews": {
       "enabled": true,
       "title": "Hacker News",
-      "limit": 8
+      "limit": 5
     },
     "media": {
       "enabled": true,
@@ -226,21 +226,16 @@
   "layout": {
     "center": [
       "stacks",
-      "community",
+      "updates",
       "hackerNews",
-      "media"
+      "community"
     ],
     "right": [
-      "clock",
-      "weather",
-      "yearProgress",
-      "stackUsage",
-      "network",
-      "nowRunning",
+      "now",
       "calendar"
     ]
   },
-  "_comment": "sidebar=global. dashboards[] boards. Rail widgets 5x3 (calendar 5x5) on square 24-col cells.",
+  "_comment": "Home: stacks + updates, feeds below, Now and a full calendar on the rail.",
   "dashboards": [
     {
       "id": "home",
@@ -252,97 +247,52 @@
           "x": 0,
           "y": 0,
           "w": 11,
-          "h": 3,
+          "h": 6,
           "config": {}
         },
         {
-          "id": "community-11-0",
-          "type": "community",
+          "id": "updates-11-0",
+          "type": "updates",
           "x": 11,
           "y": 0,
-          "w": 9,
-          "h": 3,
+          "w": 8,
+          "h": 6,
           "config": {}
         },
         {
-          "id": "hackerNews-0-3",
+          "id": "hackerNews-0-6",
           "type": "hackerNews",
           "x": 0,
-          "y": 3,
-          "w": 11,
-          "h": 3,
-          "config": {}
-        },
-        {
-          "id": "media-11-3",
-          "type": "media",
-          "x": 11,
-          "y": 3,
-          "w": 9,
-          "h": 3,
-          "config": {}
-        },
-        {
-          "id": "clock-20-0",
-          "type": "clock",
-          "x": 20,
-          "y": 0,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "weather-20-1",
-          "type": "weather",
-          "x": 20,
-          "y": 1,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "yearProgress-20-2",
-          "type": "yearProgress",
-          "x": 20,
-          "y": 2,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "stackUsage-20-3",
-          "type": "stackUsage",
-          "x": 20,
-          "y": 3,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "network-20-4",
-          "type": "network",
-          "x": 20,
-          "y": 4,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "nowRunning-20-5",
-          "type": "nowRunning",
-          "x": 20,
-          "y": 5,
-          "w": 4,
-          "h": 1,
-          "config": {}
-        },
-        {
-          "id": "calendar-20-6",
-          "type": "calendar",
-          "x": 20,
           "y": 6,
-          "w": 4,
-          "h": 4,
+          "w": 11,
+          "h": 8,
+          "config": {}
+        },
+        {
+          "id": "community-11-6",
+          "type": "community",
+          "x": 11,
+          "y": 6,
+          "w": 8,
+          "h": 8,
+          "config": {}
+        },
+        {
+          "id": "now-19-0",
+          "type": "now",
+          "x": 19,
+          "y": 0,
+          "w": 5,
+          "h": 3,
+          "config": {}
+        },
+        {
+          "id": "calendar-19-3",
+          "type": "calendar",
+          "x": 19,
+          "y": 3,
+          "w": 5,
+          "h": 9,
           "config": {}
         }
       ],

@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardDocument } from '../../core/models/dashboard';
+import { Icon } from '../../shared/icon';
 
 type SettingsSection = 'general' | 'sidebar' | 'lab';
 
@@ -22,87 +23,173 @@ function toColorInput(value?: string): string {
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Icon],
   template: `
     <section class="settings">
-      <header class="settings-head">
-        <div>
-          <h1>Settings</h1>
-          <nav class="settings-tabs" aria-label="Settings sections">
-            <a
-              routerLink="/settings"
-              class="settings-tab"
-              [class.is-active]="section() === 'general'"
-              >General</a
-            >
-            <a
-              routerLink="/settings/lab"
-              class="settings-tab"
-              [class.is-active]="section() === 'lab'"
-              >Lab</a
-            >
-            <a
-              routerLink="/settings/sidebar"
-              class="settings-tab"
-              [class.is-active]="section() === 'sidebar'"
+      <header class="page-header">
+        <div class="page-header__titles">
+          <h1 class="page-title">Settings</h1>
+          <nav class="tabs" aria-label="Settings sections">
+            <a routerLink="/settings" class="tab" [class.is-active]="section() === 'general'">General</a>
+            <a routerLink="/settings/lab" class="tab" [class.is-active]="section() === 'lab'">Lab</a>
+            <a routerLink="/settings/sidebar" class="tab" [class.is-active]="section() === 'sidebar'"
               >Shortcuts</a
             >
           </nav>
         </div>
-        <button type="button" class="btn btn--primary" [disabled]="!dirty()" (click)="save()">
-          Save
-        </button>
+        <div class="page-header__actions">
+          <button type="button" class="btn btn--solid" [disabled]="!dirty()" (click)="save()">
+            Save
+          </button>
+        </div>
       </header>
 
       @if (error()) {
         <p class="empty-note">{{ error() }}</p>
       } @else if (section() === 'lab') {
-        <div class="panel">
-          <p class="lede">
-            Host and network settings for the appliance. Set a LAN IP before installing apps from the
-            Library.
-          </p>
-          @if (labSuggested()) {
-            <p class="muted">Suggested host IP from this request: {{ labSuggested() }}</p>
-          }
-          <div class="settings-grid">
-            <label class="field">
-              <span>Host IP (LAN)</span>
-              <input [(ngModel)]="labDraft.hostIp" (ngModelChange)="markDirty()" placeholder="192.168.1.50" />
-            </label>
-            <label class="field">
-              <span>Domain</span>
-              <input [(ngModel)]="labDraft.domain" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field">
-              <span>Timezone</span>
-              <input [(ngModel)]="labDraft.timezone" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field field--inline">
-              <span>LAN reverse proxy (Caddy :80)</span>
-              <input type="checkbox" [(ngModel)]="labDraft.enableLanProxy" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field field--inline">
-              <span>Enable Pi-hole (DNS)</span>
-              <input type="checkbox" [(ngModel)]="labDraft.enablePihole" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field">
-              <span>Postgres user</span>
-              <input [(ngModel)]="labDraft.postgresUser" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field">
-              <span>Postgres password</span>
-              <input type="password" [(ngModel)]="labDraft.postgresPassword" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field">
-              <span>Postgres database</span>
-              <input [(ngModel)]="labDraft.postgresDb" (ngModelChange)="markDirty()" />
-            </label>
-            <label class="field">
-              <span>Pi-hole admin password</span>
-              <input type="password" [(ngModel)]="labDraft.piholePassword" (ngModelChange)="markDirty()" />
-            </label>
-          </div>
+        <div class="lab">
+          <section class="section">
+            <div class="section__head">
+              <div>
+                <h2 class="section__title">Network</h2>
+                <p class="section__desc">
+                  How this host is reached on the LAN. Set the host IP before installing apps.
+                </p>
+              </div>
+            </div>
+
+            @if (labSuggested() && labSuggested() !== labDraft.hostIp) {
+              <p class="banner lab-suggest">
+                This browser is on <strong>{{ labSuggested() }}</strong>
+                <button type="button" class="btn btn--sm" (click)="useSuggested()">Use this IP</button>
+              </p>
+            }
+
+            <div class="field-grid">
+              <label class="field">
+                <span class="field__label">Host IP</span>
+                <input
+                  class="input"
+                  [(ngModel)]="labDraft.hostIp"
+                  (ngModelChange)="markDirty()"
+                  placeholder="192.168.1.50"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <span class="field__hint">LAN address of this machine.</span>
+              </label>
+              <label class="field">
+                <span class="field__label">Domain</span>
+                <input
+                  class="input"
+                  [(ngModel)]="labDraft.domain"
+                  (ngModelChange)="markDirty()"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <span class="field__hint">Names look like home.{{ labDraft.domain || 'network.lan' }}.</span>
+              </label>
+              <label class="field">
+                <span class="field__label">Timezone</span>
+                <input
+                  class="input"
+                  [(ngModel)]="labDraft.timezone"
+                  (ngModelChange)="markDirty()"
+                  placeholder="Europe/Berlin"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </label>
+            </div>
+
+            <div class="lab-switches">
+              <label class="switch">
+                <span class="switch__text">
+                  LAN reverse proxy
+                  <small>Publish app hostnames through Caddy on port 80.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="labDraft.enableLanProxy"
+                  (ngModelChange)="markDirty()"
+                />
+              </label>
+              <label class="switch">
+                <span class="switch__text">
+                  Pi-hole DNS
+                  <small>Resolve those names for devices on the LAN.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="labDraft.enablePihole"
+                  (ngModelChange)="markDirty()"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section__head">
+              <div>
+                <h2 class="section__title">Postgres</h2>
+                <p class="section__desc">
+                  Shared database used by apps that need one. This does not migrate data that is
+                  already stored.
+                </p>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span class="field__label">User</span>
+                <input
+                  class="input"
+                  [(ngModel)]="labDraft.postgresUser"
+                  (ngModelChange)="markDirty()"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Password</span>
+                <input
+                  class="input"
+                  type="password"
+                  [(ngModel)]="labDraft.postgresPassword"
+                  (ngModelChange)="markDirty()"
+                  autocomplete="new-password"
+                />
+              </label>
+              <label class="field">
+                <span class="field__label">Database</span>
+                <input
+                  class="input"
+                  [(ngModel)]="labDraft.postgresDb"
+                  (ngModelChange)="markDirty()"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section__head">
+              <div>
+                <h2 class="section__title">Pi-hole</h2>
+                <p class="section__desc">Password for the Pi-hole admin page.</p>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field">
+                <span class="field__label">Admin password</span>
+                <input
+                  class="input"
+                  type="password"
+                  [(ngModel)]="labDraft.piholePassword"
+                  (ngModelChange)="markDirty()"
+                  autocomplete="new-password"
+                />
+              </label>
+            </div>
+          </section>
         </div>
       } @else if (draft) {
         @if (section() === 'general') {
@@ -153,7 +240,7 @@ function toColorInput(value?: string): string {
         @if (section() === 'sidebar') {
           <div class="panel">
             <div class="panel-toolbar">
-              <p class="lede">Reorder, rename, and color your sidebar shortcut groups.</p>
+              <p class="lede">Drag a shortcut to reorder it, or drop it into another group.</p>
               <button type="button" class="btn" (click)="addGroup()">Add group</button>
             </div>
 
@@ -202,30 +289,63 @@ function toColorInput(value?: string): string {
                   </div>
                 </div>
 
-                @for (link of group.links; track $index; let li = $index) {
-                  <div class="link-row">
-                    <input
-                      class="link-title"
-                      placeholder="Title"
-                      [(ngModel)]="link.title"
-                      (ngModelChange)="markDirty()"
-                    />
-                    <input
-                      class="link-url"
-                      placeholder="https://"
-                      [(ngModel)]="link.url"
-                      (ngModelChange)="onLinkUrl(gi, li, $event)"
-                    />
-                    <button
-                      type="button"
-                      class="btn btn--sm btn--danger"
-                      (click)="removeLink(gi, li)"
-                      title="Remove link"
+                <div
+                  class="link-list"
+                  [class.is-armed]="dragFrom() !== null"
+                  (dragover)="onDragOverList($event, gi)"
+                  (drop)="onDropList($event, gi)"
+                >
+                  @for (link of group.links; track link; let li = $index) {
+                    <div
+                      class="link-row"
+                      [class.is-dragging]="dragFrom()?.gi === gi && dragFrom()?.li === li"
+                      [class.is-drop-before]="dropAt()?.gi === gi && dropAt()?.li === li"
+                      (dragover)="onDragOverRow($event, gi, li)"
+                      (drop)="onDropRow($event, gi, li)"
                     >
-                      ×
-                    </button>
-                  </div>
-                }
+                      <span
+                        class="link-grip"
+                        draggable="true"
+                        role="button"
+                        tabindex="0"
+                        title="Drag shortcut"
+                        aria-label="Drag shortcut"
+                        (dragstart)="onDragStart($event, gi, li)"
+                        (dragend)="onDragEnd()"
+                      >
+                        <app-icon name="grip" [size]="14" [stroke]="2.4" />
+                      </span>
+                      <input
+                        class="link-title"
+                        placeholder="Title"
+                        [(ngModel)]="link.title"
+                        (ngModelChange)="markDirty()"
+                      />
+                      <input
+                        class="link-url"
+                        placeholder="https://"
+                        [(ngModel)]="link.url"
+                        (ngModelChange)="onLinkUrl(gi, li, $event)"
+                      />
+                      <button
+                        type="button"
+                        class="btn btn--sm btn--danger"
+                        (click)="removeLink(gi, li)"
+                        title="Remove link"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  }
+                  <div
+                    class="link-drop-tail"
+                    [class.is-active]="
+                      dropAt()?.gi === gi && dropAt()?.li === group.links.length
+                    "
+                    (dragover)="onDragOverList($event, gi)"
+                    (drop)="onDropList($event, gi)"
+                  ></div>
+                </div>
 
                 <button type="button" class="btn btn--ghost btn--sm add-link" (click)="addLink(gi)">
                   Add link
@@ -244,37 +364,8 @@ function toColorInput(value?: string): string {
       display: block;
       overflow: auto;
     }
-    .settings-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 1.15rem;
-    }
-    .settings-head h1 {
-      margin: 0 0 0.55rem;
-      font-size: 1.25rem;
-      letter-spacing: -0.02em;
-    }
-    .settings-tabs {
-      display: flex;
-      gap: 0.25rem;
-    }
-    .settings-tab {
-      padding: 0.35rem 0.7rem;
-      border-radius: var(--radius-sm);
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-    .settings-tab:hover {
-      color: var(--text);
-      background: hsl(240, 7%, 14%);
-    }
-    .settings-tab.is-active {
-      color: var(--accent);
-      background: var(--accent-soft);
+    .page-header {
+      margin-bottom: var(--space-4);
     }
     .lede {
       margin: 0 0 1rem;
@@ -392,19 +483,84 @@ function toColorInput(value?: string): string {
       display: flex;
       gap: 0.3rem;
     }
+    .link-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-height: 0.5rem;
+    }
     .link-row {
       display: grid;
-      grid-template-columns: minmax(100px, 160px) minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(100px, 160px) minmax(0, 1fr) auto;
       gap: 0.4rem;
-      margin-bottom: 0.4rem;
+      align-items: center;
+      border-radius: var(--radius-sm);
+    }
+    .link-row.is-dragging {
+      opacity: 0.4;
+    }
+    .link-row.is-drop-before {
+      box-shadow: inset 0 2px 0 var(--accent);
+    }
+    .link-grip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.5rem;
+      height: var(--control-h);
+      color: var(--text-muted);
+      cursor: grab;
+      border-radius: var(--radius-sm);
+    }
+    .link-grip:hover {
+      color: var(--text);
+      background: var(--inset);
+    }
+    .link-grip:active {
+      cursor: grabbing;
+    }
+    .link-drop-tail {
+      height: 0;
+      border-radius: var(--radius-sm);
+    }
+    .link-list.is-armed .link-drop-tail {
+      height: 1.75rem;
+      border: 1px dashed var(--border);
+    }
+    .link-drop-tail.is-active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
     }
     .add-link {
       margin-top: 0.35rem;
     }
+    .lab {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      max-width: 880px;
+    }
+    .lab-suggest {
+      margin: 0 0 var(--space-4);
+    }
+    .lab-suggest strong {
+      font-weight: 650;
+    }
+    .lab-switches {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
     @media (max-width: 720px) {
-      .group-head,
-      .link-row {
+      .group-head {
         grid-template-columns: 1fr;
+      }
+      .link-row {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+      }
+      .link-url {
+        grid-column: 2;
       }
     }
   `,
@@ -412,6 +568,7 @@ function toColorInput(value?: string): string {
 export class SettingsPage implements OnInit {
   private readonly dash = inject(DashboardService);
   private readonly route = inject(ActivatedRoute);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   draft: DashboardDocument | null = null;
   labDraft = {
@@ -431,6 +588,8 @@ export class SettingsPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly section = signal<SettingsSection>('general');
   readonly labSuggested = signal<string | null>(null);
+  readonly dragFrom = signal<{ gi: number; li: number } | null>(null);
+  readonly dropAt = signal<{ gi: number; li: number } | null>(null);
 
   readonly toColorInput = toColorInput;
 
@@ -449,6 +608,7 @@ export class SettingsPage implements OnInit {
         if (!Array.isArray(this.draft.sidebar.bookmarks)) this.draft.sidebar.bookmarks = [];
         this.accent = doc.theme?.accent || '#d9a441';
         this.searchEngine = doc.search?.engine || 'https://duckduckgo.com/?q=%s';
+        this.cdr.markForCheck();
       },
       error: (err: Error) => this.error.set(err.message),
     });
@@ -466,6 +626,7 @@ export class SettingsPage implements OnInit {
           enableLanProxy: s.enableLanProxy ?? true,
           enablePihole: s.enablePihole ?? false,
         };
+        this.cdr.markForCheck();
       },
       error: () => {
         /* Lab settings optional if API older */
@@ -479,6 +640,13 @@ export class SettingsPage implements OnInit {
 
   markDirty(): void {
     this.dirty.set(true);
+  }
+
+  useSuggested(): void {
+    const ip = this.labSuggested();
+    if (!ip) return;
+    this.labDraft.hostIp = ip;
+    this.markDirty();
   }
 
   onAccent(value: string): void {
@@ -552,6 +720,92 @@ export class SettingsPage implements OnInit {
     group.links = group.links.filter((_, i) => i !== li);
     this.draft = { ...this.draft! };
     this.markDirty();
+  }
+
+  onDragStart(event: DragEvent, gi: number, li: number): void {
+    const row = (event.currentTarget as HTMLElement | null)?.closest('.link-row');
+    if (row && event.dataTransfer) {
+      const rect = row.getBoundingClientRect();
+      event.dataTransfer.setDragImage(row, 20, rect.height / 2);
+    }
+    event.dataTransfer?.setData('text/plain', `${gi}:${li}`);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    this.dragFrom.set({ gi, li });
+    this.dropAt.set(null);
+  }
+
+  onDragEnd(): void {
+    this.dragFrom.set(null);
+    this.dropAt.set(null);
+  }
+
+  onDragOverRow(event: DragEvent, gi: number, li: number): void {
+    if (!this.dragFrom()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const row = event.currentTarget as HTMLElement;
+    const after = event.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2;
+    this.aim(gi, li + (after ? 1 : 0));
+  }
+
+  onDropRow(event: DragEvent, gi: number, li: number): void {
+    if (!this.dragFrom()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const row = event.currentTarget as HTMLElement;
+    const after = event.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2;
+    this.moveLink(gi, li + (after ? 1 : 0));
+  }
+
+  onDragOverList(event: DragEvent, gi: number): void {
+    if (!this.dragFrom()) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const len = this.draft?.sidebar?.bookmarks?.[gi]?.links?.length ?? 0;
+    this.aim(gi, len);
+  }
+
+  onDropList(event: DragEvent, gi: number): void {
+    if (!this.dragFrom()) return;
+    event.preventDefault();
+    const len = this.draft?.sidebar?.bookmarks?.[gi]?.links?.length ?? 0;
+    this.moveLink(gi, len);
+  }
+
+  private aim(gi: number, li: number): void {
+    const cur = this.dropAt();
+    if (cur?.gi === gi && cur.li === li) return;
+    this.dropAt.set({ gi, li });
+  }
+
+  private moveLink(toGi: number, toLi: number): void {
+    const from = this.dragFrom();
+    const groups = this.draft?.sidebar?.bookmarks;
+    this.onDragEnd();
+    if (!from || !groups) return;
+    const source = groups[from.gi];
+    const target = groups[toGi];
+    if (!source?.links || !target) return;
+    if (from.gi === toGi && (from.li === toLi || from.li + 1 === toLi)) return;
+
+    const src = [...source.links];
+    const [item] = src.splice(from.li, 1);
+    if (!item) return;
+    let insertAt = toLi;
+    if (from.gi === toGi && from.li < toLi) insertAt -= 1;
+    if (from.gi === toGi) {
+      src.splice(insertAt, 0, item);
+      source.links = src;
+    } else {
+      source.links = src;
+      const dest = [...(target.links || [])];
+      dest.splice(toLi, 0, item);
+      target.links = dest;
+    }
+    this.draft = { ...this.draft! };
+    this.markDirty();
+    this.cdr.markForCheck();
   }
 
   onLinkUrl(gi: number, li: number, url: string): void {

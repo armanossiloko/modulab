@@ -7,41 +7,35 @@ import {
 } from '../models/dashboard';
 
 /** Matches master `layout.center` / `layout.right` order. */
-export const CENTER_DEFAULT = ['stacks', 'community', 'hackerNews', 'media'];
-export const RIGHT_DEFAULT = [
-  'clock',
-  'weather',
-  'yearProgress',
-  'stackUsage',
-  'network',
-  'nowRunning',
-  'calendar',
-];
+export const CENTER_DEFAULT = ['stacks', 'updates', 'hackerNews', 'community'];
+export const RIGHT_DEFAULT = ['now', 'calendar'];
 
 /** Dense grid — more columns, shorter row units. */
 export const GRID_COLS = 24;
 
-const MAIN_W = 20;
+const MAIN_W = 19;
 const CELL_W = 11;
-const RAIL_X = 20;
-const RAIL_W = 4;
+const RAIL_X = 19;
+const RAIL_W = 5;
 
 const CENTER_HEIGHTS: Record<string, number> = {
-  stacks: 3,
-  community: 3,
-  hackerNews: 3,
-  media: 3,
+  stacks: 6,
+  updates: 6,
+  community: 8,
+  hackerNews: 8,
+  media: 6,
 };
 
-/** One row on square cells ≈ content height for status cards. */
+/** Tall enough to show the card body, not a clipped title and a scrollbar. */
 const RAIL_HEIGHTS: Record<string, number> = {
-  clock: 1,
-  weather: 1,
-  yearProgress: 1,
-  stackUsage: 1,
-  network: 1,
-  nowRunning: 1,
-  calendar: 4,
+  now: 3,
+  clock: 2,
+  weather: 2,
+  yearProgress: 2,
+  stackUsage: 2,
+  network: 2,
+  nowRunning: 2,
+  calendar: 9,
 };
 
 function widgetEnabled(widgets: WidgetConfigMap | undefined, type: string): boolean {
@@ -135,11 +129,8 @@ export function ensureDashboards(doc: DashboardDocument): DashboardDocument {
 function homeRailIsOversized(board: DashboardBoard): boolean {
   const rail = board.items.filter((i) => i.x >= 18);
   if (rail.length === 0) return false;
-  return rail.some(
-    (i) =>
-      i.w > 4 ||
-      (i.type === 'calendar' ? i.h > 4 : i.h > 1)
-  );
+  // Older boards used rail tiles wider than the 5-column rail.
+  return rail.some((i) => i.w > 6);
 }
 
 /** @deprecated alias */

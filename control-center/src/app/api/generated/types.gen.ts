@@ -55,6 +55,12 @@ export type FeedItem = {
     url: string;
     meta: string;
     thumb: null | string;
+    author?: null | string;
+    score?: null | number | string;
+    comments?: null | number | string;
+    publishedAt?: null | string;
+    domain?: null | string;
+    discussionUrl?: null | string;
 };
 
 export type FeedResponse = {
