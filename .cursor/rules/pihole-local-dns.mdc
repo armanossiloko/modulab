@@ -17,6 +17,6 @@ When you add a **new root stack** `docker-compose.<name>.yml`, add a **catalog r
 
 Naming: prefer the compose stem (`immich`); shorten if needed (`stirling-pdf` → `stirling`).
 
-User sets **`LAB_HOST_IP`** and domain via **`lab.config.json`**. Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
+User sets **`MODULAB_HOST_IP`** and domain via **`lab.config.json`**. Restart Pi-hole after DNS changes: `bash scripts/start.sh pihole`.
 
 See [pihole/LOCAL-DNS.md](../pihole/LOCAL-DNS.md) and [catalog/README.md](../catalog/README.md).

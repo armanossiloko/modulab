@@ -2,7 +2,9 @@
 # Render generated lab files from lab.config.json (.env, edge, wwwroot seed).
 
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 
 config="${root}/lab.config.json"
@@ -20,4 +22,4 @@ fi
 
 python3 "${root}/scripts/render-config.py" "$config"
 python3 "${root}/scripts/generate-edge.py"
-bash "${root}/scripts/ensure-wwwroot.sh"
+bash "${_scripts}/ensure-wwwroot.sh"

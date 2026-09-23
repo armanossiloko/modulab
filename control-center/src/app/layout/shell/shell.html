@@ -28,6 +28,13 @@
         ↻
       </button>
     </header>
+    @if (needsLabSetup()) {
+      <p class="lab-setup-banner" role="status">
+        Finish setup: set your LAN host IP in
+        <a routerLink="/settings/lab">Settings → Lab</a>
+        before installing apps.
+      </p>
+    }
     <div class="page-body">
       <router-outlet />
     </div>

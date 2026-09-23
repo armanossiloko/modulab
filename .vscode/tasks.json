@@ -4,7 +4,7 @@
     {
       "label": "lab: setup",
       "type": "shell",
-      "command": "bash scripts/setup.sh",
+      "command": "python3 scripts/lab.py setup",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -15,7 +15,7 @@
     {
       "label": "lab: render config",
       "type": "shell",
-      "command": "bash scripts/render-config.sh",
+      "command": "python3 scripts/lab.py render-config",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -26,7 +26,7 @@
     {
       "label": "docker-compose: all up",
       "type": "shell",
-      "command": "bash scripts/start.sh all",
+      "command": "python3 scripts/lab.py start all",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -37,7 +37,7 @@
     {
       "label": "docker-compose: stirling-pdf up",
       "type": "shell",
-      "command": "bash scripts/start.sh stirling-pdf",
+      "command": "python3 scripts/lab.py start stirling-pdf",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -48,7 +48,7 @@
     {
       "label": "docker-compose: jellyfin up",
       "type": "shell",
-      "command": "bash scripts/start.sh jellyfin",
+      "command": "python3 scripts/lab.py start jellyfin",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -59,7 +59,7 @@
     {
       "label": "docker-compose: n8n up",
       "type": "shell",
-      "command": "bash scripts/start.sh n8n",
+      "command": "python3 scripts/lab.py start n8n",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -70,7 +70,7 @@
     {
       "label": "docker-compose: seerr up",
       "type": "shell",
-      "command": "bash scripts/start.sh seerr",
+      "command": "python3 scripts/lab.py start seerr",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -81,7 +81,7 @@
     {
       "label": "docker-compose: it-tools up",
       "type": "shell",
-      "command": "bash scripts/start.sh it-tools",
+      "command": "python3 scripts/lab.py start it-tools",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -92,7 +92,7 @@
     {
       "label": "docker-compose: bentopdf up",
       "type": "shell",
-      "command": "bash scripts/start.sh bentopdf",
+      "command": "python3 scripts/lab.py start bentopdf",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -103,7 +103,7 @@
     {
       "label": "docker-compose: picoshare up",
       "type": "shell",
-      "command": "bash scripts/start.sh picoshare",
+      "command": "python3 scripts/lab.py start picoshare",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -114,7 +114,7 @@
     {
       "label": "docker-compose: futo-notes up",
       "type": "shell",
-      "command": "bash scripts/start.sh futo-notes",
+      "command": "python3 scripts/lab.py start futo-notes",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -125,7 +125,7 @@
     {
       "label": "docker-compose: searxng up",
       "type": "shell",
-      "command": "bash scripts/start.sh searxng",
+      "command": "python3 scripts/lab.py start searxng",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -136,7 +136,7 @@
     {
       "label": "docker-compose: postgres up",
       "type": "shell",
-      "command": "bash scripts/start.sh postgres",
+      "command": "python3 scripts/lab.py start postgres",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -147,7 +147,7 @@
     {
       "label": "docker-compose: immich up",
       "type": "shell",
-      "command": "bash scripts/start.sh immich",
+      "command": "python3 scripts/lab.py start immich",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -158,7 +158,7 @@
     {
       "label": "docker-compose: pihole up",
       "type": "shell",
-      "command": "bash scripts/start.sh pihole",
+      "command": "python3 scripts/lab.py start pihole",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -169,7 +169,7 @@
     {
       "label": "docker-compose: control-center up",
       "type": "shell",
-      "command": "bash scripts/start.sh control-center",
+      "command": "python3 scripts/lab.py start control-center",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -180,7 +180,7 @@
     {
       "label": "docker-compose: redis up",
       "type": "shell",
-      "command": "bash scripts/start.sh redis",
+      "command": "python3 scripts/lab.py start redis",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -191,7 +191,7 @@
     {
       "label": "docker-compose: caddy up",
       "type": "shell",
-      "command": "bash scripts/start.sh caddy",
+      "command": "python3 scripts/lab.py start caddy",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -202,7 +202,7 @@
     {
       "label": "docker-compose: all down",
       "type": "shell",
-      "command": "bash scripts/stop.sh all",
+      "command": "python3 scripts/lab.py stop all",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -213,7 +213,7 @@
     {
       "label": "docker-compose: stirling-pdf down",
       "type": "shell",
-      "command": "bash scripts/stop.sh stirling-pdf",
+      "command": "python3 scripts/lab.py stop stirling-pdf",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -224,7 +224,7 @@
     {
       "label": "docker-compose: jellyfin down",
       "type": "shell",
-      "command": "bash scripts/stop.sh jellyfin",
+      "command": "python3 scripts/lab.py stop jellyfin",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -235,7 +235,7 @@
     {
       "label": "docker-compose: n8n down",
       "type": "shell",
-      "command": "bash scripts/stop.sh n8n",
+      "command": "python3 scripts/lab.py stop n8n",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -246,7 +246,7 @@
     {
       "label": "docker-compose: seerr down",
       "type": "shell",
-      "command": "bash scripts/stop.sh seerr",
+      "command": "python3 scripts/lab.py stop seerr",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -257,7 +257,7 @@
     {
       "label": "docker-compose: it-tools down",
       "type": "shell",
-      "command": "bash scripts/stop.sh it-tools",
+      "command": "python3 scripts/lab.py stop it-tools",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -268,7 +268,7 @@
     {
       "label": "docker-compose: bentopdf down",
       "type": "shell",
-      "command": "bash scripts/stop.sh bentopdf",
+      "command": "python3 scripts/lab.py stop bentopdf",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -279,7 +279,7 @@
     {
       "label": "docker-compose: picoshare down",
       "type": "shell",
-      "command": "bash scripts/stop.sh picoshare",
+      "command": "python3 scripts/lab.py stop picoshare",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -290,7 +290,7 @@
     {
       "label": "docker-compose: futo-notes down",
       "type": "shell",
-      "command": "bash scripts/stop.sh futo-notes",
+      "command": "python3 scripts/lab.py stop futo-notes",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -301,7 +301,7 @@
     {
       "label": "docker-compose: searxng down",
       "type": "shell",
-      "command": "bash scripts/stop.sh searxng",
+      "command": "python3 scripts/lab.py stop searxng",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -312,7 +312,7 @@
     {
       "label": "docker-compose: postgres down",
       "type": "shell",
-      "command": "bash scripts/stop.sh postgres",
+      "command": "python3 scripts/lab.py stop postgres",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -323,7 +323,7 @@
     {
       "label": "docker-compose: immich down",
       "type": "shell",
-      "command": "bash scripts/stop.sh immich",
+      "command": "python3 scripts/lab.py stop immich",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -334,7 +334,7 @@
     {
       "label": "docker-compose: pihole down",
       "type": "shell",
-      "command": "bash scripts/stop.sh pihole",
+      "command": "python3 scripts/lab.py stop pihole",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -345,7 +345,7 @@
     {
       "label": "docker-compose: control-center down",
       "type": "shell",
-      "command": "bash scripts/stop.sh control-center",
+      "command": "python3 scripts/lab.py stop control-center",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -356,7 +356,7 @@
     {
       "label": "docker-compose: redis down",
       "type": "shell",
-      "command": "bash scripts/stop.sh redis",
+      "command": "python3 scripts/lab.py stop redis",
       "problemMatcher": [],
       "group": "none",
       "presentation": {
@@ -367,7 +367,7 @@
     {
       "label": "docker-compose: caddy down",
       "type": "shell",
-      "command": "bash scripts/stop.sh caddy",
+      "command": "python3 scripts/lab.py stop caddy",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: CRLF check (tracked scripts should be LF in git)
+        run: |
+          if grep -Il $'\r' scripts/*.sh; then
+            echo "CRLF line endings found in scripts — use LF" >&2
+            exit 1
+          fi
+      - name: Shell syntax
+        run: |
+          for f in scripts/*.sh; do bash -n "$f"; done
+          python3 -m py_compile scripts/run_bash.py scripts/lab.py
+      - name: CRLF-safe runner
+        run: |
+          # Simulate a Windows working tree: convert scripts to CRLF, then run via lab.py
+          python3 - <<'PY'
+          from pathlib import Path
+          for p in Path("scripts").glob("*.sh"):
+              data = p.read_bytes().replace(b"\n", b"\r\n")
+              p.write_bytes(data)
+          PY
+          python3 scripts/lab.py check-deps
+          cp lab.config.example.json lab.config.json
+          python3 scripts/lab.py render-config
+          test -f .env
+          test -f postgres/bootstrap.sql
+      - name: Compose config
+        run: |
+          docker compose version
+          for f in docker-compose.*.yml; do
+            case "$f" in
+              *.override.yml|*.dns.yml|*.proxy-ports.yml|*.proxy-ports.desktop.yml|*.lan-ports.yml|*.dns-ports.yml|*.redis.yml) continue ;;
+            esac
+            echo "=== $f ==="
+            docker compose --env-file .env -f "$f" config >/dev/null
+          done
+          echo "=== docker-compose.immich.yml + immich.redis overlay ==="
+          docker compose --env-file .env -f docker-compose.immich.yml -f docker-compose.immich.redis.yml config >/dev/null
+          echo "=== compose.yaml (appliance bootstrap) ==="
+          mkdir -p /tmp/modulab-data
+          MODULAB_HOST_ROOT=/tmp/modulab-data docker compose -f compose.yaml config >/dev/null
+          python3 -m py_compile scripts/seed-lab-state.py
+          python3 scripts/seed-lab-state.py
+        env:
+          MODULAB_ROOT: /tmp/modulab-seed-test
+          MODULAB_KIT: ${{ github.workspace }}
+          MODULAB_SEED: "true"

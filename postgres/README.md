@@ -16,4 +16,4 @@ bash scripts/render-config.sh   # regenerates .env + postgres/bootstrap.sql
 bash scripts/start.sh postgres
 ```
 
-Apps declare a DB in their recipe, e.g. `"database": "immich"`. Install/start pulls in Postgres via `dependsOn`.
+Apps declare a DB in their recipe, e.g. `"database": "immich"`. Install/start pulls in Postgres via `dependsOn`. Redis is separate (shared optional stack or Immich sidecar).

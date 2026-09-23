@@ -2,10 +2,12 @@
 # Stop one lab stack (keeps volumes): bash scripts/stop.sh <stack>|all
 
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
-source "${root}/scripts/common.sh"
+source "${_scripts}/common.sh"
 
 stop_stack() {
   local name="$1"
@@ -36,7 +38,7 @@ compose="${root}/docker-compose.${name}.yml"
 if [[ ! -f "$compose" ]]; then
   echo "Unknown stack '${name}'. No ${compose}" >&2
   echo "Usage: bash scripts/stop.sh <stack>|all" >&2
-  echo "Default stacks: ${LAB_STACKS[*]} (+ pihole)" >&2
+  echo "Default stacks: ${MODULAB_STACKS[*]} (+ pihole)" >&2
   exit 1
 fi
 

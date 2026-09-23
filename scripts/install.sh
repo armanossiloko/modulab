@@ -4,10 +4,12 @@
 # Enables dependsOn stacks automatically.
 
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
-source "${root}/scripts/common.sh"
+source "${_scripts}/common.sh"
 
 id="${1:?Usage: bash scripts/install.sh <recipe-id> [json-config]}"
 config_json="${2:-{}}"
@@ -18,12 +20,12 @@ if [[ ! -f "$recipe" ]]; then
   exit 1
 fi
 
-LAB_ROOT="$root" RECIPE_ID="$id" CONFIG_JSON="$config_json" python3 - <<'PY'
+MODULAB_ROOT="$root" RECIPE_ID="$id" CONFIG_JSON="$config_json" python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
-root = Path(os.environ["LAB_ROOT"])
+root = Path(os.environ["MODULAB_ROOT"])
 recipe_id = os.environ["RECIPE_ID"]
 config_path = root / "lab.config.json"
 example = root / "lab.config.example.json"
@@ -66,9 +68,33 @@ def walk(rid: str) -> None:
 
 walk(recipe_id)
 
+# Soft Redis for Immich: use shared if present, else sidecar (do not enable redis stack).
 section = data.get(recipe_id)
 if not isinstance(section, dict):
     section = {}
+
+prefer = recipe.get("preferShared") or []
+if recipe_id == "immich" or (isinstance(prefer, list) and "redis" in prefer):
+    redis_ok = "redis" in enabled
+    if not redis_ok:
+        # Container may exist without being in enabled[]
+        import subprocess
+        try:
+            out = subprocess.check_output(
+                ["docker", "ps", "--format", "{{.Names}}"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+            redis_ok = any(line.strip() == "redis" for line in out.splitlines())
+        except Exception:
+            redis_ok = False
+    if redis_ok:
+        section["REDIS_HOSTNAME"] = "redis"
+        section["useSidecarRedis"] = False
+    else:
+        section["REDIS_HOSTNAME"] = "immich-redis"
+        section["useSidecarRedis"] = True
+
 for key, value in (recipe.get("defaults") or {}).items():
     section.setdefault(key, value)
 
@@ -87,11 +113,22 @@ overrides = json.loads(os.environ["CONFIG_JSON"] or "{}")
 if not isinstance(overrides, dict):
     raise SystemExit("config must be a JSON object")
 section.update(overrides)
+# Re-apply redis decision after overrides unless caller forced REDIS_HOSTNAME
+if recipe_id == "immich" or (isinstance(prefer, list) and "redis" in prefer):
+    if overrides.get("REDIS_HOSTNAME"):
+        section["REDIS_HOSTNAME"] = overrides["REDIS_HOSTNAME"]
+        section["useSidecarRedis"] = section["REDIS_HOSTNAME"] == "immich-redis"
+    elif section.get("useSidecarRedis") is True:
+        section["REDIS_HOSTNAME"] = "immich-redis"
+    elif "redis" in enabled or section.get("REDIS_HOSTNAME") == "redis":
+        section["REDIS_HOSTNAME"] = "redis"
+        section["useSidecarRedis"] = False
+
 data[recipe_id] = section
 config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 print(f"enabled {', '.join(enabled)}", flush=True)
 PY
 
-bash "${root}/scripts/render-config.sh"
-bash "${root}/scripts/start.sh" "$id"
-bash "${root}/scripts/refresh-edge.sh"
+bash "${_scripts}/render-config.sh"
+bash "${_scripts}/start.sh" "$id"
+bash "${_scripts}/refresh-edge.sh"

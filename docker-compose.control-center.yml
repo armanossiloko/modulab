@@ -1,23 +1,32 @@
-# Control Center — UI + API in one directory (Native AOT .NET 10).
-# Open http://127.0.0.1:8888 or http://<LAB_HOST_IP>:8888 when published on LAN.
+# Control Center — UI + API (Native AOT .NET 10). Contributor / local build path.
+# Appliance users: use root compose.yaml with ghcr.io/armanossiloko/modulab instead.
+# SPA is baked into the image at /app/wwwroot (do not override to host wwwroot).
+# Dashboard JSON lives on the host at control-center/wwwroot/dashboard.json via MODULAB_ROOT.
+# Open http://127.0.0.1:8888 or http://<MODULAB_HOST_IP>:8888 when published on LAN.
 
 services:
   control-center:
     container_name: control-center
+    image: ghcr.io/armanossiloko/modulab:${MODULAB_TAG:-local}
     build:
       context: .
       dockerfile: control-center/Dockerfile
     restart: unless-stopped
     environment:
-      LAB_ROOT: /lab
+      MODULAB_ROOT: /lab
+      MODULAB_KIT: /opt/modulab
+      # Dev checkout is mounted at /lab — seed skips when control-center/src is present.
+      MODULAB_SEED: ${MODULAB_SEED:-auto}
+      MODULAB_HOST_ROOT: ${MODULAB_HOST_ROOT:-.}
       HOME_PORT: ${HOME_PORT:-8888}
       ASPNETCORE_URLS: http://0.0.0.0:8888
-      CONTROL_CENTER_WWWROOT: /lab/control-center/wwwroot
-      CONTROL_CENTER_ANGULAR_DIST: /lab/control-center/dist/control-center/browser
+      CONTROL_CENTER_WWWROOT: /app/wwwroot
       DOTNET_gcServer: "0"
       DOTNET_EnableDiagnostics: "0"
+      COMPOSE_PROJECT_NAME: modulab
+      COMPOSE_IGNORE_ORPHANS: "true"
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:${HOME_PORT:-8888}:8888"
     volumes:
-      - ./:/lab
+      - ${MODULAB_HOST_ROOT:-.}:/lab
       - /var/run/docker.sock:/var/run/docker.sock

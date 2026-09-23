@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build from repo root:
-#   docker build -f control-center/Dockerfile .
+#   docker build -f control-center/Dockerfile -t ghcr.io/armanossiloko/modulab:local .
 
 FROM node:22-bookworm-slim AS ui
 WORKDIR /build
@@ -46,12 +46,33 @@ COPY --from=build /app/publish/Modulab.ControlCenter /app/Modulab.ControlCenter
 COPY --from=ui /build/dist/control-center/browser/ /app/wwwroot/
 COPY control-center/defaults/dashboard.json /app/wwwroot/dashboard.json
 
-ENV LAB_ROOT=/lab \
+# Baked lab kit (catalog, scripts, compose templates) — seeded into MODULAB_ROOT on start.
+WORKDIR /opt/modulab
+COPY catalog/ catalog/
+COPY scripts/ scripts/
+COPY caddy/ caddy/
+COPY postgres/ postgres/
+COPY pihole/ pihole/
+COPY lab.config.example.json lab.config.example.json
+COPY docker-compose*.yml ./
+COPY control-center/defaults/ control-center/defaults/
+# Optional app templates used by start.sh
+COPY searxng/ searxng/
+
+RUN chmod +x /opt/modulab/scripts/*.sh /opt/modulab/scripts/*.py \
+    && find /opt/modulab/scripts -name '*.sh' -exec sed -i 's/\r$//' {} \; \
+    && sed -i 's/\r$//' /opt/modulab/scripts/entrypoint.sh
+
+ENV MODULAB_ROOT=/lab \
+    MODULAB_KIT=/opt/modulab \
+    MODULAB_SCRIPTS=/opt/modulab/scripts \
     HOME_PORT=8888 \
     ASPNETCORE_URLS=http://0.0.0.0:8888 \
     CONTROL_CENTER_WWWROOT=/app/wwwroot \
     DOTNET_gcServer=0 \
-    DOTNET_EnableDiagnostics=0
+    DOTNET_EnableDiagnostics=0 \
+    COMPOSE_PROJECT_NAME=modulab \
+    COMPOSE_IGNORE_ORPHANS=true
 
 EXPOSE 8888
-ENTRYPOINT ["/app/Modulab.ControlCenter"]
+ENTRYPOINT ["/opt/modulab/scripts/entrypoint.sh"]

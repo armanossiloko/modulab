@@ -2,10 +2,12 @@
 # Pull newer images and recreate one stack: bash scripts/update.sh <stack>|all
 
 set -euo pipefail
-root="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+root="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
 cd "$root"
 # shellcheck source=common.sh
-source "${root}/scripts/common.sh"
+source "${_scripts}/common.sh"
 
 update_stack() {
   local name="$1"
@@ -35,7 +37,7 @@ update_stack() {
       ;;
     control-center)
       python3 "${root}/scripts/generate-edge.py" >/dev/null 2>&1 || true
-      bash "${root}/scripts/ensure-wwwroot.sh" >/dev/null 2>&1 || true
+      bash "${_scripts}/ensure-wwwroot.sh" >/dev/null 2>&1 || true
       stack_compose control-center pull "$@" || true
       stack_compose control-center up -d --build "$@"
       ;;
@@ -48,6 +50,13 @@ update_stack() {
       stack_compose redis pull "$@"
       stack_compose redis up -d "$@"
       wait_for_redis
+      ;;
+    immich)
+      stack_compose immich pull "$@"
+      stack_compose immich up -d "$@"
+      if immich_uses_sidecar_redis; then
+        wait_for_immich_redis
+      fi
       ;;
     *)
       stack_compose "$name" pull "$@"

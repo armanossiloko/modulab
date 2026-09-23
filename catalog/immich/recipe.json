@@ -1,28 +1,30 @@
 {
   "id": "immich",
   "name": "Immich",
-  "description": "Photos and videos (uses shared Postgres + Redis)",
+  "description": "Photos and videos (shared Postgres; Redis shared if present, else sidecar)",
   "category": "media",
   "compose": "docker-compose.immich.yml",
   "port": 2283,
   "installable": true,
-  "dependsOn": ["postgres", "redis"],
+  "dependsOn": ["postgres"],
+  "preferShared": ["redis"],
   "database": "immich",
   "databaseNeedsVector": true,
   "proxy": { "host": "immich", "port": 2283 },
   "dns": ["immich"],
   "defaults": {
     "IMMICH_VERSION": "v3",
-    "UPLOAD_LOCATION": "./data/immich/library",
-    "IMMICH_DB_NAME": "immich"
+    "IMMICH_DB_NAME": "immich",
+    "REDIS_HOSTNAME": "redis",
+    "useSidecarRedis": false
   },
   "fields": [
     {
       "key": "UPLOAD_LOCATION",
-      "label": "Photo library path",
+      "label": "Photo library path (host)",
       "type": "string",
-      "default": "./data/immich/library",
-      "required": true
+      "default": "data/immich/library",
+      "required": false
     },
     {
       "key": "IMMICH_VERSION",

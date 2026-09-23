@@ -4,5 +4,5 @@
 services:
   pihole:
     ports:
-      - "${LAB_HOST_IP}:53:53/tcp"
-      - "${LAB_HOST_IP}:53:53/udp"
+      - "${MODULAB_HOST_IP}:53:53/tcp"
+      - "${MODULAB_HOST_IP}:53:53/udp"

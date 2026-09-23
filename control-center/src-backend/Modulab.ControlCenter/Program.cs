@@ -13,12 +13,12 @@ builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
 var labRoot = Path.GetFullPath(
-    Environment.GetEnvironmentVariable("LAB_ROOT")
+    Environment.GetEnvironmentVariable("MODULAB_ROOT")
     ?? (Directory.Exists("/lab") ? "/lab" : FindLabRoot()));
 
 // Control Center UI + /api on HOME_PORT (default 8888).
 var port = int.TryParse(Environment.GetEnvironmentVariable("HOME_PORT"), out var homePort) ? homePort
-    : int.TryParse(Environment.GetEnvironmentVariable("LAB_API_PORT"), out var apiPort) ? apiPort
+    : int.TryParse(Environment.GetEnvironmentVariable("MODULAB_API_PORT"), out var apiPort) ? apiPort
     : 8888;
 
 builder.WebHost.ConfigureKestrel(options =>
@@ -131,6 +131,51 @@ app.MapGet("/api/health", () => Results.Json(new HealthResponse("ok", labRoot), 
     .WithName("GetHealth")
     .WithTags("System")
     .Produces<HealthResponse>(StatusCodes.Status200OK);
+
+app.MapGet("/api/lab/status", (HttpRequest req) =>
+{
+    var status = GetLabStatus(labRoot, req);
+    return Results.Json(status, LabJsonContext.Default.LabStatusResponse);
+})
+    .WithName("GetLabStatus")
+    .WithTags("Lab")
+    .Produces<LabStatusResponse>(StatusCodes.Status200OK);
+
+app.MapGet("/api/lab/settings", () =>
+{
+    try
+    {
+        var settings = GetLabSettings(labRoot);
+        return Results.Json(settings, LabJsonContext.Default.LabSettingsResponse);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
+    }
+})
+    .WithName("GetLabSettings")
+    .WithTags("Lab")
+    .Produces<LabSettingsResponse>(StatusCodes.Status200OK)
+    .Produces<ApiMessage>(StatusCodes.Status500InternalServerError);
+
+app.MapPut("/api/lab/settings", async (LabSettingsUpdate? body) =>
+{
+    if (body is null)
+        return Results.Json(new ApiMessage("Missing body"), LabJsonContext.Default.ApiMessage, statusCode: 400);
+    try
+    {
+        await ApplyLabSettingsAsync(labRoot, body);
+        return Results.Json(GetLabSettings(labRoot), LabJsonContext.Default.LabSettingsResponse);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 400);
+    }
+})
+    .WithName("PutLabSettings")
+    .WithTags("Lab")
+    .Produces<LabSettingsResponse>(StatusCodes.Status200OK)
+    .Produces<ApiMessage>(StatusCodes.Status400BadRequest);
 
 app.MapGet("/api/feeds/reddit", async (string? sub, int? limit, CancellationToken ct) =>
 {
@@ -294,6 +339,8 @@ app.MapPost("/api/apps/{id}/install", async (string id, InstallRequest? body) =>
         return Results.Json(new ApiMessage($"Unknown app '{id}'"), LabJsonContext.Default.ApiMessage, statusCode: 404);
     if (!recipe.Installable)
         return Results.Json(new ApiMessage($"'{id}' is not installable"), LabJsonContext.Default.ApiMessage, statusCode: 400);
+    if (!IsLabReady(labRoot))
+        return Results.Json(new ApiMessage("Set a real lab.hostIp in Settings → Lab before installing apps"), LabJsonContext.Default.ApiMessage, statusCode: 400);
 
     try
     {
@@ -632,7 +679,7 @@ static JsonObject LoadConfigObject(string labRoot)
         if (File.Exists(example))
             File.Copy(example, configPath);
         else
-            File.WriteAllText(configPath, """{"lab":{},"enabled":["control-center","postgres","redis"]}""");
+            File.WriteAllText(configPath, """{"lab":{},"caddy":{"ENABLE_LAN_PROXY":true},"enabled":["control-center","postgres","caddy"]}""");
     }
 
     var node = JsonNode.Parse(File.ReadAllText(configPath)) as JsonObject
@@ -719,6 +766,8 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
             section[key] = JsonNode.Parse(value.GetRawText());
     }
 
+    ApplyPreferSharedRedis(labRoot, recipe, section);
+
     config[recipe.Id] = section;
     SaveConfigObject(labRoot, config);
 
@@ -733,6 +782,202 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
         // Install succeeded; LAN DNS/proxy reload is best-effort when edge stacks exist.
         Console.Error.WriteLine($"refresh-edge after install: {ex.Message}");
     }
+}
+
+static void ApplyPreferSharedRedis(string labRoot, Recipe recipe, JsonObject section)
+{
+    var prefersRedis = string.Equals(recipe.Id, "immich", StringComparison.Ordinal)
+        || recipe.PreferShared.Any(x => string.Equals(x, "redis", StringComparison.Ordinal));
+    if (!prefersRedis)
+        return;
+
+    // Explicit hostname from install form / prior config: honor sidecar vs shared.
+    if (section["REDIS_HOSTNAME"] is JsonValue hv
+        && hv.TryGetValue<string>(out var host)
+        && string.Equals(host, "immich-redis", StringComparison.Ordinal))
+    {
+        section["useSidecarRedis"] = true;
+        return;
+    }
+
+    var redisOk = LoadEnabled(labRoot).Contains("redis") || ContainerRunning("redis");
+    if (redisOk)
+    {
+        section["REDIS_HOSTNAME"] = "redis";
+        section["useSidecarRedis"] = false;
+    }
+    else
+    {
+        section["REDIS_HOSTNAME"] = "immich-redis";
+        section["useSidecarRedis"] = true;
+    }
+}
+
+static bool ContainerRunning(string name)
+{
+    try
+    {
+        var output = RunCapture("docker", "ps --format \"{{.Names}}\"", Directory.GetCurrentDirectory());
+        return output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(line => string.Equals(line, name, StringComparison.Ordinal));
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+static bool IsPlaceholderHostIp(string? hostIp)
+{
+    if (string.IsNullOrWhiteSpace(hostIp))
+        return true;
+    var v = hostIp.Trim();
+    return v is "127.0.0.1" or "localhost" or "192.168.1.10" or "0.0.0.0";
+}
+
+static bool IsLabReady(string labRoot)
+{
+    var config = LoadConfigObject(labRoot);
+    var lab = config["lab"] as JsonObject;
+    var hostIp = lab?["hostIp"]?.GetValue<string>();
+    return !IsPlaceholderHostIp(hostIp);
+}
+
+static string? SuggestHostIp(HttpRequest req)
+{
+    var fromEnv = Environment.GetEnvironmentVariable("MODULAB_HOST_IP");
+    if (!string.IsNullOrWhiteSpace(fromEnv) && !IsPlaceholderHostIp(fromEnv))
+        return fromEnv.Trim();
+
+    var host = req.Host.Host;
+    if (!string.IsNullOrWhiteSpace(host)
+        && host is not "localhost" and not "127.0.0.1"
+        && !host.Contains(':')
+        && System.Net.IPAddress.TryParse(host, out _))
+        return host;
+
+    return null;
+}
+
+static LabStatusResponse GetLabStatus(string labRoot, HttpRequest req)
+{
+    var config = LoadConfigObject(labRoot);
+    var lab = config["lab"] as JsonObject ?? new JsonObject();
+    var hostIp = lab["hostIp"]?.GetValue<string>() ?? "";
+    var needsHostIp = IsPlaceholderHostIp(hostIp);
+    var enabled = LoadEnabled(labRoot);
+    var postgresUp = ContainerRunning("postgres");
+    var caddyUp = !enabled.Contains("caddy") || ContainerRunning("caddy");
+    var baseOk = postgresUp && caddyUp;
+    return new LabStatusResponse(
+        Ready: !needsHostIp,
+        NeedsHostIp: needsHostIp,
+        BaseStacksRunning: baseOk,
+        HostIp: string.IsNullOrWhiteSpace(hostIp) ? null : hostIp,
+        SuggestedHostIp: SuggestHostIp(req),
+        Domain: lab["domain"]?.GetValue<string>() ?? "network.lan");
+}
+
+static LabSettingsResponse GetLabSettings(string labRoot)
+{
+    var config = LoadConfigObject(labRoot);
+    var lab = config["lab"] as JsonObject ?? new JsonObject();
+    var caddy = config["caddy"] as JsonObject ?? new JsonObject();
+    var enabled = LoadEnabled(labRoot);
+    var lanProxy = caddy["ENABLE_LAN_PROXY"]?.GetValue<bool?>()
+        ?? string.Equals(caddy["ENABLE_LAN_PROXY"]?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+    return new LabSettingsResponse(
+        HostIp: lab["hostIp"]?.GetValue<string>() ?? "",
+        Domain: lab["domain"]?.GetValue<string>() ?? "network.lan",
+        Timezone: lab["timezone"]?.GetValue<string>() ?? "UTC",
+        PostgresUser: lab["postgresUser"]?.GetValue<string>() ?? "modulab",
+        PostgresPassword: lab["postgresPassword"]?.GetValue<string>() ?? "modulab",
+        PostgresDb: lab["postgresDb"]?.GetValue<string>() ?? "modulab",
+        PiholePassword: lab["piholePassword"]?.GetValue<string>() ?? "modulab",
+        EnableLanProxy: lanProxy == true,
+        EnablePihole: enabled.Contains("pihole"));
+}
+
+static async Task ApplyLabSettingsAsync(string labRoot, LabSettingsUpdate body)
+{
+    var config = LoadConfigObject(labRoot);
+    var lab = config["lab"] as JsonObject ?? new JsonObject();
+    var caddy = config["caddy"] as JsonObject ?? new JsonObject();
+    if (config["enabled"] is not JsonArray enabled)
+    {
+        enabled = [];
+        config["enabled"] = enabled;
+    }
+
+    if (body.HostIp is not null)
+        lab["hostIp"] = body.HostIp.Trim();
+    if (body.Domain is not null)
+        lab["domain"] = body.Domain.Trim();
+    if (body.Timezone is not null)
+        lab["timezone"] = body.Timezone.Trim();
+    if (body.PostgresUser is not null)
+        lab["postgresUser"] = body.PostgresUser;
+    if (body.PostgresPassword is not null)
+        lab["postgresPassword"] = body.PostgresPassword;
+    if (body.PostgresDb is not null)
+        lab["postgresDb"] = body.PostgresDb;
+    if (body.PiholePassword is not null)
+        lab["piholePassword"] = body.PiholePassword;
+    if (body.EnableLanProxy is bool lan)
+        caddy["ENABLE_LAN_PROXY"] = lan;
+
+    void SetEnabled(string id, bool on)
+    {
+        var idx = -1;
+        for (var i = 0; i < enabled.Count; i++)
+        {
+            if (enabled[i]?.GetValue<string>() == id)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (on && idx < 0)
+            enabled.Add(id);
+        else if (!on && idx >= 0)
+            enabled.RemoveAt(idx);
+    }
+
+    SetEnabled("control-center", true);
+    SetEnabled("postgres", true);
+    if (body.EnableLanProxy is true)
+        SetEnabled("caddy", true);
+    if (body.EnablePihole is bool ph)
+        SetEnabled("pihole", ph);
+
+    config["lab"] = lab;
+    config["caddy"] = caddy;
+    config["enabled"] = enabled;
+    SaveConfigObject(labRoot, config);
+    await RunScriptAsync(labRoot, "render-config.sh");
+
+    try { await RunScriptAsync(labRoot, "start.sh", "postgres"); }
+    catch (Exception ex) { Console.Error.WriteLine($"start postgres: {ex.Message}"); }
+
+    if (enabled.Any(n => n?.GetValue<string>() == "caddy"))
+    {
+        try { await RunScriptAsync(labRoot, "start.sh", "caddy"); }
+        catch (Exception ex) { Console.Error.WriteLine($"start caddy: {ex.Message}"); }
+    }
+
+    if (body.EnablePihole is true)
+    {
+        try { await RunScriptAsync(labRoot, "start.sh", "pihole"); }
+        catch (Exception ex) { Console.Error.WriteLine($"start pihole: {ex.Message}"); }
+    }
+    else if (body.EnablePihole is false)
+    {
+        try { await RunScriptAsync(labRoot, "stop.sh", "pihole"); }
+        catch (Exception ex) { Console.Error.WriteLine($"stop pihole: {ex.Message}"); }
+    }
+
+    try { await RunScriptAsync(labRoot, "refresh-edge.sh"); }
+    catch (Exception ex) { Console.Error.WriteLine($"refresh-edge: {ex.Message}"); }
 }
 
 static void InvalidateUpdatesCache()
@@ -1216,12 +1461,19 @@ static string? AppOpenUrl(string labRoot, Recipe recipe)
 
 static async Task RunScriptAsync(string labRoot, string script, string? arg = null)
 {
+    // Always go through run_bash.py so Windows CRLF checkouts work inside Linux bash.
+    var runner = Path.Combine(labRoot, "scripts", "run_bash.py");
+    if (!File.Exists(runner))
+        throw new InvalidOperationException($"Missing {runner}");
+
     var scriptPath = Path.Combine(labRoot, "scripts", script);
     if (!File.Exists(scriptPath))
         throw new InvalidOperationException($"Missing {scriptPath}");
 
-    var args = arg is null ? $"\"{scriptPath}\"" : $"\"{scriptPath}\" {arg}";
-    var (exit, stdout, stderr) = await RunAsync("bash", args, labRoot);
+    var args = arg is null
+        ? $"\"{runner}\" {script}"
+        : $"\"{runner}\" {script} {arg}";
+    var (exit, stdout, stderr) = await RunAsync("python3", args, labRoot);
     if (exit != 0)
         throw new InvalidOperationException($"bash {script} failed ({exit}): {stderr}\n{stdout}".Trim());
 }
@@ -1490,6 +1742,33 @@ static void SaveDashboardDocument(string labRoot, string bodyText)
 
 internal sealed record HealthResponse(string Status, string LabRoot);
 internal sealed record ApiMessage(string Message);
+internal sealed record LabStatusResponse(
+    bool Ready,
+    bool NeedsHostIp,
+    bool BaseStacksRunning,
+    string? HostIp,
+    string? SuggestedHostIp,
+    string Domain);
+internal sealed record LabSettingsResponse(
+    string HostIp,
+    string Domain,
+    string Timezone,
+    string PostgresUser,
+    string PostgresPassword,
+    string PostgresDb,
+    string PiholePassword,
+    bool EnableLanProxy,
+    bool EnablePihole);
+internal sealed record LabSettingsUpdate(
+    string? HostIp,
+    string? Domain,
+    string? Timezone,
+    string? PostgresUser,
+    string? PostgresPassword,
+    string? PostgresDb,
+    string? PiholePassword,
+    bool? EnableLanProxy,
+    bool? EnablePihole);
 internal sealed record CatalogResponse(List<CatalogItem> Apps);
 internal sealed record FeedItem(string Title, string Url, string Meta, string? Thumb);
 internal sealed record FeedResponse(string Source, string Channel, List<FeedItem> Items);
@@ -1545,6 +1824,7 @@ internal sealed class Recipe
     public bool Installable { get; set; } = true;
     public bool Core { get; set; }
     public List<string> DependsOn { get; set; } = [];
+    public List<string> PreferShared { get; set; } = [];
     public Dictionary<string, JsonElement> Defaults { get; set; } = new();
     public List<RecipeField> Fields { get; set; } = [];
     public RecipeProxy? Proxy { get; set; }
@@ -1571,6 +1851,9 @@ internal sealed class RecipeField
     PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(ApiMessage))]
+[JsonSerializable(typeof(LabStatusResponse))]
+[JsonSerializable(typeof(LabSettingsResponse))]
+[JsonSerializable(typeof(LabSettingsUpdate))]
 [JsonSerializable(typeof(CatalogResponse))]
 [JsonSerializable(typeof(CatalogItem))]
 [JsonSerializable(typeof(FeedItem))]

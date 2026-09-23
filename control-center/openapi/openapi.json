@@ -26,6 +26,100 @@
         }
       }
     },
+    "/api/lab/status": {
+      "get": {
+        "tags": [
+          "Lab"
+        ],
+        "operationId": "GetLabStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lab/settings": {
+      "get": {
+        "tags": [
+          "Lab"
+        ],
+        "operationId": "GetLabSettings",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabSettingsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Lab"
+        ],
+        "operationId": "PutLabSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/LabSettingsUpdate"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabSettingsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/feeds/reddit": {
       "get": {
         "tags": [
@@ -933,6 +1027,7 @@
           "category",
           "port",
           "path",
+          "url",
           "installable",
           "core",
           "dependsOn",
@@ -1167,8 +1262,158 @@
           }
         }
       },
-      "JsonElement": {},
-      "JsonNode": {},
+      "JsonElement": { },
+      "JsonNode": { },
+      "LabSettingsResponse": {
+        "required": [
+          "hostIp",
+          "domain",
+          "timezone",
+          "postgresUser",
+          "postgresPassword",
+          "postgresDb",
+          "piholePassword",
+          "enableLanProxy",
+          "enablePihole"
+        ],
+        "type": "object",
+        "properties": {
+          "hostIp": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "postgresUser": {
+            "type": "string"
+          },
+          "postgresPassword": {
+            "type": "string"
+          },
+          "postgresDb": {
+            "type": "string"
+          },
+          "piholePassword": {
+            "type": "string"
+          },
+          "enableLanProxy": {
+            "type": "boolean"
+          },
+          "enablePihole": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LabSettingsUpdate": {
+        "required": [
+          "hostIp",
+          "domain",
+          "timezone",
+          "postgresUser",
+          "postgresPassword",
+          "postgresDb",
+          "piholePassword",
+          "enableLanProxy",
+          "enablePihole"
+        ],
+        "type": "object",
+        "properties": {
+          "hostIp": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "domain": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "timezone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postgresUser": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postgresPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "postgresDb": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "piholePassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "enableLanProxy": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "enablePihole": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "LabStatusResponse": {
+        "required": [
+          "ready",
+          "needsHostIp",
+          "baseStacksRunning",
+          "hostIp",
+          "suggestedHostIp",
+          "domain"
+        ],
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "needsHostIp": {
+            "type": "boolean"
+          },
+          "baseStacksRunning": {
+            "type": "boolean"
+          },
+          "hostIp": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "suggestedHostIp": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "domain": {
+            "type": "string"
+          }
+        }
+      },
       "RecipeField": {
         "type": "object",
         "properties": {
@@ -1302,6 +1547,9 @@
   "tags": [
     {
       "name": "System"
+    },
+    {
+      "name": "Lab"
     },
     {
       "name": "Feeds"

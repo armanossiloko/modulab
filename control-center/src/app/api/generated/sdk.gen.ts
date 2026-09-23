@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAppData, GetAppErrors, GetAppResponses, GetAppUpdatesData, GetAppUpdatesErrors, GetAppUpdatesResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetUpdatesData, GetUpdatesErrors, GetUpdatesResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses, UpdateAppData, UpdateAppErrors, UpdateAppResponses } from './types.gen';
+import type { GetAppData, GetAppErrors, GetAppResponses, GetAppUpdatesData, GetAppUpdatesErrors, GetAppUpdatesResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetLabSettingsData, GetLabSettingsErrors, GetLabSettingsResponses, GetLabStatusData, GetLabStatusResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetUpdatesData, GetUpdatesErrors, GetUpdatesResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, PutLabSettingsData, PutLabSettingsErrors, PutLabSettingsResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses, UpdateAppData, UpdateAppErrors, UpdateAppResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,6 +19,19 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
+
+export const getLabStatus = <ThrowOnError extends boolean = false>(options?: Options<GetLabStatusData, ThrowOnError>): RequestResult<GetLabStatusResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetLabStatusResponses, unknown, ThrowOnError>({ url: '/api/lab/status', ...options });
+
+export const getLabSettings = <ThrowOnError extends boolean = false>(options?: Options<GetLabSettingsData, ThrowOnError>): RequestResult<GetLabSettingsResponses, GetLabSettingsErrors, ThrowOnError> => (options?.client ?? client).get<GetLabSettingsResponses, GetLabSettingsErrors, ThrowOnError>({ url: '/api/lab/settings', ...options });
+
+export const putLabSettings = <ThrowOnError extends boolean = false>(options?: Options<PutLabSettingsData, ThrowOnError>): RequestResult<PutLabSettingsResponses, PutLabSettingsErrors, ThrowOnError> => (options?.client ?? client).put<PutLabSettingsResponses, PutLabSettingsErrors, ThrowOnError>({
+    url: '/api/lab/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
 
 export const getRedditFeed = <ThrowOnError extends boolean = false>(options?: Options<GetRedditFeedData, ThrowOnError>): RequestResult<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError> => (options?.client ?? client).get<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError>({ url: '/api/feeds/reddit', ...options });
 

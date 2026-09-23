@@ -3,5 +3,5 @@ services:
     image: corentinth/it-tools:latest
     container_name: it-tools
     ports:
-      - "${LAB_PUBLISH_IP:-0.0.0.0}:8083:80"
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8083:80"
     restart: unless-stopped

@@ -1,41 +1,31 @@
-# Control Center — frontend + backend together (FileVault-style)
+# Control Center
+
+Angular SPA + .NET 10 Native AOT API. In production Docker, the SPA is **baked into the image** at `/app/wwwroot`. The host file `wwwroot/dashboard.json` is the editable dashboard (seeded by `scripts/ensure-wwwroot.sh`).
 
 ```text
 control-center/
   src/                                  # Angular SPA
-  src-backend/Modulab.ControlCenter/    # .NET 10 API + SPA host
+  src-backend/Modulab.ControlCenter/    # API + SPA host
   defaults/                             # tracked dashboard templates
-  openapi/                              # OpenAPI document (generated)
-  wwwroot/                              # generated (gitignored)
-  package.json / angular.json           # frontend toolchain at this root
-  Dockerfile                            # multi-stage UI + API image
+  wwwroot/                              # host: dashboard.json only (gitignored)
+  Dockerfile                            # builds UI + API image
 ```
 
-Shell chrome (sidebar) is a separate component — shortcuts are global. Widget boards live in `dashboards[]` (nest via `parentId`) and open at `/d/:id`.
-
-`wwwroot/` is **not** in git. Create it with:
+## Production
 
 ```bash
-bash scripts/setup.sh
-bash scripts/publish-ui.sh     # optional local SPA publish; Docker builds UI into the image
+bash scripts/start.sh control-center
+# http://127.0.0.1:8888 (or http://<MODULAB_HOST_IP>:8888 on the LAN)
 ```
 
-Dev UI: `cd control-center && npm start` (proxies `/api` to :8888).
+Compose must keep `CONTROL_CENTER_WWWROOT=/app/wwwroot` so the baked UI is served. Do not point that env at an empty host `wwwroot/`.
 
-Open `Modulab.slnx` in Visual Studio.
-Regenerate env/edge: `bash scripts/render-config.sh`
+## Development
 
-## Routes
+```bash
+cd control-center && npm start          # proxies /api → :8888
+bash scripts/publish-ui.sh              # optional host dist for local `dotnet run`
+bash scripts/generate-api.sh            # after API changes
+```
 
-| Path | View |
-|---|---|
-| `/` | Home |
-| `/library` | Library |
-| `/settings` | Settings (General) |
-| `/settings/sidebar` | Settings → Sidebar |
-| `/settings/widgets` | Settings → Widgets |
-| `/settings/layout` | Settings → Layout |
-
-## Configure the UI
-
-Defaults live in **`defaults/dashboard.json`** (seeded into `wwwroot/` on first setup). Edit the runtime file under `wwwroot/dashboard.json`, or use the **Settings** page in Control Center.
+Open **`Modulab.slnx`** for the backend.

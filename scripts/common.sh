@@ -3,9 +3,12 @@
 
 # Stable project name so Control Center (cwd /lab) and host checkouts share containers.
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-modulab}"
+# Each stack is its own compose file under the same project name — siblings look like
+# "orphans" to Compose. Ignore that noise so install/start errors stay actionable.
+export COMPOSE_IGNORE_ORPHANS="${COMPOSE_IGNORE_ORPHANS:-true}"
 
 # Fallback order when lab.config.json has no "enabled" array.
-LAB_STACKS=(
+MODULAB_STACKS=(
   control-center
   postgres
   redis
@@ -28,31 +31,135 @@ require_lab_env() {
   fi
 }
 
-# Host path of the lab checkout for Compose volume binds.
-# Control Center runs with $root=/lab; the Docker daemon needs the real host path.
+# True when MODULAB_HOST_ROOT is a usable absolute host path for Compose binds.
+# Rejects container-only /lab and corrupted Desktop values like D:Developmentmodulab
+# (slashes stripped — Compose then joins onto /lab → "too many colons").
+lab_host_root_usable() {
+  local p="${1:-}"
+  p="${p//\\//}"
+  [[ -n "$p" ]] || return 1
+  [[ "$p" == "/lab" || "$p" == "/lab/" || "$p" == "." ]] && return 1
+  # Windows: D:/... (slash after drive is required)
+  [[ "$p" =~ ^[A-Za-z]:/ ]] && return 0
+  # Unix absolute (not the Control Center bind target alone)
+  [[ "$p" == /* && "$p" != "/lab" && "$p" != "/lab/" ]] && return 0
+  return 1
+}
+
+# Host path of the lab checkout for Compose volume binds / build context.
+# Control Center runs with $root=/lab; the Docker daemon needs the real host path
+# (Windows Docker Desktop: D:\..., Linux: /home/..., never the container-only /lab).
 compose_root() {
-  if [[ -n "${LAB_HOST_ROOT:-}" ]]; then
-    printf '%s\n' "$LAB_HOST_ROOT"
+  if lab_host_root_usable "${MODULAB_HOST_ROOT:-}"; then
+    printf '%s\n' "${MODULAB_HOST_ROOT//\\//}"
     return 0
   fi
-  if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]] && [[ -r /proc/self/mountinfo ]]; then
-    local host_path
-    host_path="$(awk '$5 == "/lab" { print $4; exit }' /proc/self/mountinfo)"
-    host_path="${host_path//\\040/ }"
-    if [[ -n "$host_path" ]]; then
+
+  if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]]; then
+    local host_path=""
+
+    # Most reliable: ask the daemon how /lab was bind-mounted into this container.
+    if command -v docker >/dev/null 2>&1; then
+      host_path="$(
+        docker inspect "$(hostname)" \
+          --format '{{range .Mounts}}{{if eq .Destination "/lab"}}{{.Source}}{{end}}{{end}}' \
+          2>/dev/null || true
+      )"
+    fi
+
+    # Fallback: parse mountinfo (Linux bind mounts). On Docker Desktop this often
+    # yields a drive-relative path like /Development/modulab — not usable as context.
+    if [[ -z "$host_path" && -r /proc/self/mountinfo ]]; then
+      host_path="$(awk '$5 == "/lab" { print $4; exit }' /proc/self/mountinfo)"
+      host_path="${host_path//\\040/ }"
+      # Reject Docker Desktop / WSL-style relative paths (no drive letter, not absolute host).
+      if [[ "$host_path" == /* && "$host_path" != /home/* && "$host_path" != /Users/* && "$host_path" != /mnt/* ]]; then
+        # Try to recover Windows drive from 9p options (path=D:\ …).
+        local opts drive
+        opts="$(awk '$5 == "/lab" { print $0; exit }' /proc/self/mountinfo)"
+        drive="$(printf '%s\n' "$opts" | sed -n 's/.*path=\([A-Za-z]\):.*/\1/p' | head -1)"
+        if [[ -n "$drive" ]]; then
+          host_path="${drive}:$(printf '%s' "$host_path" | tr '/' '\\')"
+        else
+          host_path=""
+        fi
+      fi
+    fi
+
+    if lab_host_root_usable "$host_path"; then
+      # Docker Desktop returns Windows paths with backslashes. Inside the Linux
+      # container those look *relative*, so Compose joins them onto /lab and breaks
+      # build context. Normalize to forward slashes (D:/...).
+      host_path="${host_path//\\//}"
       printf '%s\n' "$host_path"
       return 0
     fi
   fi
+
   printf '%s\n' "$root"
 }
 
-docker_compose() {
-  local cr
-  cr="$(compose_root)"
-  docker compose --project-directory "$cr" --env-file "${root}/.env" "$@"
+# True when the Docker engine is Docker Desktop (Windows/macOS) — host networking is not Linux-like.
+docker_desktop() {
+  local os
+  os="$(docker info --format '{{.OperatingSystem}}' 2>/dev/null || true)"
+  [[ "$os" == "Docker Desktop" ]]
 }
 
+
+# Append optional per-stack override if present (explicit -f; Compose will not auto-merge).
+append_stack_override() {
+  local name="$1"
+  local -n files_ref=$2
+  local override="${root}/docker-compose.${name}.override.yml"
+  if [[ -f "$override" ]]; then
+    files_ref+=(-f "$override")
+  fi
+}
+
+# Ensure .env has MODULAB_HOST_ROOT (absolute host path). Required when Compose runs
+# from inside Control Center on Docker Desktop — relative binds would otherwise
+# resolve to container paths the daemon cannot use.
+ensure_lab_host_root() {
+  local host_path envf cur
+  envf="${root}/.env"
+  [[ -f "$envf" ]] || return 0
+  cur="$(grep -E '^MODULAB_HOST_ROOT=' "$envf" 2>/dev/null | head -1 || true)"
+  cur="${cur#MODULAB_HOST_ROOT=}"
+  if lab_host_root_usable "$cur"; then
+    return 0
+  fi
+  # Avoid compose_root short-circuiting on a bad/container MODULAB_HOST_ROOT in the env.
+  host_path="$(MODULAB_HOST_ROOT= compose_root)"
+  host_path="${host_path//\\//}"
+  if ! lab_host_root_usable "$host_path"; then
+    return 0
+  fi
+  MODULAB_ROOT="$root" NEW_ROOT="$host_path" python3 - <<'PY2'
+import os
+from pathlib import Path
+path = Path(os.environ["MODULAB_ROOT"]) / ".env"
+new = os.environ["NEW_ROOT"]
+lines = []
+found = False
+for line in path.read_text(encoding="utf-8").splitlines():
+    if line.startswith("MODULAB_HOST_ROOT="):
+        lines.append(f"MODULAB_HOST_ROOT={new}")
+        found = True
+    else:
+        lines.append(line)
+if not found:
+    lines.append(f"MODULAB_HOST_ROOT={new}")
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY2
+}
+
+docker_compose() {
+  # Use $root as project-directory so the CLI can read YAML and upload build
+  # contexts from the bind mount. Absolute host binds use MODULAB_HOST_ROOT in .env.
+  ensure_lab_host_root
+  docker compose --project-directory "${root}" --env-file "${root}/.env" "$@"
+}
 ensure_modulab_network() {
   # Shared bridge used by Immich/n8n/etc. Must be external in compose files —
   # creating it via `docker network create` (no compose labels) is intentional.
@@ -72,7 +179,54 @@ stack_compose() {
     caddy_compose "$@"
     return
   fi
-  docker_compose -f "${root}/docker-compose.${name}.yml" "$@"
+  if [[ "$name" == immich ]]; then
+    immich_compose "$@"
+    return
+  fi
+  local files=(-f "${root}/docker-compose.${name}.yml")
+  append_stack_override "$name" files
+  docker_compose "${files[@]}" "$@"
+}
+
+# True when Immich config asks for sidecar Redis (no shared redis stack).
+immich_uses_sidecar_redis() {
+  MODULAB_ROOT="$root" python3 - <<'PY'
+import json, os
+from pathlib import Path
+root = Path(os.environ["MODULAB_ROOT"])
+cfg = root / "lab.config.json"
+if not cfg.is_file():
+    raise SystemExit(1)
+data = json.loads(cfg.read_text(encoding="utf-8"))
+section = data.get("immich") if isinstance(data.get("immich"), dict) else {}
+flag = section.get("useSidecarRedis")
+if flag is True or str(flag).lower() in ("1", "true", "yes"):
+    raise SystemExit(0)
+# Also honor REDIS_HOSTNAME pointing at sidecar
+if str(section.get("REDIS_HOSTNAME") or "").strip() == "immich-redis":
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+immich_compose() {
+  local files=(-f "${root}/docker-compose.immich.yml")
+  if immich_uses_sidecar_redis && [[ -f "${root}/docker-compose.immich.redis.yml" ]]; then
+    files+=(-f "${root}/docker-compose.immich.redis.yml")
+  fi
+  append_stack_override immich files
+  docker_compose "${files[@]}" "$@"
+}
+
+# Shared redis is usable if enabled in config or container is running.
+shared_redis_available() {
+  if stack_is_enabled redis; then
+    return 0
+  fi
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx redis; then
+    return 0
+  fi
+  return 1
 }
 
 pihole_compose() {
@@ -80,30 +234,38 @@ pihole_compose() {
   if [[ -f "${root}/docker-compose.pihole.dns.yml" ]]; then
     files+=(-f "${root}/docker-compose.pihole.dns.yml")
   fi
-  # LAN proxy: publish DNS on LAB_HOST_IP. Otherwise keep DNS on loopback only.
+  # LAN proxy: publish DNS on MODULAB_HOST_IP. Otherwise keep DNS on loopback only.
   if lan_proxy_enabled; then
     files+=(-f "${root}/docker-compose.pihole.lan-ports.yml")
   else
     files+=(-f "${root}/docker-compose.pihole.dns-ports.yml")
   fi
+  append_stack_override pihole files
   docker_compose "${files[@]}" "$@"
 }
 
 caddy_compose() {
   local files=(-f "${root}/docker-compose.caddy.yml")
   if lan_proxy_enabled; then
-    files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
+    # Linux: host networking + 127.0.0.1 upstreams.
+    # Docker Desktop (Windows/macOS): publish :80 and reach apps via host.docker.internal.
+    if docker_desktop; then
+      files+=(-f "${root}/docker-compose.caddy.proxy-ports.desktop.yml")
+    else
+      files+=(-f "${root}/docker-compose.caddy.proxy-ports.yml")
+    fi
   fi
+  append_stack_override caddy files
   docker_compose "${files[@]}" "$@"
 }
 
 # True if id is listed in lab.config.json enabled[].
 stack_is_enabled() {
   local id="$1"
-  LAB_ROOT="$root" STACK_ID="$id" python3 - <<'PY'
+  MODULAB_ROOT="$root" STACK_ID="$id" python3 - <<'PY'
 import json, os
 from pathlib import Path
-root = Path(os.environ["LAB_ROOT"])
+root = Path(os.environ["MODULAB_ROOT"])
 want = os.environ["STACK_ID"]
 path = root / "lab.config.json"
 if not path.is_file():
@@ -147,7 +309,9 @@ stack_down() {
     pihole) pihole_compose down "$@" ;;
     *)
       if [[ -f "${root}/docker-compose.${name}.yml" ]]; then
-        docker_compose -f "${root}/docker-compose.${name}.yml" down "$@"
+        local files=(-f "${root}/docker-compose.${name}.yml")
+        append_stack_override "$name" files
+        docker_compose "${files[@]}" down "$@"
       fi
       ;;
   esac
@@ -155,15 +319,15 @@ stack_down() {
 
 # Resolve stacks for `start.sh all` / `stop.sh all` from lab.config.json enabled[].
 enabled_stacks() {
-  LAB_ROOT="$root" python3 - <<'PY'
+  MODULAB_ROOT="$root" python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
-root = Path(os.environ["LAB_ROOT"])
+root = Path(os.environ["MODULAB_ROOT"])
 config_path = root / "lab.config.json"
 fallback = [
-    "control-center", "postgres", "redis",
+    "control-center", "postgres", "caddy",
 ]
 
 if not config_path.is_file():
@@ -178,7 +342,7 @@ if not isinstance(enabled, list):
 
 stacks = [str(x) for x in enabled if isinstance(x, str)]
 ordered: list[str] = []
-for name in ("control-center", "postgres", "redis"):
+for name in ("control-center", "postgres", "redis", "caddy", "pihole"):
     if name in stacks and name not in ordered:
         ordered.append(name)
 for name in stacks:
@@ -191,12 +355,12 @@ PY
 # Print dependency stack ids for a recipe (recursive, unique, deps before dependents).
 recipe_depends() {
   local id="$1"
-  LAB_ROOT="$root" RECIPE_ID="$id" python3 - <<'PY'
+  MODULAB_ROOT="$root" RECIPE_ID="$id" python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
-root = Path(os.environ["LAB_ROOT"])
+root = Path(os.environ["MODULAB_ROOT"])
 target = os.environ["RECIPE_ID"]
 recipes = {}
 for path in (root / "catalog").glob("*/recipe.json"):
@@ -243,10 +407,12 @@ lab_dashboard_url() {
 }
 
 lan_proxy_enabled() {
-  local line
+  local line val
   [[ -f "${root}/.env" ]] || return 1
   line="$(grep -E '^ENABLE_LAN_PROXY=' "${root}/.env" | head -1 || true)"
-  [[ "${line#ENABLE_LAN_PROXY=}" == "true" ]]
+  val="${line#ENABLE_LAN_PROXY=}"
+  val="${val%%$'\r'}"
+  [[ "$val" == "true" ]]
 }
 
 lab_domain() {
@@ -290,8 +456,8 @@ print_stack_url() {
         local host_ip=127.0.0.1
         if [[ -f "${root}/.env" ]]; then
           local line
-          line="$(grep -E '^LAB_HOST_IP=' "${root}/.env" | head -1 || true)"
-          [[ -n "$line" ]] && host_ip="${line#LAB_HOST_IP=}" && host_ip="${host_ip%%$'\r'}"
+          line="$(grep -E '^MODULAB_HOST_IP=' "${root}/.env" | head -1 || true)"
+          [[ -n "$line" ]] && host_ip="${line#MODULAB_HOST_IP=}" && host_ip="${host_ip%%$'\r'}"
         fi
         echo "DNS (LAN): ${host_ip}:53"
       else
@@ -323,4 +489,8 @@ wait_for_postgres() {
 
 wait_for_redis() {
   until docker exec redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 1; done
+}
+
+wait_for_immich_redis() {
+  until docker exec immich_redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 1; done
 }

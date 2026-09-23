@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Build Angular UI and publish into control-center/wwwroot (keeps *.json config).
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+_scripts="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${MODULAB_ROOT:-$(cd "${_scripts}/.." && pwd)}"
+_scripts="${MODULAB_SCRIPTS:-${_scripts}}"
+cd "$ROOT"
 CC="$ROOT/control-center"
 WWW="$CC/wwwroot"
 DIST="$CC/dist/control-center/browser"

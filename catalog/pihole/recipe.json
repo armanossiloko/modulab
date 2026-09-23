@@ -7,7 +7,7 @@
   "port": 5080,
   "path": "/admin",
   "installable": true,
-  "core": true,
+  "core": false,
   "dependsOn": [],
   "proxy": {
     "host": "pihole",
@@ -19,7 +19,7 @@
   ],
   "defaults": {
     "PIHOLE_UPSTREAM_DNS": "1.1.1.1;1.0.0.1",
-    "PIHOLE_TAG": "latest"
+    "PIHOLE_TAG": "2025.03.0"
   },
   "fields": [
     {

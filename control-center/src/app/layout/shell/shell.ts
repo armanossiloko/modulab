@@ -1,12 +1,12 @@
-import { Component, OnInit, inject, HostListener } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, inject, HostListener, computed } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { Sidebar } from '../sidebar/sidebar';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, FormsModule, Sidebar],
+  imports: [RouterOutlet, RouterLink, FormsModule, Sidebar],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
@@ -14,6 +14,7 @@ export class Shell implements OnInit {
   readonly dash = inject(DashboardService);
   search = '';
   private resizing = false;
+  readonly needsLabSetup = computed(() => this.dash.labStatus()?.needsHostIp === true);
 
   ngOnInit(): void {
     const stored = localStorage.getItem('modulab.sidebarWidth');
@@ -21,6 +22,7 @@ export class Shell implements OnInit {
       document.documentElement.style.setProperty('--sidebar', `${stored}px`);
     }
     this.dash.load().subscribe();
+    this.dash.loadLabStatus().subscribe({ error: () => undefined });
   }
 
   onSearchKey(event: KeyboardEvent): void {
