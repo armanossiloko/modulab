@@ -26,6 +26,10 @@ function readView(): LibraryView {
   }
 }
 
+function libraryApps(apps: CatalogItem[]): CatalogItem[] {
+  return apps.filter((app) => app.id !== 'control-center');
+}
+
 @Component({
   selector: 'app-library-page',
   imports: [FormsModule, Icon, CatalogMark],
@@ -160,15 +164,17 @@ function readView(): LibraryView {
                   {{ busyId() === app.id ? 'Starting…' : 'Start' }}
                 </button>
               }
-              @if (
-                app.id !== 'control-center' &&
-                (app.status === 'running' || (app.core && app.status === 'removed')) &&
-                (app.url || app.port)
-              ) {
+              @if (canOpen(app)) {
                 <a class="btn" [href]="openUrl(app)" target="_blank" rel="noopener">
                   Open
                   <app-icon name="external" [size]="13" />
                 </a>
+                @if (ipUrl(app); as viaIp) {
+                  <a class="btn" [href]="viaIp" target="_blank" rel="noopener" [title]="viaIp">
+                    Open via IP
+                    <app-icon name="external" [size]="13" />
+                  </a>
+                }
               }
               @if (
                 !app.core &&
@@ -392,7 +398,9 @@ export class LibraryPage implements OnInit {
   installDraft: Record<string, string | boolean> = {};
   readonly setupBlocked = computed(() => this.dash.labStatus()?.needsHostIp === true);
   readonly runningCount = computed(() => this.apps().filter((a) => a.status === 'running').length);
-  readonly updateCount = computed(() => this.dash.appsWithUpdates().length);
+  readonly updateCount = computed(
+    () => this.dash.appsWithUpdates().filter((app) => app.id !== 'control-center').length
+  );
   readonly statusLabel = statusLabel;
   readonly tone = statusTone;
 
@@ -444,7 +452,7 @@ export class LibraryPage implements OnInit {
   ngOnInit(): void {
     forkJoin([this.dash.load(), this.dash.loadCatalog()]).subscribe({
       next: () => {
-        this.apps.set(this.dash.catalog());
+        this.apps.set(libraryApps(this.dash.catalog()));
         this.dash.loadUpdates(false).subscribe({ error: () => undefined });
       },
       error: (err: Error) => this.error.set(err.message),
@@ -454,6 +462,24 @@ export class LibraryPage implements OnInit {
 
   hasUpdate(id: string): boolean {
     return this.dash.updateAvailable(id);
+  }
+
+  canOpen(app: CatalogItem): boolean {
+    return (
+      app.id !== 'control-center' &&
+      (app.status === 'running' || (!!app.core && app.status === 'removed')) &&
+      !!(app.url || app.port)
+    );
+  }
+
+  /** LAN address from Settings → Lab, plus this app's published port. */
+  ipUrl(app: CatalogItem): string | null {
+    const status = this.dash.labStatus();
+    const hostIp = status?.hostIp?.trim();
+    const port = app.port;
+    if (!hostIp || status?.needsHostIp || port == null || String(port).trim() === '') return null;
+    const url = `http://${hostIp}:${port}${app.path || ''}`;
+    return url === this.openUrl(app) ? null : url;
   }
 
   /** Prefer LAN hostname when the UI is opened remotely; keep port for direct access. */
@@ -490,7 +516,7 @@ export class LibraryPage implements OnInit {
   refresh(): void {
     this.dash.loadCatalog().subscribe({
       next: (apps) => {
-        this.apps.set(apps);
+        this.apps.set(libraryApps(apps));
         this.dash.loadUpdates(true).subscribe({ error: () => undefined });
       },
       error: (err: Error) => this.error.set(err.message),
