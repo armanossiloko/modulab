@@ -12,21 +12,11 @@
 
   <div class="page">
     <header class="topbar">
-      <label class="search input-icon">
-        <span class="sr-only">Search</span>
+      <button type="button" class="search search-launch" (click)="paletteOpen.set(true)">
         <app-icon name="search" />
-        <input
-          #searchInput
-          type="search"
-          class="input"
-          [placeholder]="searchPlaceholder()"
-          [(ngModel)]="search"
-          (keydown)="onSearchKey($event)"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <kbd class="search-kbd" aria-hidden="true">/</kbd>
-      </label>
+        <span>{{ searchPlaceholder() }}</span>
+        <kbd class="search-kbd" aria-hidden="true">{{ shortcutLabel }}</kbd>
+      </button>
       <button
         type="button"
         class="icon-btn icon-btn--lg"
@@ -54,3 +44,7 @@
     </div>
   </div>
 </div>
+
+@if (paletteOpen()) {
+  <app-command-palette (closed)="paletteOpen.set(false)" />
+}

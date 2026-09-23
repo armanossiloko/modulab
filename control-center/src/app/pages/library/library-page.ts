@@ -2,6 +2,7 @@ import { Component, HostListener, OnInit, inject, signal, computed } from '@angu
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { CatalogItem, RecipeField } from '../../api/generated';
+import { canOpenApp, ipAppUrl, openAppUrl } from '../../core/app-links';
 import { formatRelease, statusLabel, statusTone } from '../../core/app-status';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { CatalogMark } from '../../shared/catalog-mark';
@@ -403,6 +404,7 @@ export class LibraryPage implements OnInit {
   );
   readonly statusLabel = statusLabel;
   readonly tone = statusTone;
+  readonly canOpen = canOpenApp;
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -464,53 +466,13 @@ export class LibraryPage implements OnInit {
     return this.dash.updateAvailable(id);
   }
 
-  canOpen(app: CatalogItem): boolean {
-    return (
-      app.id !== 'control-center' &&
-      (app.status === 'running' || (!!app.core && app.status === 'removed')) &&
-      !!(app.url || app.port)
-    );
-  }
-
-  /** LAN address from Settings → Lab, plus this app's published port. */
   ipUrl(app: CatalogItem): string | null {
     const status = this.dash.labStatus();
-    const hostIp = status?.hostIp?.trim();
-    const port = app.port;
-    if (!hostIp || status?.needsHostIp || port == null || String(port).trim() === '') return null;
-    const url = `http://${hostIp}:${port}${app.path || ''}`;
-    return url === this.openUrl(app) ? null : url;
+    return ipAppUrl(app, status?.hostIp, status?.needsHostIp);
   }
 
-  /** Prefer LAN hostname when the UI is opened remotely; keep port for direct access. */
   openUrl(app: CatalogItem): string {
-    const path = app.path || '';
-    const host = window.location.hostname || '127.0.0.1';
-    const port = app.port;
-    if (!port) return `http://${host}${path}`;
-
-    // If Control Center is reached via home.network.lan, open peer hostnames on the same domain.
-    const parts = host.split('.');
-    if (parts.length >= 2 && host !== '127.0.0.1' && host !== 'localhost') {
-      const domain = parts.slice(1).join('.');
-      const label = this.proxyLabel(app);
-      if (label && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-        return `http://${label}.${domain}${path}`;
-      }
-    }
-
-    return `http://${host}:${port}${path}`;
-  }
-
-  private proxyLabel(app: CatalogItem): string | null {
-    // Recipe proxy host usually matches dns label; fall back to id with common aliases.
-    const aliases: Record<string, string> = {
-      'stirling-pdf': 'stirling',
-      'futo-notes': 'notes',
-      'control-center': 'home',
-      'it-tools': 'it-tools',
-    };
-    return aliases[app.id] || app.id;
+    return openAppUrl(app);
   }
 
   refresh(): void {

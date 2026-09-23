@@ -1,31 +1,22 @@
-import {
-  Component,
-  ElementRef,
-  HostListener,
-  OnInit,
-  ViewChild,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { Icon } from '../../shared/icon';
+import { CommandPalette } from '../command-palette/command-palette';
 import { Sidebar } from '../sidebar/sidebar';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, FormsModule, Sidebar, Icon],
+  imports: [RouterOutlet, RouterLink, Sidebar, Icon, CommandPalette],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
 export class Shell implements OnInit {
   readonly dash = inject(DashboardService);
-  @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
-  search = '';
   private resizing = false;
+  readonly paletteOpen = signal(false);
+  readonly shortcutLabel = /\bmac/i.test(navigator.platform) || /\bmac/i.test(navigator.userAgent) ? '⌘K' : 'Ctrl K';
   readonly refreshing = signal(false);
   readonly needsLabSetup = computed(() => this.dash.labStatus()?.needsHostIp === true);
   readonly searchPlaceholder = computed(
@@ -44,25 +35,17 @@ export class Shell implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   onGlobalKey(event: KeyboardEvent): void {
+    const key = event.key.toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && key === 'k' && !event.altKey) {
+      event.preventDefault();
+      this.paletteOpen.update((open) => !open);
+      return;
+    }
     if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
     const target = event.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
     event.preventDefault();
-    this.searchInput?.nativeElement.focus();
-  }
-
-  onSearchKey(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      this.search = '';
-      (event.target as HTMLInputElement).blur();
-      return;
-    }
-    if (event.key !== 'Enter') return;
-    const q = this.search.trim();
-    if (!q) return;
-    const engine =
-      this.dash.document()?.search?.engine || 'https://duckduckgo.com/?q=%s';
-    window.open(engine.replace('%s', encodeURIComponent(q)), '_blank', 'noopener,noreferrer');
+    this.paletteOpen.set(true);
   }
 
   refresh(): void {
