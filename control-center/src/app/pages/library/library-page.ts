@@ -14,6 +14,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   infrastructure: 'var(--cat-infrastructure)',
 };
 
+type LibraryView = 'list' | 'grid';
+
+const VIEW_KEY = 'modulab.library.view';
+
+function readView(): LibraryView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
+  } catch {
+    return 'grid';
+  }
+}
+
 @Component({
   selector: 'app-library-page',
   imports: [FormsModule, Icon, CatalogMark],
@@ -29,6 +41,30 @@ const CATEGORY_COLORS: Record<string, string> = {
         </p>
       </div>
       <div class="page-header__actions">
+        <div class="view-switch" role="group" aria-label="Library layout">
+          <button
+            type="button"
+            class="icon-btn"
+            [class.is-active]="view() === 'list'"
+            [attr.aria-pressed]="view() === 'list'"
+            aria-label="List view"
+            title="List view"
+            (click)="setView('list')"
+          >
+            <app-icon name="list" [size]="15" />
+          </button>
+          <button
+            type="button"
+            class="icon-btn"
+            [class.is-active]="view() === 'grid'"
+            [attr.aria-pressed]="view() === 'grid'"
+            aria-label="Grid view"
+            title="Grid view"
+            (click)="setView('grid')"
+          >
+            <app-icon name="grid" [size]="15" />
+          </button>
+        </div>
         <label class="input-icon filter">
           <span class="sr-only">Filter library</span>
           <app-icon name="search" [size]="14" />
@@ -46,13 +82,14 @@ const CATEGORY_COLORS: Record<string, string> = {
     @if (error()) {
       <p class="empty-note">{{ error() }}</p>
     } @else {
-      <ul class="library-list">
+      <ul class="library-list" [class.is-grid]="view() === 'grid'">
         @for (app of filteredApps(); track app.id; let i = $index) {
           <li class="card library-item" [style.animation-delay.ms]="i * 20">
             <app-catalog-mark
               [id]="app.id"
               [name]="app.name"
               [color]="categoryColor(app.category)"
+              [size]="view() === 'grid' ? 52 : 36"
             />
             <div class="library-meta">
               <div class="library-title-row">
@@ -286,6 +323,38 @@ const CATEGORY_COLORS: Record<string, string> = {
       gap: 0.4rem;
       flex: 0 0 auto;
     }
+    .view-switch {
+      display: inline-flex;
+      gap: 0.25rem;
+    }
+    .library-list.is-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.65rem;
+      align-items: stretch;
+    }
+    .library-list.is-grid .library-item {
+      flex-direction: column;
+      align-items: flex-start;
+      align-content: flex-start;
+      gap: 0.75rem;
+      height: 100%;
+      padding: 0.95rem;
+    }
+    .library-list.is-grid .library-meta {
+      width: 100%;
+    }
+    .library-list.is-grid .library-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .library-list.is-grid .library-actions {
+      width: 100%;
+      margin-top: auto;
+      justify-content: flex-start;
+    }
     .install-head {
       display: flex;
       align-items: center;
@@ -315,6 +384,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 export class LibraryPage implements OnInit {
   private readonly dash = inject(DashboardService);
   readonly query = signal('');
+  readonly view = signal<LibraryView>(readView());
   readonly error = signal<string | null>(null);
   readonly apps = signal<CatalogItem[]>([]);
   readonly busyId = signal<string | null>(null);
@@ -329,6 +399,15 @@ export class LibraryPage implements OnInit {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.installing()) this.cancelInstall();
+  }
+
+  setView(next: LibraryView): void {
+    this.view.set(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      /* preference is optional */
+    }
   }
 
   categoryColor(category?: string): string {
