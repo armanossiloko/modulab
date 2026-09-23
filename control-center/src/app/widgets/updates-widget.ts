@@ -1,21 +1,30 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { DashboardService } from '../core/services/dashboard.service';
+import { Icon } from '../shared/icon';
 
 @Component({
   selector: 'app-updates-widget',
+  imports: [Icon],
   template: `
     <div class="updates">
       <div class="updates-bar">
-        <span class="updates-meta">
-          @if (loading()) {
-            Checking…
-          } @else if (pending().length) {
-            {{ pending().length }} update{{ pending().length === 1 ? '' : 's' }}
-          } @else {
-            Up to date
-          }
-        </span>
-        <button type="button" class="btn-check" [disabled]="loading()" (click)="check(true)">
+        @if (loading()) {
+          <span class="badge badge--plain">Checking…</span>
+        } @else if (pending().length) {
+          <span class="badge badge--accent"
+            >{{ pending().length }} update{{ pending().length === 1 ? '' : 's' }}</span
+          >
+        } @else {
+          <span class="badge badge--positive">Up to date</span>
+        }
+        <button
+          type="button"
+          class="btn btn--sm"
+          [class.is-spinning]="loading()"
+          [disabled]="loading()"
+          (click)="check(true)"
+        >
+          <app-icon name="refresh" [size]="12" />
           Check
         </button>
       </div>
@@ -25,16 +34,16 @@ import { DashboardService } from '../core/services/dashboard.service';
       } @else if (!loading() && pending().length === 0) {
         <p class="empty-note">No image updates for installed stacks.</p>
       } @else {
-        <ul class="update-list">
+        <ul class="row-list update-list">
           @for (app of pending(); track app.id) {
-            <li class="update-row">
-              <div class="update-meta">
-                <span class="update-name">{{ app.name }}</span>
-                <span class="update-detail">{{ detail(app.id) }}</span>
+            <li class="row">
+              <div class="row__main">
+                <span class="row__title">{{ app.name }}</span>
+                <span class="row__meta">{{ detail(app.id) }}</span>
               </div>
               <button
                 type="button"
-                class="btn-update"
+                class="btn btn--primary btn--sm"
                 [disabled]="busyId() === app.id"
                 (click)="apply(app.id, app.name)"
               >
@@ -50,7 +59,7 @@ import { DashboardService } from '../core/services/dashboard.service';
     .updates {
       display: flex;
       flex-direction: column;
-      gap: 0.45rem;
+      gap: 0.5rem;
       height: 100%;
       min-height: 0;
     }
@@ -60,76 +69,12 @@ import { DashboardService } from '../core/services/dashboard.service';
       justify-content: space-between;
       gap: 0.5rem;
     }
-    .updates-meta {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-    .btn-check,
-    .btn-update {
-      height: 1.7rem;
-      padding: 0 0.55rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: color-mix(in srgb, var(--bg) 40%, var(--widget));
-      color: var(--text);
-      font: inherit;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-    .btn-check:hover:not(:disabled),
-    .btn-update:hover:not(:disabled) {
-      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-    }
-    .btn-update {
-      background: var(--accent-soft);
-      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .btn-check:disabled,
-    .btn-update:disabled {
-      opacity: 0.55;
-      cursor: default;
+    .is-spinning app-icon {
+      animation: spin 0.8s linear infinite;
     }
     .update-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
       overflow: auto;
       min-height: 0;
-    }
-    .update-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.45rem 0.55rem;
-      border-radius: var(--radius-sm);
-      background: color-mix(in srgb, var(--bg) 55%, var(--widget));
-      border: 1px solid var(--border-soft);
-    }
-    .update-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.1rem;
-      min-width: 0;
-    }
-    .update-name {
-      font-weight: 500;
-      color: var(--text);
-    }
-    .update-detail {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
   `,
 })

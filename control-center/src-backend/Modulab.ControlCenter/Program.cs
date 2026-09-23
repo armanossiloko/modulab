@@ -294,16 +294,17 @@ app.MapGet("/api/weather", async (double? lat, double? lon, string? label, Cance
     .Produces<WeatherResponse>(StatusCodes.Status200OK)
     .ProducesApiMessage(StatusCodes.Status502BadGateway);
 
-app.MapGet("/api/catalog", () =>
+app.MapGet("/api/catalog", async () =>
 {
     try
     {
         var recipes = LoadRecipes(labRoot);
         var enabled = LoadEnabled(labRoot);
         var (running, present) = ProbeContainers(labRoot, recipes);
+        var releases = await LoadImageReleasesAsync(labRoot, recipes, CancellationToken.None);
         var items = recipes
-            .Where(r => !string.Equals(r.Id, "control-center", StringComparison.OrdinalIgnoreCase))
-            .Select(r => ToCatalogItem(labRoot, r, enabled, running, present))
+            .Select(r => ToCatalogItem(
+                labRoot, r, enabled, running, present, releases.GetValueOrDefault(r.Id)))
             .ToList();
         return Results.Json(new CatalogResponse(items), LabJsonContext.Default.CatalogResponse);
     }
@@ -317,7 +318,7 @@ app.MapGet("/api/catalog", () =>
     .Produces<CatalogResponse>(StatusCodes.Status200OK)
     .ProducesApiMessage(StatusCodes.Status500InternalServerError);
 
-app.MapGet("/api/apps/{id}", (string id) =>
+app.MapGet("/api/apps/{id}", async (string id) =>
 {
     var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
     if (recipe is null)
@@ -325,7 +326,10 @@ app.MapGet("/api/apps/{id}", (string id) =>
 
     var enabled = LoadEnabled(labRoot);
     var (running, present) = ProbeContainers(labRoot, [recipe]);
-    return Results.Json(ToCatalogItem(labRoot, recipe, enabled, running, present), LabJsonContext.Default.CatalogItem);
+    var releases = await LoadImageReleasesAsync(labRoot, [recipe], CancellationToken.None);
+    return Results.Json(
+        ToCatalogItem(labRoot, recipe, enabled, running, present, releases.GetValueOrDefault(recipe.Id)),
+        LabJsonContext.Default.CatalogItem);
 })
     .WithName("GetApp")
     .WithTags("Apps")
@@ -345,6 +349,7 @@ app.MapPost("/api/apps/{id}/install", async (string id, InstallRequest? body) =>
     try
     {
         await EnableAndStartAsync(labRoot, recipe, body?.Config);
+        InvalidateReleaseCache();
         return Results.Json(new ApiMessage($"Installed {id}"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
@@ -373,6 +378,7 @@ app.MapPost("/api/apps/{id}/start", async (string id) =>
         await RunScriptAsync(labRoot, "start.sh", id);
         try { await RunScriptAsync(labRoot, "refresh-edge.sh"); }
         catch (Exception ex) { Console.Error.WriteLine($"refresh-edge after start: {ex.Message}"); }
+        InvalidateReleaseCache();
         return Results.Json(new ApiMessage($"Started {id}"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
@@ -986,6 +992,8 @@ static void InvalidateUpdatesCache()
     {
         UpdatesCacheState.Response = null;
     }
+
+    InvalidateReleaseCache();
 }
 
 static async Task<UpdatesResponse> GetUpdatesCachedAsync(string labRoot, bool forceRefresh, CancellationToken ct)
@@ -1373,12 +1381,156 @@ static bool TryMatchContainer(HashSet<string> names, string recipeId, out string
     return false;
 }
 
+static async Task<Dictionary<string, ImageRelease>> LoadImageReleasesAsync(
+    string labRoot,
+    List<Recipe> recipes,
+    CancellationToken ct)
+{
+    lock (ReleaseCacheState.Lock)
+    {
+        if (ReleaseCacheState.ById is not null
+            && DateTimeOffset.UtcNow - ReleaseCacheState.At < ReleaseCacheState.Ttl)
+            return ReleaseCacheState.ById;
+    }
+
+    var imageByApp = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    try
+    {
+        var output = RunCapture("docker", "ps -a --format \"{{.Names}}\\t{{.Image}}\"", labRoot, 15_000);
+        var imageByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = line.Split('\t', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[0]) && !string.IsNullOrWhiteSpace(parts[1]))
+                imageByName[parts[0]] = parts[1];
+        }
+
+        var names = imageByName.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var recipe in recipes)
+        {
+            if (TryMatchContainer(names, recipe.Id, out var matched)
+                && imageByName.TryGetValue(matched, out var image))
+                imageByApp[recipe.Id] = image;
+        }
+    }
+    catch
+    {
+        return new Dictionary<string, ImageRelease>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    var unique = imageByApp.Values.Distinct(StringComparer.Ordinal).ToList();
+    var byImage = new Dictionary<string, ImageRelease?>(StringComparer.Ordinal);
+    await Parallel.ForEachAsync(
+        unique,
+        new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct },
+        async (image, token) =>
+        {
+            var release = await InspectImageReleaseAsync(labRoot, image, token);
+            lock (byImage)
+                byImage[image] = release;
+        });
+
+    var byId = new Dictionary<string, ImageRelease>(StringComparer.OrdinalIgnoreCase);
+    foreach (var (id, image) in imageByApp)
+    {
+        if (byImage.TryGetValue(image, out var release) && release is not null)
+            byId[id] = release;
+    }
+
+    lock (ReleaseCacheState.Lock)
+    {
+        ReleaseCacheState.ById = byId;
+        ReleaseCacheState.At = DateTimeOffset.UtcNow;
+    }
+
+    return byId;
+}
+
+static async Task<ImageRelease?> InspectImageReleaseAsync(
+    string labRoot,
+    string imageRef,
+    CancellationToken ct)
+{
+    ct.ThrowIfCancellationRequested();
+    var (exit, stdout, _) = await RunAsync(
+        "docker",
+        $"image inspect {QuoteArg(imageRef)} --format \"{{{{json .}}}}\"",
+        labRoot,
+        20_000);
+    if (exit != 0 || string.IsNullOrWhiteSpace(stdout))
+        return null;
+
+    try
+    {
+        using var doc = JsonDocument.Parse(stdout);
+        var root = doc.RootElement;
+        if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+            root = root[0];
+
+        DateTimeOffset? released = null;
+        if (root.TryGetProperty("Created", out var created)
+            && DateTimeOffset.TryParse(created.GetString(), out var built))
+            released = built;
+
+        string? version = null;
+        if (root.TryGetProperty("Config", out var config)
+            && config.TryGetProperty("Labels", out var labels)
+            && labels.ValueKind == JsonValueKind.Object
+            && labels.TryGetProperty("org.opencontainers.image.version", out var label)
+            && label.ValueKind == JsonValueKind.String)
+            version = label.GetString();
+
+        if (string.IsNullOrWhiteSpace(version))
+            version = VersionFromImageRef(imageRef);
+
+        version = string.IsNullOrWhiteSpace(version) ? null : version.Trim();
+        if (version is null && released is null)
+            return null;
+        return new ImageRelease(version, released);
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+/// <summary>Tag is a version when it is pinned and contains a digit (10.11.10, v3, 2025.03.0).</summary>
+static string? VersionFromImageRef(string imageRef)
+{
+    var digest = imageRef.IndexOf('@');
+    if (digest >= 0)
+        imageRef = imageRef[..digest];
+    var slash = imageRef.LastIndexOf('/');
+    var colon = imageRef.LastIndexOf(':');
+    if (colon < 0 || colon < slash)
+        return null;
+    var tag = imageRef[(colon + 1)..];
+    if (tag.Length == 0 || IsFloatingTag(tag) || !tag.Any(char.IsDigit))
+        return null;
+    return tag;
+}
+
+static bool IsFloatingTag(string tag) => tag.ToLowerInvariant() switch
+{
+    "latest" or "stable" or "main" or "master" or "release" or "local" or "edge" or "nightly" or "dev" or "develop" => true,
+    _ => false,
+};
+
+static void InvalidateReleaseCache()
+{
+    lock (ReleaseCacheState.Lock)
+    {
+        ReleaseCacheState.ById = null;
+    }
+}
+
 static CatalogItem ToCatalogItem(
     string labRoot,
     Recipe recipe,
     HashSet<string> enabled,
     HashSet<string> running,
-    HashSet<string> present)
+    HashSet<string> present,
+    ImageRelease? release = null)
 {
     var isRunning = running.Contains(recipe.Id);
     var isPresent = present.Contains(recipe.Id);
@@ -1409,7 +1561,9 @@ static CatalogItem ToCatalogItem(
         recipe.Fields,
         isEnabled,
         isRunning,
-        status);
+        status,
+        release?.Version,
+        release?.ReleasedAt);
 }
 
 static bool EnvFlagTrue(string labRoot, string key)
@@ -1787,7 +1941,11 @@ internal sealed record CatalogItem(
     List<RecipeField> Fields,
     bool Enabled,
     bool Running,
-    string Status);
+    string Status,
+    string? Version = null,
+    DateTimeOffset? ReleasedAt = null);
+
+internal sealed record ImageRelease(string? Version, DateTimeOffset? ReleasedAt);
 internal sealed record InstallRequest(Dictionary<string, JsonElement>? Config);
 internal sealed record BookmarkLinkDto(string Title, string Url, string? Domain);
 internal sealed record BookmarkGroupDto(string Title, string? Color, List<BookmarkLinkDto> Links);
@@ -1884,6 +2042,14 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]
 internal partial class LabJsonContext : JsonSerializerContext;
+
+file static class ReleaseCacheState
+{
+    public static readonly object Lock = new();
+    public static Dictionary<string, ImageRelease>? ById;
+    public static DateTimeOffset At;
+    public static readonly TimeSpan Ttl = TimeSpan.FromSeconds(45);
+}
 
 file static class UpdatesCacheState
 {

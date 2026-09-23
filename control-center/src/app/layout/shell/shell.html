@@ -11,31 +11,45 @@
   ></div>
 
   <div class="page">
-    <header class="search-row">
-      <label class="search-wrap">
+    <header class="topbar">
+      <label class="search input-icon">
         <span class="sr-only">Search</span>
+        <app-icon name="search" />
         <input
+          #searchInput
           type="search"
-          class="search"
-          placeholder="Search stacks or the web…"
+          class="input"
+          [placeholder]="searchPlaceholder()"
           [(ngModel)]="search"
           (keydown)="onSearchKey($event)"
           autocomplete="off"
           spellcheck="false"
         />
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
       </label>
-      <button type="button" class="icon-btn" title="Refresh" aria-label="Refresh" (click)="refresh()">
-        ↻
+      <button
+        type="button"
+        class="icon-btn icon-btn--lg"
+        [class.is-spinning]="refreshing()"
+        title="Refresh"
+        aria-label="Refresh"
+        (click)="refresh()"
+      >
+        <app-icon name="refresh" />
       </button>
     </header>
-    @if (needsLabSetup()) {
-      <p class="lab-setup-banner" role="status">
-        Finish setup: set your LAN host IP in
-        <a routerLink="/settings/lab">Settings → Lab</a>
-        before installing apps.
-      </p>
-    }
+
     <div class="page-body">
+      @if (needsLabSetup()) {
+        <p class="banner setup-banner" role="status">
+          <app-icon name="info" />
+          <span>
+            Finish setup: set your LAN host IP in
+            <a routerLink="/settings/lab">Settings → Lab</a>
+            before installing apps.
+          </span>
+        </p>
+      }
       <router-outlet />
     </div>
   </div>

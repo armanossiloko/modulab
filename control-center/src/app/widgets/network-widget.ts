@@ -1,50 +1,22 @@
 import { Component, Input, computed, inject } from '@angular/core';
 import { DashboardService } from '../core/services/dashboard.service';
+import { STAT_WIDGET_STYLES } from './stat-widget-styles';
 
 @Component({
   selector: 'app-network-widget',
   template: `
     <div class="stats">
       <div class="stat">
-        <span class="stat-value">{{ online() }}</span>
-        <span class="stat-label">Online</span>
+        <span class="stat__value is-positive">{{ online() }}</span>
+        <span class="stat__label">Online</span>
       </div>
       <div class="stat">
-        <span class="stat-value">{{ installed() }}</span>
-        <span class="stat-label">Installed</span>
+        <span class="stat__value">{{ installed() }}</span>
+        <span class="stat__label">Installed</span>
       </div>
     </div>
   `,
-  styles: `
-    .stats {
-      display: flex;
-      gap: 0.4rem;
-      align-items: stretch;
-    }
-    .stat {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 0.05rem;
-      padding: 0.25rem 0.4rem;
-      border-radius: var(--radius-sm);
-      background: color-mix(in srgb, var(--bg) 55%, var(--widget));
-      border: 1px solid var(--border-soft);
-    }
-    .stat-value {
-      font-family: var(--mono);
-      font-size: 1.05rem;
-      font-weight: 600;
-      line-height: 1.1;
-    }
-    .stat-label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-  `,
+  styles: STAT_WIDGET_STYLES,
 })
 export class NetworkWidget {
   @Input() config: Record<string, unknown> = {};

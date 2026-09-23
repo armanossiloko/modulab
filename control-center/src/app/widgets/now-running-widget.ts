@@ -6,7 +6,10 @@ import { DashboardService } from '../core/services/dashboard.service';
   template: `
     @if (featured(); as app) {
       <div class="feat">
-        <p class="feat-title">{{ app.name }}</p>
+        <p class="feat-title">
+          <span class="feat-dot" aria-hidden="true"></span>
+          <span class="feat-name">{{ app.name }}</span>
+        </p>
         <p class="feat-sub">{{ app.description || app.status }}</p>
       </div>
     } @else {
@@ -17,19 +20,52 @@ import { DashboardService } from '../core/services/dashboard.service';
     .feat {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      gap: 0.15rem;
+      gap: 0.2rem;
+      min-width: 0;
     }
     .feat-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
       margin: 0;
-      font-weight: 600;
-      font-size: 0.9rem;
-      line-height: 1.15;
+      font-weight: 650;
+      font-size: var(--fs-lg);
+      line-height: 1.2;
+      min-width: 0;
+    }
+    .feat-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .feat-dot {
+      flex: 0 0 auto;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--positive);
+      box-shadow: 0 0 8px var(--positive);
     }
     .feat-sub {
       margin: 0;
-      font-size: 0.75rem;
+      font-size: var(--fs-sm);
       color: var(--text-dim);
+    }
+    @container widget (max-height: 84px) {
+      .feat {
+        align-items: flex-end;
+      }
+      .feat-title {
+        font-size: var(--fs-md);
+      }
+      .feat-sub {
+        display: none;
+      }
+    }
+    @container widget (max-height: 84px) and (max-width: 230px) {
+      .feat {
+        align-items: flex-start;
+      }
     }
   `,
 })

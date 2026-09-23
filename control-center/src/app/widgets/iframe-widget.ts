@@ -20,9 +20,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       width: 100%;
       height: 100%;
       min-height: 120px;
-      border: 0;
-      border-radius: 8px;
-      background: var(--bg);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius-sm);
+      background: var(--inset);
     }
   `,
 })

@@ -11,6 +11,9 @@ services:
     build:
       context: .
       dockerfile: control-center/Dockerfile
+      args:
+        MODULAB_VERSION: ${MODULAB_VERSION:-}
+        MODULAB_BUILT_AT: ${MODULAB_BUILT_AT:-}
     restart: unless-stopped
     environment:
       MODULAB_ROOT: /lab

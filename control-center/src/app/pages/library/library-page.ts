@@ -1,208 +1,235 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CatalogItem, RecipeField } from '../../api/generated';
+import { formatRelease, statusLabel, statusTone } from '../../core/app-status';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { CatalogMark } from '../../shared/catalog-mark';
+import { Icon } from '../../shared/icon';
+
+const CATEGORY_COLORS: Record<string, string> = {
+  productivity: 'var(--cat-productivity)',
+  media: 'var(--cat-media)',
+  tools: 'var(--cat-tools)',
+  infrastructure: 'var(--cat-infrastructure)',
+};
 
 @Component({
   selector: 'app-library-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, Icon, CatalogMark],
   template: `
-    <section class="library">
-      <header class="library-head">
-        <h1>Library</h1>
-        <input
-          class="search"
-          type="search"
-          placeholder="Filter library…"
-          [ngModel]="query()"
-          (ngModelChange)="query.set($event)"
-        />
-      </header>
-
-      @if (setupBlocked()) {
-        <p class="setup-banner">
-          Set your LAN host IP in
-          <a routerLink="/settings/lab">Settings → Lab</a>
-          before installing apps.
-        </p>
-      }
-
-      @if (error()) {
-        <p class="empty-note">{{ error() }}</p>
-      } @else {
-        <ul class="library-list">
-          @for (app of filteredApps(); track app.id) {
-            <li class="library-item">
-              <div class="library-meta">
-                <p class="library-title">{{ app.name }}</p>
-                <p class="library-desc">{{ app.description || '' }}</p>
-                <div class="library-badges">
-                  <span
-                    class="library-status"
-                    [class.is-running]="app.status === 'running'"
-                    [class.is-available]="app.status === 'available'"
-                    [class.is-removed]="app.status === 'removed'"
-                    >{{ statusLabel(app.status) }}</span
-                  >
-                  @if (hasUpdate(app.id)) {
-                    <span class="library-status is-update">update</span>
-                  }
-                </div>
-              </div>
-              <div class="library-actions">
-                @if (app.status === 'available' && app.installable !== false) {
-                  <button
-                    type="button"
-                    class="btn btn--primary"
-                    [disabled]="setupBlocked()"
-                    (click)="beginInstall(app)"
-                  >
-                    Install
-                  </button>
-                }
-                @if (app.status === 'removed' && !app.core) {
-                  <button
-                    type="button"
-                    class="btn btn--primary"
-                    [disabled]="busyId() === app.id"
-                    (click)="start(app)"
-                  >
-                    {{ busyId() === app.id ? 'Starting…' : 'Start' }}
-                  </button>
-                }
-                @if (
-                  (app.status === 'running' || (app.core && app.status === 'removed')) &&
-                  (app.url || app.port)
-                ) {
-                  <a class="btn btn--primary" [href]="openUrl(app)" target="_blank" rel="noopener"
-                    >Open</a
-                  >
-                }
-                @if ((app.status === 'stopped' || app.status === 'installed') && !app.core) {
-                  <button
-                    type="button"
-                    class="btn"
-                    [disabled]="busyId() === app.id"
-                    (click)="start(app)"
-                  >
-                    {{ busyId() === app.id ? 'Starting…' : 'Start' }}
-                  </button>
-                }
-                @if (hasUpdate(app.id)) {
-                  <button
-                    type="button"
-                    class="btn btn--primary"
-                    [disabled]="busyId() === app.id"
-                    (click)="update(app)"
-                  >
-                    {{ busyId() === app.id ? 'Updating…' : 'Update' }}
-                  </button>
-                }
-                @if (
-                  !app.core &&
-                  (app.status === 'stopped' ||
-                    app.status === 'installed' ||
-                    app.status === 'running' ||
-                    app.status === 'removed')
-                ) {
-                  <button type="button" class="btn btn--danger btn--sm" (click)="uninstall(app)">
-                    Uninstall
-                  </button>
-                }
-              </div>
-            </li>
-          } @empty {
-            <li class="empty-note">No recipes found.</li>
+    <header class="page-header">
+      <div class="page-header__titles">
+        <h1 class="page-title">Library</h1>
+        <p class="page-subtitle">
+          {{ apps().length }} apps · {{ runningCount() }} running
+          @if (updateCount()) {
+            · <span class="accent-text">{{ updateCount() }} with updates</span>
           }
-        </ul>
-      }
+        </p>
+      </div>
+      <div class="page-header__actions">
+        <label class="input-icon filter">
+          <span class="sr-only">Filter library</span>
+          <app-icon name="search" [size]="14" />
+          <input
+            class="input input--sm"
+            type="search"
+            placeholder="Filter library…"
+            [ngModel]="query()"
+            (ngModelChange)="query.set($event)"
+          />
+        </label>
+      </div>
+    </header>
 
-      @if (installing()) {
-        <div class="modal-backdrop" (click)="cancelInstall()"></div>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
-          <h2 id="install-title">Install {{ installing()!.name }}</h2>
-          @if ((installing()!.fields.length) === 0) {
+    @if (error()) {
+      <p class="empty-note">{{ error() }}</p>
+    } @else {
+      <ul class="library-list">
+        @for (app of filteredApps(); track app.id; let i = $index) {
+          <li class="card library-item" [style.animation-delay.ms]="i * 20">
+            <app-catalog-mark
+              [id]="app.id"
+              [name]="app.name"
+              [color]="categoryColor(app.category)"
+            />
+            <div class="library-meta">
+              <div class="library-title-row">
+                <p class="library-title">{{ app.name }}</p>
+                <span
+                  class="badge"
+                  [class.badge--positive]="tone(app.status) === 'positive'"
+                  [class.badge--accent]="tone(app.status) === 'accent'"
+                  [class.badge--negative]="tone(app.status) === 'negative'"
+                  >{{ statusLabel(app.status) }}</span
+                >
+                @if (hasUpdate(app.id)) {
+                  <span class="badge badge--accent badge--plain">update</span>
+                }
+                @if (app.core) {
+                  <span class="badge badge--plain">core</span>
+                }
+              </div>
+              @if (app.description) {
+                <p class="library-desc">{{ app.description }}</p>
+              }
+              @if (releaseLine(app); as release) {
+                <p class="library-release" title="Installed version and image build date">{{ release }}</p>
+              }
+            </div>
+            <div class="library-actions">
+              @if (hasUpdate(app.id)) {
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  [disabled]="busyId() === app.id"
+                  (click)="update(app)"
+                >
+                  <app-icon name="download" [size]="14" />
+                  {{ busyId() === app.id ? 'Updating…' : 'Update' }}
+                </button>
+              }
+              @if (app.status === 'available' && app.installable !== false) {
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  [disabled]="setupBlocked()"
+                  (click)="beginInstall(app)"
+                >
+                  <app-icon name="download" [size]="14" />
+                  Install
+                </button>
+              }
+              @if (app.status === 'removed' && !app.core) {
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  [disabled]="busyId() === app.id"
+                  (click)="start(app)"
+                >
+                  <app-icon name="play" [size]="12" />
+                  {{ busyId() === app.id ? 'Starting…' : 'Start' }}
+                </button>
+              }
+              @if ((app.status === 'stopped' || app.status === 'installed') && !app.core) {
+                <button
+                  type="button"
+                  class="btn"
+                  [disabled]="busyId() === app.id"
+                  (click)="start(app)"
+                >
+                  <app-icon name="play" [size]="12" />
+                  {{ busyId() === app.id ? 'Starting…' : 'Start' }}
+                </button>
+              }
+              @if (
+                app.id !== 'control-center' &&
+                (app.status === 'running' || (app.core && app.status === 'removed')) &&
+                (app.url || app.port)
+              ) {
+                <a class="btn" [href]="openUrl(app)" target="_blank" rel="noopener">
+                  Open
+                  <app-icon name="external" [size]="13" />
+                </a>
+              }
+              @if (
+                !app.core &&
+                (app.status === 'stopped' ||
+                  app.status === 'installed' ||
+                  app.status === 'running' ||
+                  app.status === 'removed')
+              ) {
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--ghost icon-btn--danger"
+                  title="Uninstall"
+                  [attr.aria-label]="'Uninstall ' + app.name"
+                  (click)="uninstall(app)"
+                >
+                  <app-icon name="trash" [size]="15" />
+                </button>
+              }
+            </div>
+          </li>
+        } @empty {
+          <li class="empty-note">No recipes found.</li>
+        }
+      </ul>
+    }
+
+    @if (installing(); as app) {
+      <div class="overlay" (click)="cancelInstall()"></div>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="install-title">
+        <header class="overlay-head">
+          <div class="install-head">
+            <app-catalog-mark
+              [id]="app.id"
+              [name]="app.name"
+              [color]="categoryColor(app.category)"
+            />
+            <div>
+              <h2 id="install-title" class="overlay-title">Install {{ app.name }}</h2>
+              @if (app.description) {
+                <p class="page-subtitle">{{ app.description }}</p>
+              }
+            </div>
+          </div>
+        </header>
+        <div class="overlay-body">
+          @if (app.fields.length === 0) {
             <p class="modal-note">No extra options — install with recipe defaults?</p>
           } @else {
             <div class="field-list">
-              @for (field of installing()!.fields; track field.key) {
-                <label class="field">
-                  <span
-                    >{{ field.label || field.key
-                    }}@if (field.required) {
-                      <span aria-hidden="true">*</span>
-                    }</span
-                  >
-                  @if (field.type === 'boolean') {
+              @for (field of app.fields; track field.key) {
+                @if (field.type === 'boolean') {
+                  <label class="switch">
+                    <span class="switch__text">{{ field.label || field.key }}</span>
                     <input type="checkbox" [(ngModel)]="installDraft[field.key!]" />
-                  } @else {
+                  </label>
+                } @else {
+                  <label class="field">
+                    <span class="field__label"
+                      >{{ field.label || field.key
+                      }}@if (field.required) {
+                        <span class="field__required" aria-hidden="true">*</span>
+                      }</span
+                    >
                     <input
+                      class="input"
                       [type]="field.type === 'password' ? 'password' : 'text'"
                       [(ngModel)]="installDraft[field.key!]"
                       [required]="!!field.required"
                     />
-                  }
-                </label>
+                  </label>
+                }
               }
             </div>
           }
-          <div class="modal-actions">
-            <button type="button" class="btn" (click)="cancelInstall()">Cancel</button>
-            <button
-              type="button"
-              class="btn btn--primary"
-              [disabled]="busyId() === installing()!.id"
-              (click)="confirmInstall()"
-            >
-              {{ busyId() === installing()!.id ? 'Installing…' : 'Install' }}
-            </button>
-          </div>
         </div>
-      }
-    </section>
+        <footer class="overlay-foot">
+          <button type="button" class="btn btn--lg" (click)="cancelInstall()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn--solid btn--lg"
+            [disabled]="busyId() === app.id"
+            (click)="confirmInstall()"
+          >
+            {{ busyId() === app.id ? 'Installing…' : 'Install' }}
+          </button>
+        </footer>
+      </div>
+    }
   `,
   styles: `
-    .library-head {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
+    :host {
+      display: block;
     }
-    .library-head h1 {
-      margin: 0;
-      font-size: 1.25rem;
-      letter-spacing: -0.02em;
-    }
-    .setup-banner {
-      margin: 0 0 1rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
-      border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-      background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent));
-      color: var(--text);
-      font-size: 0.92rem;
-    }
-    .setup-banner a {
+    .accent-text {
       color: var(--accent);
     }
-    .search {
-      min-width: min(280px, 100%);
-      height: var(--control-h);
-      padding: 0 0.85rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--widget);
-      color: var(--text);
-      font: inherit;
-    }
-    .search:focus {
-      outline: none;
-      border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-      box-shadow: 0 0 0 3px var(--accent-soft);
+    .filter {
+      width: min(280px, 60vw);
     }
     .library-list {
       list-style: none;
@@ -210,123 +237,78 @@ import { DashboardService } from '../../core/services/dashboard.service';
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
+      gap: 0.45rem;
     }
     .library-item {
       display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.75rem 0.9rem;
+      animation: rise-in 0.3s var(--ease) both;
+      transition: border-color 0.15s;
+    }
+    .library-item:hover {
+      border-color: var(--border);
+    }
+    .library-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .library-title-row {
+      display: flex;
       flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 0.75rem 1rem;
-      padding: 0.9rem 1rem;
-      border-radius: var(--radius);
-      background: var(--widget);
-      border: 1px solid var(--border);
+      align-items: center;
+      gap: 0.3rem 0.5rem;
     }
     .library-title {
       margin: 0;
-      font-weight: 600;
+      font-weight: 650;
+      font-size: var(--fs-lg);
       letter-spacing: -0.01em;
     }
     .library-desc {
-      margin: 0.25rem 0 0.45rem;
+      margin: 0.15rem 0 0;
       color: var(--text-dim);
-      font-size: 0.9rem;
+      font-size: var(--fs-sm);
     }
-    .library-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      align-items: center;
-    }
-    .library-status {
-      display: inline-block;
+    .library-release {
+      margin: 0.2rem 0 0;
       font-family: var(--mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.01em;
       color: var(--text-muted);
-    }
-    .library-status.is-running {
-      color: var(--positive);
-      background: var(--positive-soft);
-      padding: 0.12rem 0.4rem;
-      border-radius: 999px;
-    }
-    .library-status.is-available {
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.12rem 0.4rem;
-      border-radius: 999px;
-    }
-    .library-status.is-removed {
-      color: var(--negative);
-    }
-    .library-status.is-update {
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.12rem 0.4rem;
-      border-radius: 999px;
     }
     .library-actions {
       display: flex;
       flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
       gap: 0.4rem;
-      align-items: flex-start;
+      flex: 0 0 auto;
     }
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      z-index: 40;
-    }
-    .modal {
-      position: fixed;
-      z-index: 50;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: min(420px, calc(100vw - 2rem));
-      padding: 1.1rem 1.2rem;
-      border-radius: var(--radius);
-      background: var(--widget);
-      border: 1px solid var(--border);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    }
-    .modal h2 {
-      margin: 0 0 0.75rem;
-      font-size: 1.1rem;
+    .install-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
     .modal-note {
-      margin: 0 0 1rem;
+      margin: 0;
       color: var(--text-dim);
-      font-size: 0.92rem;
+      font-size: var(--fs-md);
     }
     .field-list {
       display: flex;
       flex-direction: column;
-      gap: 0.65rem;
-      margin-bottom: 1rem;
+      gap: var(--space-3);
     }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      font-size: 0.88rem;
-    }
-    .field input[type='text'],
-    .field input[type='password'] {
-      height: var(--control-h);
-      padding: 0 0.75rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--bg, #111);
-      color: var(--text);
-      font: inherit;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
+    @media (max-width: 640px) {
+      .library-item {
+        flex-wrap: wrap;
+      }
+      .library-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
     }
   `,
 })
@@ -339,6 +321,23 @@ export class LibraryPage implements OnInit {
   readonly installing = signal<CatalogItem | null>(null);
   installDraft: Record<string, string | boolean> = {};
   readonly setupBlocked = computed(() => this.dash.labStatus()?.needsHostIp === true);
+  readonly runningCount = computed(() => this.apps().filter((a) => a.status === 'running').length);
+  readonly updateCount = computed(() => this.dash.appsWithUpdates().length);
+  readonly statusLabel = statusLabel;
+  readonly tone = statusTone;
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.installing()) this.cancelInstall();
+  }
+
+  categoryColor(category?: string): string {
+    return CATEGORY_COLORS[(category || '').toLowerCase()] ?? 'var(--cat-other)';
+  }
+
+  releaseLine(app: CatalogItem): string | null {
+    return formatRelease(app.version, app.releasedAt);
+  }
 
   filteredApps(): CatalogItem[] {
     const q = this.query().trim().toLowerCase();
@@ -417,11 +416,6 @@ export class LibraryPage implements OnInit {
       },
       error: (err: Error) => this.error.set(err.message),
     });
-  }
-
-  statusLabel(status: string): string {
-    if (status === 'removed') return 'not running';
-    return status;
   }
 
   beginInstall(app: CatalogItem): void {

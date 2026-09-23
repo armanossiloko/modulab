@@ -33,6 +33,11 @@ RUN dotnet publish control-center/src-backend/Modulab.ControlCenter/Modulab.Cont
 FROM docker:27-cli AS dockercli
 
 FROM debian:bookworm-slim AS final
+ARG MODULAB_VERSION=
+ARG MODULAB_BUILT_AT=
+LABEL org.opencontainers.image.title="Modulab Control Center" \
+      org.opencontainers.image.version="${MODULAB_VERSION}" \
+      org.opencontainers.image.created="${MODULAB_BUILT_AT}"
 RUN apt-get update \
     && apt-get install -y --no-install-recommends bash ca-certificates python3 \
     && rm -rf /var/lib/apt/lists/*

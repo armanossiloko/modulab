@@ -35,7 +35,6 @@ import { UpdatesWidget } from './updates-widget';
   template: `
     <header class="widget-head">
       <h3 class="widget-title">{{ title }}</h3>
-      <ng-content select="[widgetActions]" />
     </header>
     <div class="widget-body">
       @switch (type) {
@@ -96,27 +95,32 @@ import { UpdatesWidget } from './updates-widget';
       flex-direction: column;
       height: 100%;
       min-height: 0;
+      padding: 0.7rem 0.85rem 0.8rem;
     }
     .widget-head {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 0.5rem;
       flex: 0 0 auto;
-      margin-bottom: 0.2rem;
+      min-height: 18px;
+      margin-bottom: 0.55rem;
+      padding-right: 1.5rem;
     }
     .widget-title {
       margin: 0;
       font-size: 0.68rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: var(--text-dim);
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .widget-body {
       flex: 1;
       min-height: 0;
-      overflow: auto;
+      overflow: hidden auto;
       display: flex;
       flex-direction: column;
     }
@@ -127,6 +131,43 @@ import { UpdatesWidget } from './updates-widget';
     }
     .widget-body > .fills {
       flex: 1 1 auto;
+    }
+
+    /* Short tiles (1 grid row): title and content share a single line. */
+    @container widget (max-height: 84px) {
+      :host {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0 0.85rem;
+      }
+      .widget-head {
+        margin: 0;
+        padding: 0;
+        flex: 0 1 auto;
+        min-width: 0;
+      }
+      .widget-body {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .widget-body > * {
+        max-width: 100%;
+      }
+    }
+    @container widget (max-height: 84px) and (max-width: 230px) {
+      :host {
+        padding: 0 0.7rem;
+      }
+      .widget-head {
+        display: none;
+      }
+      .widget-body {
+        align-items: stretch;
+      }
     }
   `,
 })

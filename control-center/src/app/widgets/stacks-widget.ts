@@ -1,21 +1,30 @@
 import { Component, Input, OnInit, computed, inject } from '@angular/core';
 import { DashboardService } from '../core/services/dashboard.service';
+import { statusLabel, statusTone } from '../core/app-status';
+import { CatalogMark } from '../shared/catalog-mark';
 
 @Component({
   selector: 'app-stacks-widget',
+  imports: [CatalogMark],
   template: `
-    <ul class="stack-list">
+    <ul class="row-list stack-list">
       @for (app of stacks(); track app.id) {
-        <li class="stack-row">
+        <li class="row">
           <span class="stack-name">
-            {{ app.name }}
-            @if (hasUpdate(app.id)) {
-              <span class="stack-update" title="Update available">upd</span>
-            }
+            <app-catalog-mark [id]="app.id" [name]="app.name" [size]="22" />
+            <span class="row__title">{{ app.name }}</span>
           </span>
-          <span class="stack-status" [class.is-running]="app.status === 'running'">{{
-            app.status || '—'
-          }}</span>
+          <span class="row__end">
+            @if (hasUpdate(app.id)) {
+              <span class="badge badge--accent badge--plain" title="Update available">update</span>
+            }
+            <span
+              class="badge"
+              [class.badge--positive]="tone(app.status) === 'positive'"
+              [class.badge--negative]="tone(app.status) === 'negative'"
+              >{{ label(app.status) }}</span
+            >
+          </span>
         </li>
       } @empty {
         <li class="empty-note">No stacks yet. Install from Library.</li>
@@ -24,62 +33,22 @@ import { DashboardService } from '../core/services/dashboard.service';
   `,
   styles: `
     .stack-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
       height: 100%;
       overflow: auto;
     }
-    .stack-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.45rem 0.55rem;
-      border-radius: var(--radius-sm);
-      background: color-mix(in srgb, var(--bg) 55%, var(--widget));
-      border: 1px solid var(--border-soft);
-    }
     .stack-name {
-      font-weight: 500;
-      color: var(--text);
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.5rem;
       min-width: 0;
-    }
-    .stack-update {
-      flex: 0 0 auto;
-      font-family: var(--mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 0.1rem 0.35rem;
-      border-radius: 999px;
-    }
-    .stack-status {
-      font-family: var(--mono);
-      font-size: 0.7rem;
-      letter-spacing: 0.04em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-    .stack-status.is-running {
-      color: var(--positive);
-      background: var(--positive-soft);
-      padding: 0.15rem 0.4rem;
-      border-radius: 999px;
     }
   `,
 })
 export class StacksWidget implements OnInit {
   @Input() config: Record<string, unknown> = {};
   private readonly dash = inject(DashboardService);
+  readonly label = statusLabel;
+  readonly tone = statusTone;
 
   readonly stacks = computed(() =>
     this.dash

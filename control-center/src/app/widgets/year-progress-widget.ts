@@ -16,27 +16,45 @@ import { DecimalPipe } from '@angular/common';
     .yp {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      gap: 0.35rem;
+      gap: 0.45rem;
     }
     .yp__bar {
       height: 6px;
       border-radius: 999px;
-      background: hsl(240, 8%, 18%);
+      background: var(--inset);
+      box-shadow: inset 0 0 0 1px var(--border-soft);
       overflow: hidden;
     }
     .yp__fill {
       display: block;
       height: 100%;
-      background: var(--accent);
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--accent) 55%, transparent),
+        var(--accent)
+      );
       border-radius: inherit;
-      transition: width 0.4s ease;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+      transition: width 0.4s var(--ease);
     }
     .yp__label {
       margin: 0;
       font-family: var(--mono);
-      font-size: 0.75rem;
+      font-size: var(--fs-xs);
       color: var(--text-dim);
+      white-space: nowrap;
+    }
+    @container widget (max-height: 84px) {
+      .yp {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.6rem;
+        width: 100%;
+      }
+      .yp__bar {
+        flex: 1;
+        min-width: 24px;
+      }
     }
   `,
 })

@@ -11,10 +11,12 @@ import { FeedItem } from '../api/generated';
       <ul class="feed-list">
         @for (item of items(); track item.url) {
           <li>
-            <a [href]="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-            @if (item.meta) {
-              <span class="feed-meta">{{ item.meta }}</span>
-            }
+            <a class="feed-item" [href]="item.url" target="_blank" rel="noopener noreferrer">
+              <span class="feed-title">{{ item.title }}</span>
+              @if (item.meta) {
+                <span class="feed-meta">{{ item.meta }}</span>
+              }
+            </a>
           </li>
         } @empty {
           <li class="empty-note">{{ loading() ? 'Loading…' : 'No items.' }}</li>
@@ -25,27 +27,46 @@ import { FeedItem } from '../api/generated';
   styles: `
     .feed-list {
       list-style: none;
-      margin: 0;
+      margin: 0 -0.45rem;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.55rem;
       overflow: auto;
       max-height: 100%;
     }
-    .feed-list a {
+    .feed-list li + li {
+      border-top: 1px solid var(--border-soft);
+    }
+    .feed-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding: 0.45rem 0.45rem;
+      border-radius: var(--radius-sm);
       color: var(--text);
       text-decoration: none;
-      font-weight: 500;
+      transition: background 0.15s;
     }
-    .feed-list a:hover {
+    .feed-item:hover {
+      background: var(--inset);
+    }
+    .feed-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: var(--fs-md);
+      font-weight: 500;
+      line-height: 1.35;
+      transition: color 0.15s;
+    }
+    .feed-item:hover .feed-title {
       color: var(--accent);
     }
     .feed-meta {
-      display: block;
-      font-size: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
       color: var(--text-muted);
-      margin-top: 0.15rem;
     }
   `,
 })

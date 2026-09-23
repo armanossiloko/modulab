@@ -14,22 +14,43 @@ import { DatePipe } from '@angular/common';
     .w-clock {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      gap: 0.1rem;
+      gap: 0.15rem;
     }
     .w-clock__time {
       margin: 0;
       font-family: var(--mono);
-      font-size: 1.35rem;
+      font-size: 1.6rem;
       font-weight: 600;
-      letter-spacing: 0.02em;
+      letter-spacing: -0.01em;
       color: var(--text);
       line-height: 1.1;
     }
     .w-clock__date {
       margin: 0;
       color: var(--text-dim);
-      font-size: 0.75rem;
+      font-size: var(--fs-sm);
+    }
+    @container widget (max-height: 84px) {
+      .w-clock {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: flex-end;
+        gap: 0.6rem;
+      }
+      .w-clock__time {
+        font-size: 1.15rem;
+      }
+      .w-clock__date {
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    @container widget (max-height: 84px) and (max-width: 230px) {
+      .w-clock {
+        justify-content: space-between;
+      }
     }
   `,
 })

@@ -42,6 +42,8 @@ export type CatalogItem = {
     enabled: boolean;
     running: boolean;
     status: string;
+    version?: null | string;
+    releasedAt?: null | string;
 };
 
 export type CatalogResponse = {

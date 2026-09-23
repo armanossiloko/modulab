@@ -21,6 +21,7 @@ import { WidgetHost } from '../widgets/widget-host';
 import { defaultWidgetTitle } from '../widgets/widget-catalog';
 import { Subject, debounceTime } from 'rxjs';
 import { GRID_COLS } from '../core/services/layout-migrate';
+import { Icon } from '../shared/icon';
 
 type GridItem = GridsterItemConfig & {
   id: string;
@@ -30,32 +31,31 @@ type GridItem = GridsterItemConfig & {
 
 @Component({
   selector: 'app-dashboard-grid',
-  imports: [Gridster, GridsterItem, WidgetHost],
+  imports: [Gridster, GridsterItem, WidgetHost, Icon],
   template: `
     <div class="grid-wrap" [class.is-editing]="dash.editMode()">
       <gridster [options]="options">
-        @for (item of items(); track item.id) {
+        @for (item of items(); track item.id; let i = $index) {
           <gridster-item [item]="item">
-            <article class="widget-card">
+            <article class="widget-card" [style.animation-delay.ms]="i * 35">
               <app-widget-host
                 [type]="item.type"
                 [title]="widgetTitle(item)"
                 [config]="item.config || {}"
-              >
-                @if (dash.editMode()) {
-                  <button
-                    widgetActions
-                    type="button"
-                    class="remove-btn"
-                    title="Remove widget"
-                    (click)="remove(item.id); $event.stopPropagation()"
-                    (mousedown)="$event.stopPropagation()"
-                    (touchstart)="$event.stopPropagation()"
-                  >
-                    ×
-                  </button>
-                }
-              </app-widget-host>
+              />
+              @if (dash.editMode()) {
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--sm icon-btn--danger remove-btn"
+                  title="Remove widget"
+                  aria-label="Remove widget"
+                  (click)="remove(item.id); $event.stopPropagation()"
+                  (mousedown)="$event.stopPropagation()"
+                  (touchstart)="$event.stopPropagation()"
+                >
+                  <app-icon name="close" [size]="13" />
+                </button>
+              }
             </article>
           </gridster-item>
         }
@@ -72,37 +72,50 @@ type GridItem = GridsterItemConfig & {
       height: 100%;
       min-height: 0;
     }
-    .grid-wrap.is-editing ::ng-deep gridster-item {
-      outline: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
-      outline-offset: -1px;
-      border-radius: var(--radius);
-    }
     .widget-card {
+      position: relative;
       height: 100%;
       min-height: 0;
-      padding: 0.45rem 0.55rem;
-      border-radius: var(--radius);
-      background: var(--widget);
-      border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--widget);
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--highlight), 0 1px 2px rgba(0, 0, 0, 0.25);
+      container: widget / size;
+      animation: rise-in 0.35s var(--ease) both;
+      transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+    }
+    .widget-card:hover {
+      border-color: var(--border);
+    }
+    .is-editing .widget-card {
+      border-style: dashed;
+      border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+      cursor: grab;
+    }
+    .is-editing .widget-card:hover {
+      border-color: var(--accent-border);
+      box-shadow: var(--highlight), var(--accent-ring);
+    }
+    .is-editing app-widget-host {
+      pointer-events: none;
+      user-select: none;
+    }
+    .is-editing ::ng-deep .gridster-item-moving .widget-card {
+      cursor: grabbing;
+      box-shadow: var(--shadow-pop);
     }
     .remove-btn {
-      flex: 0 0 auto;
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 1rem;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
-    }
-    .remove-btn:hover {
-      color: var(--negative);
-      border-color: color-mix(in srgb, var(--negative) 40%, var(--border));
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      background: var(--bg-elevated);
+      animation: fade-in 0.15s ease both;
     }
   `,
 })
@@ -121,8 +134,12 @@ export class DashboardGrid implements OnInit, OnDestroy {
     gridType: GridType.ScrollVertical,
     rowHeightRatio: 1,
     compactType: CompactType.None,
-    margin: 8,
+    margin: 10,
     outerMargin: true,
+    outerMarginTop: 2,
+    outerMarginLeft: 2,
+    outerMarginRight: 2,
+    outerMarginBottom: 10,
     minCols: GRID_COLS,
     maxCols: GRID_COLS,
     minRows: 1,

@@ -1,0 +1,3 @@
+App icons in this folder are from homarr-labs/dashboard-icons
+https://github.com/homarr-labs/dashboard-icons
+Licensed under the Apache License, Version 2.0.

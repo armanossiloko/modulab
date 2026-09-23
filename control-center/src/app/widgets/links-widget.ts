@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { Icon } from '../shared/icon';
 
 interface LinkItem {
   title: string;
@@ -7,11 +8,15 @@ interface LinkItem {
 
 @Component({
   selector: 'app-links-widget',
+  imports: [Icon],
   template: `
     <ul class="links">
       @for (link of links; track link.url) {
         <li>
-          <a [href]="link.url" target="_blank" rel="noopener noreferrer">{{ link.title || link.url }}</a>
+          <a class="link" [href]="link.url" target="_blank" rel="noopener noreferrer">
+            <span class="link-title">{{ link.title || link.url }}</span>
+            <app-icon name="external" [size]="13" />
+          </a>
         </li>
       } @empty {
         <li class="empty-note">No links configured.</li>
@@ -19,22 +24,49 @@ interface LinkItem {
     </ul>
   `,
   styles: `
+    :host {
+      overflow: auto;
+    }
     .links {
       list-style: none;
-      margin: 0;
+      margin: 0 -0.45rem;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 1px;
     }
-    .links a {
+    .link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      height: 30px;
+      padding: 0 0.45rem;
+      border-radius: var(--radius-sm);
       color: var(--text);
       text-decoration: none;
       font-weight: 500;
-      font-size: 0.9rem;
+      font-size: var(--fs-md);
+      transition:
+        background 0.15s,
+        color 0.15s;
     }
-    .links a:hover {
+    .link app-icon {
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .link:hover {
+      background: var(--inset);
       color: var(--accent);
+    }
+    .link:hover app-icon {
+      opacity: 1;
+    }
+    .link-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   `,
 })

@@ -1,12 +1,14 @@
 import { Component, inject, computed } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { formatRelease } from '../../core/app-status';
 import { resolveBookmarkColor } from '../../core/services/layout-migrate';
+import { Icon } from '../../shared/icon';
 import { DashboardNavNode } from './dashboard-nav-node';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive, DashboardNavNode],
+  imports: [RouterLink, RouterLinkActive, DashboardNavNode, Icon],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',
 })
@@ -15,6 +17,10 @@ export class Sidebar {
   private readonly router = inject(Router);
 
   readonly brand = computed(() => this.dash.document()?.title || 'Modulab');
+  readonly releaseLine = computed(() => {
+    const app = this.dash.catalog().find((item) => item.id === 'control-center');
+    return formatRelease(app?.version, app?.releasedAt);
+  });
   readonly bookmarkGroups = computed(() =>
     (this.dash.sidebar()?.bookmarks || []).filter((g) => g.enabled !== false)
   );

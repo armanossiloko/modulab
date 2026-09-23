@@ -1,22 +1,19 @@
 :host {
   display: block;
-  min-height: 100dvh;
+  height: 100dvh;
 }
 
 .shell {
   display: grid;
-  grid-template-columns: var(--sidebar) 5px minmax(0, 1fr);
-  min-height: 100dvh;
+  grid-template-columns: var(--sidebar) 0 minmax(0, 1fr);
+  height: 100dvh;
 }
 
 .sidebar-resizer {
   position: relative;
   z-index: 5;
-  width: 5px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
+  width: 9px;
+  margin-left: -4px;
   cursor: col-resize;
   touch-action: none;
 }
@@ -30,7 +27,9 @@
   width: 1px;
   transform: translateX(-50%);
   background: var(--border-soft);
-  transition: background 0.15s, width 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    width 0.15s;
 }
 
 .sidebar-resizer:hover::after,
@@ -38,118 +37,101 @@
 :host-context(body.is-resizing-sidebar) .sidebar-resizer::after {
   width: 2px;
   background: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.sidebar-resizer:focus-visible {
+  outline: none;
 }
 
 .page {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 100dvh;
-  background: var(--bg);
+  min-height: 0;
+  background:
+    radial-gradient(
+      1100px 380px at 20% -140px,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 70%
+    ),
+    var(--bg);
 }
 
-.search-row {
+.topbar {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.9rem var(--space-4) 0.55rem;
-}
-
-.search-wrap {
-  position: relative;
-  flex: 1;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  padding: 0.9rem var(--page-pad) 0.4rem;
 }
 
 .search {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.search .input {
   height: var(--control-h);
-  padding: 0 0.9rem 0 2.35rem;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--widget);
-  color: var(--text);
-  font: inherit;
-  font-size: 0.95rem;
+  background: color-mix(in srgb, var(--widget) 80%, transparent);
+  padding-right: 2.5rem;
 }
 
-.search::placeholder {
-  color: var(--text-muted);
-}
-
-.search:focus {
-  outline: none;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.lab-setup-banner {
-  margin: 0 1.25rem 0.75rem;
-  padding: 0.65rem 0.9rem;
-  border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-  background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, transparent));
-  color: var(--text);
-  font-size: 0.9rem;
-}
-
-.lab-setup-banner a {
-  color: var(--accent);
-}
-
-.search-wrap::before {
-  content: '';
+.search-kbd {
   position: absolute;
-  left: 0.9rem;
+  right: 0.6rem;
   top: 50%;
-  width: 14px;
-  height: 14px;
   transform: translateY(-50%);
-  border: 1.5px solid var(--text-muted);
-  border-radius: 50%;
-  pointer-events: none;
-  box-shadow: 5px 5px 0 -6px var(--text-muted);
-  opacity: 0.85;
-}
-
-.icon-btn {
-  width: var(--control-h);
-  height: var(--control-h);
-  border-radius: var(--radius);
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.3rem;
+  border-radius: 5px;
   border: 1px solid var(--border);
-  background: var(--widget);
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 1.05rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s, background 0.15s;
+  background: var(--inset);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
 
-.icon-btn:hover {
-  color: var(--text);
-  background: var(--widget-hover);
+.search:focus-within .search-kbd {
+  opacity: 0;
+}
+
+.is-spinning app-icon {
+  animation: spin 0.8s linear infinite;
 }
 
 .page-body {
   flex: 1;
   min-height: 0;
-  padding: 0.25rem var(--space-4) var(--space-4);
+  overflow: auto;
   display: flex;
   flex-direction: column;
+  padding: var(--space-3) var(--page-pad) var(--page-pad);
 }
 
-.page-body > * {
-  flex: 1;
-  min-height: 0;
+.setup-banner {
+  flex: 0 0 auto;
+  margin: 0 0 var(--space-3);
 }
 
 @media (max-width: 800px) {
+  :host,
+  .shell {
+    height: auto;
+    min-height: 100dvh;
+  }
   .shell {
     grid-template-columns: 1fr;
   }
   .sidebar-resizer {
     display: none;
+  }
+  .page-body {
+    overflow: visible;
   }
 }

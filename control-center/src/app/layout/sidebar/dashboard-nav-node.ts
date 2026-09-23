@@ -2,108 +2,91 @@ import { Component, Input, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { DashboardTreeNode } from '../../core/models/dashboard';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { Icon } from '../../shared/icon';
 
 @Component({
   selector: 'app-dashboard-nav-node',
-  imports: [RouterLink, RouterLinkActive, DashboardNavNode],
+  imports: [RouterLink, RouterLinkActive, DashboardNavNode, Icon],
   template: `
-    <div class="dash-node">
-      <div class="dash-row">
-        <a
-          class="page-tab"
-          [routerLink]="['/d', node.board.id]"
-          routerLinkActive="is-active"
-          [style.paddingLeft.rem]="0.85 + node.depth * 0.75"
+    <div class="dash-row">
+      <a
+        class="nav-item"
+        [routerLink]="['/d', node.board.id]"
+        routerLinkActive="is-active"
+        [style.paddingLeft.rem]="0.6 + node.depth * 0.9"
+      >
+        <app-icon [name]="node.depth ? 'subfolder' : 'grid'" />
+        <span class="nav-item__label">{{ node.board.title }}</span>
+      </a>
+      <div class="dash-actions">
+        <button
+          type="button"
+          class="icon-btn icon-btn--sm icon-btn--ghost"
+          title="Add nested dashboard"
+          aria-label="Add nested dashboard"
+          (click)="addChild($event)"
         >
-          {{ node.board.title }}
-        </a>
-        <div class="dash-actions">
-          <button type="button" class="mini" title="Add nested" (click)="addChild($event)">+</button>
-          <button type="button" class="mini" title="Rename" (click)="rename($event)">✎</button>
-          @if (node.board.id !== 'home') {
-            <button type="button" class="mini danger" title="Delete" (click)="remove($event)">×</button>
-          }
-        </div>
+          <app-icon name="plus" [size]="13" />
+        </button>
+        <button
+          type="button"
+          class="icon-btn icon-btn--sm icon-btn--ghost"
+          title="Rename"
+          aria-label="Rename dashboard"
+          (click)="rename($event)"
+        >
+          <app-icon name="edit" [size]="13" />
+        </button>
+        @if (node.board.id !== 'home') {
+          <button
+            type="button"
+            class="icon-btn icon-btn--sm icon-btn--ghost icon-btn--danger"
+            title="Delete"
+            aria-label="Delete dashboard"
+            (click)="remove($event)"
+          >
+            <app-icon name="close" [size]="13" />
+          </button>
+        }
       </div>
-      @for (child of node.children; track child.board.id) {
-        <app-dashboard-nav-node [node]="child" />
-      }
     </div>
+    @for (child of node.children; track child.board.id) {
+      <app-dashboard-nav-node [node]="child" />
+    }
   `,
   styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
     .dash-row {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 0.15rem;
-    }
-    .dash-row .page-tab {
-      flex: 1;
-      min-width: 0;
     }
     .dash-actions {
-      display: none;
-      flex: 0 0 auto;
-      gap: 0.1rem;
-    }
-    .dash-row:hover .dash-actions {
-      display: inline-flex;
-    }
-    .mini {
-      width: 22px;
-      height: 22px;
-      padding: 0;
-      border: none;
-      border-radius: 4px;
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.85rem;
-      line-height: 1;
-    }
-    .mini:hover {
-      color: var(--text);
-      background: var(--widget-hover);
-    }
-    .mini.danger:hover {
-      color: var(--negative);
-    }
-    .page-tab {
-      position: relative;
-      display: block;
-      width: 100%;
-      padding: 0.45rem 0.65rem 0.45rem 0.85rem;
-      border-radius: var(--radius-sm);
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.92rem;
-      letter-spacing: -0.01em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .page-tab::before {
-      content: '';
       position: absolute;
-      left: 0;
+      right: 4px;
       top: 50%;
-      width: 2px;
-      height: 0;
-      border-radius: 1px;
-      background: var(--accent);
       transform: translateY(-50%);
-      transition: height 0.15s ease;
+      display: inline-flex;
+      gap: 1px;
+      padding-left: 1.25rem;
+      border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+      background: linear-gradient(90deg, transparent, var(--widget) 1.1rem);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
     }
-    .page-tab:hover {
+    .dash-row:hover .dash-actions,
+    .dash-row:focus-within .dash-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .dash-row:hover .nav-item {
       color: var(--text);
-      background: hsl(240, 7%, 14%);
-    }
-    .page-tab.is-active {
-      color: var(--text);
-      font-weight: 600;
-    }
-    .page-tab.is-active::before {
-      height: 1.05rem;
+      background: var(--widget);
     }
   `,
 })

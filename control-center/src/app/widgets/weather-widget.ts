@@ -19,19 +19,44 @@ import { DashboardService } from '../core/services/dashboard.service';
     .w-weather {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      gap: 0.1rem;
+      gap: 0.15rem;
     }
     .w-weather__temp {
       margin: 0;
-      font-size: 1.25rem;
+      font-family: var(--mono);
+      font-size: 1.6rem;
       font-weight: 600;
+      letter-spacing: -0.02em;
       line-height: 1.1;
     }
     .w-weather__meta {
       margin: 0;
       color: var(--text-dim);
-      font-size: 0.75rem;
+      font-size: var(--fs-sm);
+    }
+    @container widget (max-height: 84px) {
+      .w-weather {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        min-width: 0;
+      }
+      .w-weather__temp {
+        font-size: 1.15rem;
+      }
+      .w-weather__meta {
+        min-width: 0;
+        font-size: var(--fs-xs);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    @container widget (max-height: 84px) and (max-width: 230px) {
+      .w-weather {
+        justify-content: space-between;
+      }
     }
   `,
 })

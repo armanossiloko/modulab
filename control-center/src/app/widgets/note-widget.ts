@@ -21,9 +21,9 @@ import { Component, Input } from '@angular/core';
       white-space: pre-wrap;
       word-break: break-word;
       font-family: var(--font);
-      font-size: 0.9rem;
-      line-height: 1.45;
-      color: var(--text);
+      font-size: var(--fs-md);
+      line-height: 1.55;
+      color: var(--text-dim);
     }
   `,
 })
