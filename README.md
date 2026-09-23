@@ -2,6 +2,16 @@
 
 Independent [Docker Compose](https://docs.docker.com/compose/) stacks for a personal lab. Run Control Center (dashboard + install API), shared Postgres, optional Caddy / Pi-hole for `*.network.lan` names, and install apps from a catalog.
 
+## Screenshots
+
+### Home
+
+![Control Center home dashboard](docs/screenshots/home.png)
+
+### Library
+
+![Control Center library](docs/screenshots/library.png)
+
 ---
 
 ## Install guide (first time)
