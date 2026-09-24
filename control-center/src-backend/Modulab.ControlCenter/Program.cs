@@ -858,6 +858,7 @@ static async Task EnableAndStartAsync(string labRoot, Recipe recipe, Dictionary<
 
     await RunScriptAsync(labRoot, "render-config.sh");
     await RunScriptAsync(labRoot, "start.sh", recipe.Id);
+    EnsureContainerRunning(labRoot, recipe);
     try
     {
         await RunScriptAsync(labRoot, "refresh-edge.sh");
@@ -1439,6 +1440,18 @@ static (HashSet<string> Running, HashSet<string> Present) ProbeContainers(string
     return (running, present);
 }
 
+static void EnsureContainerRunning(string labRoot, Recipe recipe)
+{
+    var (running, present) = ProbeContainers(labRoot, [recipe]);
+    if (running.Contains(recipe.Id))
+        return;
+
+    var name = string.IsNullOrWhiteSpace(recipe.Name) ? recipe.Id : recipe.Name;
+    if (present.Contains(recipe.Id))
+        throw new InvalidOperationException($"{name} installed, but its container is not running.");
+    throw new InvalidOperationException($"{name} install did not create a container.");
+}
+
 static bool TryMatchContainer(HashSet<string> names, string recipeId, out string matchedName)
 {
     matchedName = "";
@@ -1622,7 +1635,7 @@ static CatalogItem ToCatalogItem(
     else if (isPresent)
         status = "stopped";
     else if (isEnabled)
-        status = "removed"; // expected in stack, but container deleted outside Control Center
+        status = "removed"; // enabled in the lab, but no container — Install creates it
     else
         status = "available";
 
@@ -1730,13 +1743,16 @@ static Task<(int Exit, string StdOut, string StdErr)> RunAsync(
             CreateNoWindow = true,
         };
         using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {file}");
-        var stdout = proc.StandardOutput.ReadToEnd();
-        var stderr = proc.StandardError.ReadToEnd();
+        // Drain both pipes concurrently. Reading stdout to completion before stderr
+        // deadlocks when the child fills the unread pipe (docker compose pull progress).
+        var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+        var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
         if (timeoutMs is int ms)
         {
             if (!proc.WaitForExit(ms))
             {
                 try { proc.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                try { Task.WaitAll(stdoutTask, stderrTask); } catch { /* ignore */ }
                 throw new TimeoutException($"{file} timed out after {ms}ms");
             }
         }
@@ -1745,7 +1761,8 @@ static Task<(int Exit, string StdOut, string StdErr)> RunAsync(
             proc.WaitForExit();
         }
 
-        return (proc.ExitCode, stdout, stderr);
+        Task.WaitAll(stdoutTask, stderrTask);
+        return (proc.ExitCode, stdoutTask.Result, stderrTask.Result);
     });
 }
 
@@ -1762,14 +1779,17 @@ static string RunCapture(string file, string args, string cwd, int timeoutMs = 1
         CreateNoWindow = true,
     };
     using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {file}");
-    var stdout = proc.StandardOutput.ReadToEnd();
+    var stdoutTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+    var stderrTask = Task.Run(() => proc.StandardError.ReadToEnd());
     if (!proc.WaitForExit(timeoutMs))
     {
         try { proc.Kill(entireProcessTree: true); } catch { /* ignore */ }
+        try { Task.WaitAll(stdoutTask, stderrTask); } catch { /* ignore */ }
         throw new TimeoutException($"{file} timed out after {timeoutMs}ms");
     }
 
-    return stdout.Trim();
+    Task.WaitAll(stdoutTask, stderrTask);
+    return stdoutTask.Result.Trim();
 }
 
 static string DashboardJsonPath(string labRoot) =>

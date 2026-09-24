@@ -61,10 +61,14 @@ def run_bash_script(script_name: str, script_args: list[str], lab_root: Path | N
         env["MODULAB_ROOT"] = str(root)
         env["MODULAB_SCRIPTS"] = str(tmp_scripts)
 
+        # Control Center reads the child stdout pipe to EOF before stderr. Docker
+        # pull progress is written to stderr and fills that pipe, so the pull blocks
+        # forever. Merge stderr into stdout so the reader can drain it.
         return subprocess.call(
             ["bash", str(target), *script_args],
             cwd=str(root),
             env=env,
+            stderr=subprocess.STDOUT,
         )
 
 

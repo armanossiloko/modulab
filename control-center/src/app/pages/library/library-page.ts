@@ -143,15 +143,15 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
                   Install
                 </button>
               }
-              @if (app.status === 'removed' && !app.core) {
+              @if (app.status === 'removed' && !app.core && app.installable !== false) {
                 <button
                   type="button"
                   class="btn btn--primary"
-                  [disabled]="busyId() === app.id"
-                  (click)="start(app)"
+                  [disabled]="busyId() === app.id || setupBlocked()"
+                  (click)="install(app)"
                 >
-                  <app-icon name="play" [size]="12" />
-                  {{ busyId() === app.id ? 'Starting…' : 'Start' }}
+                  <app-icon name="download" [size]="14" />
+                  {{ busyId() === app.id ? 'Installing…' : 'Install' }}
                 </button>
               }
               @if ((app.status === 'stopped' || app.status === 'installed') && !app.core) {
@@ -497,6 +497,23 @@ export class LibraryPage implements OnInit {
   cancelInstall(): void {
     this.installing.set(null);
     this.installDraft = {};
+  }
+
+  /** Enabled in the lab config, but no container yet — Install creates it. */
+  install(app: CatalogItem): void {
+    if (this.setupBlocked()) return;
+    this.busyId.set(app.id);
+    this.dash.installApp(app.id, {}).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+        this.refresh();
+      },
+    });
   }
 
   confirmInstall(): void {

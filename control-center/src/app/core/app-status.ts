@@ -2,7 +2,7 @@ export type StatusTone = 'positive' | 'accent' | 'negative' | 'neutral';
 
 export function statusLabel(status?: string | null): string {
   if (!status) return 'unknown';
-  if (status === 'removed') return 'not running';
+  if (status === 'removed') return 'not installed';
   return status;
 }
 
