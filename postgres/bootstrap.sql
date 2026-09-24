@@ -10,5 +10,8 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'immich')\gexec
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS vectors;
 
+SELECT format('CREATE DATABASE %I OWNER %I ENCODING %L', 'mediacms', 'modulab', 'UTF8')
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'mediacms')\gexec
+
 SELECT format('CREATE DATABASE %I OWNER %I ENCODING %L', 'n8n', 'modulab', 'UTF8')
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'n8n')\gexec
