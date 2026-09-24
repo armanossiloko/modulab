@@ -1,0 +1,44 @@
+{
+  "id": "mediacms",
+  "name": "MediaCMS",
+  "description": "Video and media portal (shared Postgres and Redis)",
+  "category": "media",
+  "compose": "docker-compose.mediacms.yml",
+  "port": 8088,
+  "installable": true,
+  "dependsOn": ["postgres", "redis"],
+  "database": "mediacms",
+  "proxy": { "host": "mediacms", "port": 8088 },
+  "dns": ["mediacms"],
+  "defaults": {
+    "MEDIACMS_DB_NAME": "mediacms",
+    "MEDIACMS_FRONTEND_HOST": "http://localhost:8088",
+    "MEDIACMS_PORTAL_NAME": "MediaCMS",
+    "MEDIACMS_ADMIN_USER": "admin",
+    "MEDIACMS_ADMIN_EMAIL": "admin@localhost",
+    "MEDIACMS_SECRET_KEY": "modulab-mediacms-secret-key"
+  },
+  "fields": [
+    {
+      "key": "MEDIACMS_ADMIN_PASSWORD",
+      "label": "Admin password",
+      "type": "string",
+      "required": true,
+      "fromLab": "mediacmsAdminPassword"
+    },
+    {
+      "key": "MEDIACMS_FRONTEND_HOST",
+      "label": "Public URL (scheme, host, and port)",
+      "type": "string",
+      "default": "http://localhost:8088",
+      "required": false
+    },
+    {
+      "key": "TZ",
+      "label": "Timezone",
+      "type": "string",
+      "fromLab": "timezone",
+      "required": false
+    }
+  ]
+}

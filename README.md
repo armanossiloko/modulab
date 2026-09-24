@@ -74,7 +74,7 @@ Until Host IP is set, a banner appears and **Library → Install** stays disable
 2. Choose an app (e.g. Jellyfin, Immich) → **Install**.
 3. Open the app by IP+port or, if Pi-hole + Caddy are configured, by `http://<name>.network.lan`.
 
-Dependencies start automatically. Immich uses shared Redis if it is already running; otherwise it starts its own sidecar Redis.
+Dependencies start automatically. MediaCMS also starts shared Redis. Immich uses shared Redis if it is already running; otherwise it starts its own sidecar Redis.
 
 ### What the first boot does
 
@@ -188,6 +188,7 @@ Example secrets default to **`modulab`** (change in Settings → Lab or `lab.con
 | Postgres user / password / DB | `modulab` / `modulab` / `modulab` |
 | Pi-hole admin password | `modulab` |
 | PicoShare / FUTO Notes / SearXNG | see `lab.config.example.json` |
+| MediaCMS admin | `admin` / `modulab` (`lab.mediacmsAdminPassword`) |
 
 ## Base stack vs optional edge
 
@@ -197,7 +198,7 @@ Example secrets default to **`modulab`** (change in Settings → Lab or `lab.con
 | Postgres | yes | Shared DB (vector image) |
 | Caddy | yes | LAN reverse proxy on port 80 when `ENABLE_LAN_PROXY` is true |
 | Pi-hole | no | Optional LAN DNS / ad-blocking — enable in Settings → Lab or Library |
-| Redis | no | Optional shared cache — Immich uses shared Redis if present, otherwise a sidecar |
+| Redis | no | Shared cache — MediaCMS requires it; Immich uses it if present, otherwise a sidecar |
 
 ## Config files
 
@@ -245,6 +246,7 @@ With **LAN proxy** on, Caddy listens on host port **80** and routes `http://<lab
 | **4001** | PicoShare |
 | **3005** | FUTO Notes |
 | **2283** | Immich |
+| **8088** | MediaCMS |
 | **5080** | Pi-hole admin (if enabled) |
 | **53** tcp/udp | Pi-hole DNS (if enabled) |
 | **5432** | Postgres (**localhost only**) |
@@ -269,7 +271,7 @@ python3 scripts/lab.py install jellyfin
 python3 scripts/lab.py install immich
 ```
 
-Install enables hard `dependsOn`, renders config, starts the stack, and refreshes edge routes when Caddy/Pi-hole are present. Immich prefers shared Redis when available; otherwise it starts sidecar Redis (`docker-compose.immich.redis.yml`).
+Install enables hard `dependsOn`, renders config, starts the stack, and refreshes edge routes when Caddy/Pi-hole are present. MediaCMS starts shared Postgres and Redis. Immich prefers shared Redis when available; otherwise it starts sidecar Redis (`docker-compose.immich.redis.yml`).
 
 Recipes: [`catalog/<id>/recipe.json`](catalog/).
 
@@ -308,6 +310,7 @@ control-center/
 | **Postgres** | `docker-compose.postgres.yml` | Shared DB |
 | **Redis** | `docker-compose.redis.yml` | Optional shared cache |
 | **Immich** | `docker-compose.immich.yml` (+ `.immich.redis.yml` sidecar) | Photos |
+| **MediaCMS** | `docker-compose.mediacms.yml` | Video and media portal |
 | Apps | `docker-compose.<name>.yml` | Jellyfin, n8n, Seerr, tools, … |
 
 **Shared Postgres only** — apps get DB names via recipes. Redis may be shared or app-local.
@@ -316,7 +319,7 @@ control-center/
 
 | Path | Used by |
 |------|---------|
-| `data/` | Runtime volumes |
+| `data/` | Runtime volumes (MediaCMS uploads under `data/mediacms/media_files`) |
 | `media/` | Jellyfin library |
 | `secrets/` | Optional secret files |
 | `lab.config.json`, `.env` | Local config |

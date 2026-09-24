@@ -203,6 +203,9 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         "SEARXNG_PORT": 8080,
         "SEARXNG_BASE_URL": "http://localhost:8080/",
         "FUTO_NOTES_PASSWORD": lab.get("futoNotesPassword", "modulab"),
+        "MEDIACMS_ADMIN_PASSWORD": lab.get("mediacmsAdminPassword", "modulab"),
+        "MEDIACMS_FRONTEND_HOST": "http://localhost:8088",
+        "MEDIACMS_DB_NAME": "mediacms",
         "FUTO_NOTES_PORT": 3005,
         "FUTO_NOTES_IMAGE": "futotech/notes-server:stable",
         "FUTO_NOTES_COOKIE_SECURE": False,
@@ -276,6 +279,19 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         env["PS_BEHIND_PROXY"] = True
         if env.get("SEARXNG_BASE_URL") in ("http://localhost:8080/", "http://127.0.0.1:8080/"):
             env["SEARXNG_BASE_URL"] = f"http://searxng.{domain}/"
+
+    # MediaCMS absolute media URLs follow MEDIACMS_FRONTEND_HOST. Leave a custom value alone.
+    default_media_frontend = "http://localhost:8088"
+    media_frontend = str(env.get("MEDIACMS_FRONTEND_HOST") or default_media_frontend)
+    if media_frontend in (default_media_frontend, "http://localhost", "http://127.0.0.1:8088"):
+        if lan_on:
+            env["MEDIACMS_FRONTEND_HOST"] = f"http://mediacms.{domain}"
+        else:
+            host_ip = str(env.get("MODULAB_HOST_IP") or "")
+            if host_ip and host_ip not in ("127.0.0.1", "localhost"):
+                env["MEDIACMS_FRONTEND_HOST"] = f"http://{host_ip}:8088"
+            else:
+                env["MEDIACMS_FRONTEND_HOST"] = default_media_frontend
 
     return env
 

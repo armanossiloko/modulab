@@ -1,0 +1,36 @@
+# MediaCMS — video/media portal on shared Postgres (database "mediacms") and shared Redis.
+# One container runs nginx, the app server, migrations, and Celery (image defaults).
+# Localhost: http://127.0.0.1:8088
+# FRONTEND_HOST must match the URL you open (render-config sets this from Host IP or the LAN name).
+
+services:
+  mediacms:
+    image: mediacms/mediacms:latest
+    container_name: mediacms
+    restart: unless-stopped
+    ports:
+      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8088:80"
+    environment:
+      FRONTEND_HOST: ${MEDIACMS_FRONTEND_HOST:-http://localhost:8088}
+      PORTAL_NAME: ${MEDIACMS_PORTAL_NAME:-MediaCMS}
+      SECRET_KEY: ${MEDIACMS_SECRET_KEY:-modulab-mediacms-secret-key}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_NAME: ${MEDIACMS_DB_NAME:-mediacms}
+      POSTGRES_USER: ${POSTGRES_USER:-modulab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modulab}
+      REDIS_LOCATION: redis://redis:6379/1
+      ADMIN_USER: ${MEDIACMS_ADMIN_USER:-admin}
+      ADMIN_EMAIL: ${MEDIACMS_ADMIN_EMAIL:-admin@localhost}
+      ADMIN_PASSWORD: ${MEDIACMS_ADMIN_PASSWORD:-modulab}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${MODULAB_HOST_ROOT:-.}/data/mediacms/media_files:/home/mediacms.io/mediacms/media_files
+      - ${MODULAB_HOST_ROOT:-.}/data/mediacms/logs:/home/mediacms.io/mediacms/logs
+    networks:
+      - modulab
+
+networks:
+  modulab:
+    external: true
+    name: modulab

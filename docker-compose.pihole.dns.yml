@@ -13,6 +13,7 @@ services:
         ${MODULAB_HOST_IP} immich.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} it-tools.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} jellyfin.${PIHOLE_LOCAL_DOMAIN}
+        ${MODULAB_HOST_IP} mediacms.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} n8n.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} picoshare.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}

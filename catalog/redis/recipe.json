@@ -1,7 +1,7 @@
 {
   "id": "redis",
   "name": "Redis",
-  "description": "Shared Valkey/Redis cache (optional; Immich can use a sidecar instead)",
+  "description": "Shared Valkey/Redis (required by MediaCMS; Immich uses it when present)",
   "category": "infrastructure",
   "compose": "docker-compose.redis.yml",
   "port": null,

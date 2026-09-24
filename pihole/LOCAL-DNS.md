@@ -32,6 +32,7 @@ With **`ENABLE_LAN_PROXY=true`**, start scripts automatically:
 | http://picoshare.network.lan | PicoShare |
 | http://notes.network.lan | FUTO Notes |
 | http://immich.network.lan | Immich |
+| http://mediacms.network.lan | MediaCMS |
 | http://searxng.network.lan | SearXNG |
 | http://pihole.network.lan/admin | Pi-hole admin |
 | `postgres.network.lan:5432` | Shared Postgres (TCP only) |
@@ -69,6 +70,7 @@ python3 scripts/lab.py start caddy
 | `stirling` | Stirling PDF | http://127.0.0.1:8082 |
 | `bentopdf` | BentoPDF | http://127.0.0.1:8084 |
 | `immich` | Immich | http://127.0.0.1:2283 |
+| `mediacms` | MediaCMS | http://127.0.0.1:8088 |
 | `searxng` | SearXNG | http://127.0.0.1:8080 |
 | `postgres` | Shared Postgres | `127.0.0.1:5432` |
 | `pihole` | Pi-hole admin | http://127.0.0.1:5080/admin |

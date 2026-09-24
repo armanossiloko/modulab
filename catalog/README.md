@@ -23,5 +23,5 @@ Hand-edit **`lab.config.json` only** (or use Control Center → Settings → Lab
 ## Shared infra rule
 
 - **One** shared Postgres for all apps — apps must not ship their own Postgres.
-- **Redis** is optional: prefer the shared Redis stack when it is already enabled or running; otherwise apps such as Immich may start a sidecar Redis.
+- **Redis** is optional for most apps. MediaCMS requires the shared stack (`dependsOn`). Immich prefers shared Redis when it is already enabled or running, otherwise a sidecar.
 - Declaring `dependsOn` is enough for hard deps; `preferShared` does not auto-enable the shared stack.
