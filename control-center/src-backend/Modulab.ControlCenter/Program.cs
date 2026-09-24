@@ -596,6 +596,36 @@ app.MapPost("/api/apps/{id}/update", (string id) =>
     .Produces<AppTaskSnapshot>(StatusCodes.Status409Conflict)
     .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
+app.MapPost("/api/system/update", () =>
+{
+    if (!AppTaskBoard.TryBegin("control-center", "Control Center", out var snapshot, out var run, "system-update"))
+        return Results.Json(new AppTaskSnapshot(snapshot), LabJsonContext.Default.AppTaskSnapshot, statusCode: 409);
+
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            AppTaskBoard.Note(run!, "Downloading compose.yaml and updating the core stack…");
+            await RunScriptAsync(labRoot, "update-appliance.sh", null, line => AppTaskBoard.Note(run!, line));
+            InvalidateUpdatesCache();
+            AppTaskBoard.Finish(run!, "ok", "Control Center is restarting");
+        }
+        catch (Exception ex)
+        {
+            var message = ex.Message.Trim();
+            if (message.Length > 500)
+                message = message[^500..];
+            AppTaskBoard.Finish(run!, "error", "Update failed", string.IsNullOrWhiteSpace(message) ? "Update failed" : message);
+        }
+    });
+
+    return Results.Json(new AppTaskSnapshot(snapshot), LabJsonContext.Default.AppTaskSnapshot, statusCode: StatusCodes.Status202Accepted);
+})
+    .WithName("UpdateControlCenter")
+    .WithTags("System")
+    .Produces<AppTaskSnapshot>(StatusCodes.Status202Accepted)
+    .Produces<AppTaskSnapshot>(StatusCodes.Status409Conflict);
+
 app.MapDelete("/api/apps/{id}", async (string id) =>
 {
     var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
@@ -2292,7 +2322,7 @@ file static class AppTaskBoard
             return Current is null ? null : ToDto(Current);
     }
 
-    public static bool TryBegin(string id, string name, out AppTaskDto snapshot, out AppTaskRun? started)
+    public static bool TryBegin(string id, string name, out AppTaskDto snapshot, out AppTaskRun? started, string action = "update")
     {
         lock (Gate)
         {
@@ -2303,7 +2333,7 @@ file static class AppTaskBoard
                 return false;
             }
 
-            var run = new AppTaskRun { Id = id, Name = name };
+            var run = new AppTaskRun { Id = id, Name = name, Action = action };
             Current = run;
             started = run;
             snapshot = ToDto(run);

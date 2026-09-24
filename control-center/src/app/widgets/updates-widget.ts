@@ -30,6 +30,21 @@ import { Icon } from '../shared/icon';
         </button>
       </div>
 
+      <div class="row">
+        <div class="row__main">
+          <span class="row__title">Control Center</span>
+          <span class="row__meta">compose.yaml, Postgres, and Caddy</span>
+        </div>
+        <button
+          type="button"
+          class="btn btn--primary btn--sm"
+          [disabled]="tasks.runningId() !== null"
+          (click)="updateControlCenter()"
+        >
+          {{ tasks.runningId() === 'control-center' ? 'Updating…' : 'Update' }}
+        </button>
+      </div>
+
       @if (error()) {
         <p class="empty-note">{{ error() }}</p>
       } @else if (!loading() && pending().length === 0) {
@@ -111,6 +126,10 @@ export class UpdatesWidget implements OnInit {
     this.dash.loadUpdates(refresh).subscribe({
       error: (err: Error) => this.error.set(err.message),
     });
+  }
+
+  updateControlCenter(): void {
+    void this.tasks.updateControlCenter();
   }
 
   apply(id: string, name: string): void {

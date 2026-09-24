@@ -16,6 +16,7 @@
 #   Public Hostname HTTP: home → http://127.0.0.1:8888
 #   Same pattern for other apps (immich → :2283, jellyfin → :8096, …). Skip Postgres.
 #   Access → Applications → Self-hosted → that hostname → one-time PIN
+#   Per-app steps (FUTO Notes and the hostname table): docs/cloudflare-tunnel.md
 #
 # Windows (PowerShell):
 #   $env:MODULAB_HOST_ROOT = (Resolve-Path "$HOME\modulab-data").Path

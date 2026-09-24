@@ -141,7 +141,7 @@ Anyone who can open Control Center can install/start/stop apps. **Do not expose 
 
 ### Optional: Cloudflare tunnel
 
-The connector is in [`compose.yaml`](compose.yaml). Create the tunnel in [Zero Trust](https://one.dash.cloudflare.com/) → **Networks** → **Tunnels** → **Cloudflared**, name it `modulab-800-01`, and copy the token (the value after `--token`).
+The connector is the `cloudflare` profile in [`compose.yaml`](compose.yaml). Create the tunnel in Zero Trust, name it `modulab-800-01`, then:
 
 ```bash
 export MODULAB_HOST_ROOT="$HOME/modulab-data"
@@ -149,7 +149,7 @@ export CLOUDFLARE_TUNNEL_TOKEN='paste-token-here'
 docker compose --profile cloudflare up -d
 ```
 
-`cloudflared` uses the host network so it can reach `127.0.0.1`. In that tunnel, add **Public Hostname** routes (HTTP): `home` → `127.0.0.1:8888`, then the same for each running app (`immich` → `127.0.0.1:2283`, `jellyfin` → `127.0.0.1:8096`, and so on). Leave Postgres off. Under **Access** → **Applications** → **Self-hosted**, require a login (one-time PIN) for each hostname.
+Each app is a public hostname on that tunnel (no further Compose change). Walkthrough, including FUTO Notes at `https://notes.<your-domain>`: [docs/cloudflare-tunnel.md](docs/cloudflare-tunnel.md).
 
 ### Troubleshooting (first install)
 
@@ -240,6 +240,7 @@ python3 scripts/lab.py render-config
 |--------|---------|----------------|
 | **IP + port** | `http://192.168.1.50:8083` | No |
 | **Hostname** | `http://it-tools.network.lan` | Yes — client DNS must be `lab.hostIp` (Pi-hole) |
+| **Cloudflare Tunnel** | `https://notes.example.com` | No — public hostname on the tunnel. See [docs/cloudflare-tunnel.md](docs/cloudflare-tunnel.md) |
 
 With **LAN proxy** on, Caddy listens on host port **80** and routes `http://<label>.<domain>` → the app. Pi-hole (when enabled) maps those names to `lab.hostIp`.
 

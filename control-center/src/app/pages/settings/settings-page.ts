@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { AppTasks } from '../../core/services/app-tasks';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardDocument } from '../../core/models/dashboard';
 import { Icon } from '../../shared/icon';
@@ -48,6 +49,26 @@ function toColorInput(value?: string): string {
         <p class="empty-note">{{ error() }}</p>
       } @else if (section() === 'lab') {
         <div class="lab">
+          <section class="section">
+            <div class="section__head section__head--end">
+              <div>
+                <h2 class="section__title">Control Center</h2>
+                <p class="section__desc">
+                  Download compose.yaml for this image tag and recreate Control Center, Postgres, and Caddy.
+                  The page disconnects while Control Center restarts.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="btn btn--solid"
+                [disabled]="tasks.runningId() !== null"
+                (click)="updateControlCenter()"
+              >
+                {{ tasks.runningId() === 'control-center' ? 'Updating…' : 'Update' }}
+              </button>
+            </div>
+          </section>
+
           <section class="section">
             <div class="section__head">
               <div>
@@ -552,6 +573,9 @@ function toColorInput(value?: string): string {
       gap: var(--space-3);
       margin-top: var(--space-4);
     }
+    .section__head.section__head--end {
+      margin-bottom: 0;
+    }
     @media (max-width: 720px) {
       .group-head {
         grid-template-columns: 1fr;
@@ -569,6 +593,7 @@ export class SettingsPage implements OnInit {
   private readonly dash = inject(DashboardService);
   private readonly route = inject(ActivatedRoute);
   private readonly cdr = inject(ChangeDetectorRef);
+  readonly tasks = inject(AppTasks);
 
   draft: DashboardDocument | null = null;
   labDraft = {
@@ -818,6 +843,10 @@ export class SettingsPage implements OnInit {
       /* keep previous domain while typing */
     }
     this.markDirty();
+  }
+
+  updateControlCenter(): void {
+    void this.tasks.updateControlCenter();
   }
 
   save(): void {

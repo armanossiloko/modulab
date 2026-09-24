@@ -19,7 +19,8 @@ jobs:
       - name: Shell syntax
         run: |
           for f in scripts/*.sh; do bash -n "$f"; done
-          python3 -m py_compile scripts/run_bash.py scripts/lab.py
+          python3 -m py_compile scripts/run_bash.py scripts/lab.py scripts/update-appliance.py
+          python3 scripts/update-appliance.py --self-check
       - name: CRLF-safe runner
         run: |
           # Simulate a Windows working tree: convert scripts to CRLF, then run via lab.py

@@ -19,6 +19,8 @@ export class AppTasks {
   readonly logOpen = signal(false);
   readonly clock = signal(Date.now());
   private timer: number | null = null;
+  private downSince: number | null = null;
+  private reloadTimer: number | null = null;
 
   runningId(): string | null {
     const task = this.task();
@@ -28,6 +30,48 @@ export class AppTasks {
   async attach(): Promise<void> {
     await this.pull(false);
     if (this.task()?.status === 'running') this.follow();
+  }
+
+  async updateControlCenter(): Promise<void> {
+    if (this.runningId()) {
+      this.logOpen.set(true);
+      return;
+    }
+    if (
+      !confirm(
+        'Download compose.yaml for this image tag and recreate Control Center, Postgres, and Caddy? This page disconnects while Control Center restarts.'
+      )
+    ) {
+      return;
+    }
+
+    this.downSince = null;
+    this.logOpen.set(false);
+    this.task.set({
+      id: 'control-center',
+      name: 'Control Center',
+      action: 'system-update',
+      status: 'running',
+      latest: 'Starting…',
+      lines: [],
+      error: null,
+      startedAt: new Date().toISOString(),
+    });
+
+    try {
+      const res = await fetch('/api/system/update', { method: 'POST' });
+      const body = (await res.json()) as { current?: AppTask; message?: string };
+      if (body.current) {
+        const next = normalize(body.current);
+        this.task.set(next);
+        if (next.status === 'running') this.follow();
+        else this.settle(next.status);
+        return;
+      }
+      this.fail(body.message || `Update failed (${res.status})`);
+    } catch (err) {
+      this.fail(err instanceof Error ? err.message : 'Update failed');
+    }
   }
 
   async updateApp(id: string, name: string): Promise<void> {
@@ -91,17 +135,53 @@ export class AppTasks {
     this.clock.set(Date.now());
     try {
       const res = await fetch('/api/tasks', { cache: 'no-store' });
-      if (!res.ok) return;
+      if (!res.ok) {
+        this.noteRestartIfDown();
+        return;
+      }
       const body = (await res.json()) as { current?: AppTask | null };
       const prev = this.task();
       const next = body.current ? normalize(body.current) : null;
+      if (prev?.action === 'system-update' && prev.status === 'running' && !next) {
+        window.location.reload();
+        return;
+      }
       this.task.set(next);
       if (settle && prev?.status === 'running' && next && next.status !== 'running') {
         this.settle(next.status);
       }
+      if (next?.action === 'system-update' && next.status === 'ok') this.armReload();
+      this.downSince = null;
       if (!next || next.status !== 'running') this.stop();
     } catch {
-      /* keep the last snapshot and retry on the next tick */
+      this.noteRestartIfDown();
+    }
+  }
+
+  private noteRestartIfDown(): void {
+    const task = this.task();
+    if (task?.action !== 'system-update' || task.status !== 'running') return;
+    if (this.downSince == null) this.downSince = Date.now();
+    if (Date.now() - this.downSince < 8000) return;
+    this.task.set({
+      ...task,
+      latest: 'Control Center is restarting. This page will reload when it is back.',
+    });
+    this.armReload();
+  }
+
+  private armReload(): void {
+    if (this.reloadTimer != null) return;
+    this.reloadTimer = window.setInterval(() => void this.ping(), 2000);
+  }
+
+  private async ping(): Promise<void> {
+    try {
+      const res = await fetch('/api/health', { cache: 'no-store' });
+      if (!res.ok) return;
+      if (this.downSince != null || this.task()?.status === 'ok') window.location.reload();
+    } catch {
+      this.downSince = this.downSince ?? Date.now();
     }
   }
 
