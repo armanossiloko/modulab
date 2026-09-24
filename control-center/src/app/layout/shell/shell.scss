@@ -139,6 +139,118 @@
   margin: 0 0 var(--space-3);
 }
 
+.task-dock {
+  flex: 0 0 auto;
+  margin: 0 var(--page-pad) var(--page-pad);
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-border);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 55%), var(--widget);
+  box-shadow: var(--highlight);
+}
+
+.task-dock.is-ok {
+  border-color: color-mix(in srgb, var(--positive) 45%, var(--border));
+  background: linear-gradient(90deg, var(--positive-soft), transparent 55%), var(--widget);
+}
+
+.task-dock.is-error {
+  border-color: var(--negative-border);
+  background: linear-gradient(90deg, var(--negative-soft), transparent 55%), var(--widget);
+}
+
+.task-dock__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.task-dock__mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  color: var(--accent);
+}
+
+.task-dock.is-ok .task-dock__mark {
+  color: var(--positive);
+}
+
+.task-dock.is-error .task-dock__mark {
+  color: var(--negative);
+}
+
+.task-dock__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-dock__title {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 650;
+}
+
+.task-dock__time {
+  margin-left: 0.45rem;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+.task-dock__latest {
+  margin: 0.2rem 0 0;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-dock__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.task-dock__error {
+  margin: 0.55rem 0 0;
+  color: var(--negative);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.task-log {
+  margin: 0.65rem 0 0;
+  max-height: 9.5rem;
+  overflow: auto;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--inset);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .task-dock__row {
+    flex-wrap: wrap;
+  }
+  .task-dock__actions {
+    width: 100%;
+  }
+  .task-dock__latest {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 800px) {
   :host,
   .shell {

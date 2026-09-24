@@ -42,6 +42,53 @@
       }
       <router-outlet />
     </div>
+
+    @if (tasks.task(); as job) {
+      <section
+        class="task-dock"
+        [class.is-ok]="job.status === 'ok'"
+        [class.is-error]="job.status === 'error'"
+        aria-labelledby="task-dock-title"
+      >
+        <div class="task-dock__row">
+          <span class="task-dock__mark" [class.is-spinning]="job.status === 'running'">
+            <app-icon
+              [name]="job.status === 'ok' ? 'check' : job.status === 'error' ? 'info' : 'refresh'"
+              [size]="16"
+            />
+          </span>
+          <div class="task-dock__copy">
+            <p id="task-dock-title" class="task-dock__title">
+              @if (job.status === 'running') {
+                Updating {{ job.name }}
+                @if (elapsed()) {
+                  <span class="task-dock__time">{{ elapsed() }}</span>
+                }
+              } @else if (job.status === 'ok') {
+                {{ job.name }} updated
+              } @else {
+                Couldn't update {{ job.name }}
+              }
+            </p>
+            <p class="task-dock__latest">{{ job.latest }}</p>
+          </div>
+          <div class="task-dock__actions">
+            <button type="button" class="btn btn--sm" (click)="tasks.logOpen.update((open) => !open)">
+              {{ tasks.logOpen() ? 'Hide log' : 'Log' }}
+            </button>
+            @if (job.status !== 'running') {
+              <button type="button" class="btn btn--sm" (click)="tasks.dismiss()">Dismiss</button>
+            }
+          </div>
+        </div>
+        @if (job.status === 'error' && job.error) {
+          <p class="task-dock__error">{{ job.error }}</p>
+        }
+        @if (tasks.logOpen() && job.lines.length) {
+          <pre class="task-log">{{ job.lines.join('\n') }}</pre>
+        }
+      </section>
+    }
   </div>
 </div>
 

@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Modulab.ControlCenter.Extensions;
 
 // Full builder (not slim) so static files / SPA hosting work like Fable.API.
@@ -529,7 +531,28 @@ app.MapGet("/api/apps/{id}/updates", async (string id, bool? refresh, Cancellati
     .Produces<AppUpdateStatus>(StatusCodes.Status200OK)
     .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
-app.MapPost("/api/apps/{id}/update", async (string id) =>
+app.MapGet("/api/tasks", (HttpResponse response) =>
+{
+    response.Headers.CacheControl = "no-store";
+    return Results.Json(new AppTaskSnapshot(AppTaskBoard.Snapshot()), LabJsonContext.Default.AppTaskSnapshot);
+})
+    .WithName("GetAppTask")
+    .WithTags("Apps")
+    .Produces<AppTaskSnapshot>(StatusCodes.Status200OK);
+
+app.MapDelete("/api/tasks", () =>
+{
+    if (!AppTaskBoard.TryDismiss())
+        return Results.Json(new ApiMessage("An update is still running"), LabJsonContext.Default.ApiMessage, statusCode: 409);
+
+    return Results.Json(new AppTaskSnapshot(null), LabJsonContext.Default.AppTaskSnapshot);
+})
+    .WithName("DismissAppTask")
+    .WithTags("Apps")
+    .Produces<AppTaskSnapshot>(StatusCodes.Status200OK)
+    .ProducesApiMessage(StatusCodes.Status409Conflict);
+
+app.MapPost("/api/apps/{id}/update", (string id) =>
 {
     var recipe = LoadRecipes(labRoot).FirstOrDefault(r => r.Id == id);
     if (recipe is null)
@@ -538,18 +561,39 @@ app.MapPost("/api/apps/{id}/update", async (string id) =>
     try
     {
         EnsureEnabled(labRoot, id);
-        await RunScriptAsync(labRoot, "update.sh", id);
-        InvalidateUpdatesCache();
-        return Results.Json(new ApiMessage($"Updated {id}"), LabJsonContext.Default.ApiMessage);
     }
     catch (Exception ex)
     {
         return Results.Json(new ApiMessage(ex.Message), LabJsonContext.Default.ApiMessage, statusCode: 500);
     }
+
+    if (!AppTaskBoard.TryBegin(recipe.Id, recipe.Name, out var snapshot, out var run))
+        return Results.Json(new AppTaskSnapshot(snapshot), LabJsonContext.Default.AppTaskSnapshot, statusCode: 409);
+
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            AppTaskBoard.Note(run!, "Pulling the image and recreating the container…");
+            await RunScriptAsync(labRoot, "update.sh", id, line => AppTaskBoard.Note(run!, line));
+            InvalidateUpdatesCache();
+            AppTaskBoard.Finish(run!, "ok", "Image pulled and container recreated");
+        }
+        catch (Exception ex)
+        {
+            var message = ex.Message.Trim();
+            if (message.Length > 500)
+                message = message[^500..];
+            AppTaskBoard.Finish(run!, "error", "Update failed", string.IsNullOrWhiteSpace(message) ? "Update failed" : message);
+        }
+    });
+
+    return Results.Json(new AppTaskSnapshot(snapshot), LabJsonContext.Default.AppTaskSnapshot, statusCode: StatusCodes.Status202Accepted);
 })
     .WithName("UpdateApp")
     .WithTags("Apps")
-    .Produces<ApiMessage>(StatusCodes.Status200OK)
+    .Produces<AppTaskSnapshot>(StatusCodes.Status202Accepted)
+    .Produces<AppTaskSnapshot>(StatusCodes.Status409Conflict)
     .ProducesApiMessage(StatusCodes.Status404NotFound, StatusCodes.Status500InternalServerError);
 
 app.MapDelete("/api/apps/{id}", async (string id) =>
@@ -1705,7 +1749,7 @@ static string? AppOpenUrl(string labRoot, Recipe recipe)
     return null;
 }
 
-static async Task RunScriptAsync(string labRoot, string script, string? arg = null)
+static async Task RunScriptAsync(string labRoot, string script, string? arg = null, Action<string>? onLine = null)
 {
     // Always go through run_bash.py so Windows CRLF checkouts work inside Linux bash.
     var runner = Path.Combine(labRoot, "scripts", "run_bash.py");
@@ -1719,9 +1763,76 @@ static async Task RunScriptAsync(string labRoot, string script, string? arg = nu
     var args = arg is null
         ? $"\"{runner}\" {script}"
         : $"\"{runner}\" {script} {arg}";
-    var (exit, stdout, stderr) = await RunAsync("python3", args, labRoot);
-    if (exit != 0)
-        throw new InvalidOperationException($"bash {script} failed ({exit}): {stderr}\n{stdout}".Trim());
+    if (onLine is null)
+    {
+        var (exit, stdout, stderr) = await RunAsync("python3", args, labRoot);
+        if (exit != 0)
+            throw new InvalidOperationException($"bash {script} failed ({exit}): {stderr}\n{stdout}".Trim());
+        return;
+    }
+
+    var streamed = await RunStreamingAsync("python3", args, labRoot, onLine, CancellationToken.None);
+    if (streamed != 0)
+        throw new InvalidOperationException($"bash {script} failed ({streamed})");
+}
+
+static async Task<int> RunStreamingAsync(
+    string file,
+    string args,
+    string cwd,
+    Action<string> onLine,
+    CancellationToken ct)
+{
+    var psi = new ProcessStartInfo
+    {
+        FileName = file,
+        Arguments = args,
+        WorkingDirectory = cwd,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        CreateNoWindow = true,
+    };
+    using var proc = Process.Start(psi) ?? throw new InvalidOperationException($"Failed to start {file}");
+    // Read both pipes at once. Docker writes pull progress on stderr; waiting for
+    // stdout to close before reading stderr deadlocks the pull.
+    var stdoutTask = PumpAsync(proc.StandardOutput, onLine, ct);
+    var stderrTask = PumpAsync(proc.StandardError, onLine, ct);
+    await proc.WaitForExitAsync(ct);
+    await Task.WhenAll(stdoutTask, stderrTask);
+    return proc.ExitCode;
+}
+
+static async Task PumpAsync(StreamReader reader, Action<string> onLine, CancellationToken ct)
+{
+    var buffer = new char[1024];
+    var pending = new StringBuilder();
+    while (true)
+    {
+        var read = await reader.ReadAsync(buffer.AsMemory(), ct);
+        if (read == 0)
+            break;
+        for (var i = 0; i < read; i++)
+        {
+            var ch = buffer[i];
+            if (ch is '\n' or '\r')
+                FlushPending();
+            else
+                pending.Append(ch);
+        }
+    }
+
+    FlushPending();
+
+    void FlushPending()
+    {
+        if (pending.Length == 0)
+            return;
+        var line = AppTaskBoard.StripAnsi(pending.ToString()).Trim();
+        pending.Clear();
+        if (line.Length > 0)
+            onLine(line);
+    }
 }
 
 static Task<(int Exit, string StdOut, string StdErr)> RunAsync(
@@ -2150,7 +2261,122 @@ internal sealed class RecipeField
 [JsonSerializable(typeof(Dictionary<string, JsonElement>))]
 [JsonSerializable(typeof(JsonNode))]
 [JsonSerializable(typeof(JsonObject))]
+[JsonSerializable(typeof(AppTaskDto))]
+[JsonSerializable(typeof(AppTaskSnapshot))]
+[JsonSerializable(typeof(string[]))]
 internal partial class LabJsonContext : JsonSerializerContext;
+
+internal sealed record AppTaskDto(
+    string Id,
+    string Name,
+    string Action,
+    string Status,
+    string Latest,
+    string[] Lines,
+    string? Error,
+    DateTimeOffset StartedAt);
+
+internal sealed record AppTaskSnapshot(AppTaskDto? Current);
+
+file static class AppTaskBoard
+{
+    static readonly object Gate = new();
+    static readonly Regex Ansi = new(@"\u001B\[[0-?]*[ -/]*[@-~]", RegexOptions.Compiled);
+    static AppTaskRun? Current;
+
+    public static string StripAnsi(string value) => Ansi.Replace(value, "");
+
+    public static AppTaskDto? Snapshot()
+    {
+        lock (Gate)
+            return Current is null ? null : ToDto(Current);
+    }
+
+    public static bool TryBegin(string id, string name, out AppTaskDto snapshot, out AppTaskRun? started)
+    {
+        lock (Gate)
+        {
+            if (Current?.Status == "running")
+            {
+                snapshot = ToDto(Current);
+                started = null;
+                return false;
+            }
+
+            var run = new AppTaskRun { Id = id, Name = name };
+            Current = run;
+            started = run;
+            snapshot = ToDto(run);
+            return true;
+        }
+    }
+
+    public static bool TryDismiss()
+    {
+        lock (Gate)
+        {
+            if (Current?.Status == "running")
+                return false;
+            Current = null;
+            return true;
+        }
+    }
+
+    public static void Note(AppTaskRun run, string line)
+    {
+        var text = line.Trim();
+        if (text.Length == 0)
+            return;
+        if (text.Length > 240)
+            text = text[..240];
+        lock (run.Gate)
+        {
+            run.Latest = text;
+            run.Lines.Add(text);
+            if (run.Lines.Count > 80)
+                run.Lines.RemoveAt(0);
+        }
+    }
+
+    public static void Finish(AppTaskRun run, string status, string latest, string? error = null)
+    {
+        lock (run.Gate)
+        {
+            run.Status = status;
+            run.Latest = latest;
+            run.Error = error;
+        }
+    }
+
+    static AppTaskDto ToDto(AppTaskRun run)
+    {
+        lock (run.Gate)
+        {
+            return new AppTaskDto(
+                run.Id,
+                run.Name,
+                run.Action,
+                run.Status,
+                run.Latest,
+                run.Lines.ToArray(),
+                run.Error,
+                run.StartedAt);
+        }
+    }
+}
+
+sealed class AppTaskRun
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public string Action { get; init; } = "update";
+    public string Status { get; set; } = "running";
+    public string Latest { get; set; } = "Starting…";
+    public string? Error { get; set; }
+    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.UtcNow;
+    public List<string> Lines { get; } = [];
+    public readonly object Gate = new();
+}
 
 file static class ReleaseCacheState
 {

@@ -1,6 +1,7 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
+import { AppTasks } from '../../core/services/app-tasks';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { Icon } from '../../shared/icon';
 import { CommandPalette } from '../command-palette/command-palette';
@@ -14,6 +15,18 @@ import { Sidebar } from '../sidebar/sidebar';
 })
 export class Shell implements OnInit {
   readonly dash = inject(DashboardService);
+  readonly tasks = inject(AppTasks);
+  readonly elapsed = computed(() => {
+    this.tasks.clock();
+    const task = this.tasks.task();
+    if (!task || task.status !== 'running') return '';
+    const started = Date.parse(task.startedAt);
+    if (Number.isNaN(started)) return '';
+    const total = Math.max(0, Math.floor((Date.now() - started) / 1000));
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  });
   private resizing = false;
   readonly paletteOpen = signal(false);
   readonly shortcutLabel = /\bmac/i.test(navigator.platform) || /\bmac/i.test(navigator.userAgent) ? '⌘K' : 'Ctrl K';
@@ -31,6 +44,7 @@ export class Shell implements OnInit {
     this.dash.load().subscribe();
     this.dash.loadCatalog().subscribe({ error: () => undefined });
     this.dash.loadLabStatus().subscribe({ error: () => undefined });
+    void this.tasks.attach();
   }
 
   @HostListener('document:keydown', ['$event'])

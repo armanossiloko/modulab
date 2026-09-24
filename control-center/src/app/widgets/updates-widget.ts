@@ -1,4 +1,5 @@
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
+import { AppTasks } from '../core/services/app-tasks';
 import { DashboardService } from '../core/services/dashboard.service';
 import { Icon } from '../shared/icon';
 
@@ -44,10 +45,10 @@ import { Icon } from '../shared/icon';
               <button
                 type="button"
                 class="btn btn--primary btn--sm"
-                [disabled]="busyId() === app.id"
+                [disabled]="tasks.runningId() !== null"
                 (click)="apply(app.id, app.name)"
               >
-                {{ busyId() === app.id ? 'Updating…' : 'Update' }}
+                {{ tasks.runningId() === app.id ? 'Updating…' : 'Update' }}
               </button>
             </li>
           }
@@ -81,8 +82,8 @@ import { Icon } from '../shared/icon';
 export class UpdatesWidget implements OnInit {
   @Input() config: Record<string, unknown> = {};
   private readonly dash = inject(DashboardService);
+  readonly tasks = inject(AppTasks);
   readonly error = signal<string | null>(null);
-  readonly busyId = signal<string | null>(null);
 
   readonly loading = computed(() => this.dash.updatesLoading());
   readonly pending = computed(() => this.dash.appsWithUpdates());
@@ -113,18 +114,8 @@ export class UpdatesWidget implements OnInit {
   }
 
   apply(id: string, name: string): void {
+    if (this.tasks.runningId()) return;
     if (!confirm(`Pull and recreate ${name}?`)) return;
-    this.busyId.set(id);
-    this.dash.updateApp(id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.check(true);
-        this.dash.loadCatalog().subscribe();
-      },
-      error: (err: Error) => {
-        this.busyId.set(null);
-        alert(err.message);
-      },
-    });
+    void this.tasks.updateApp(id, name);
   }
 }

@@ -15,7 +15,6 @@ import {
   startApp as apiStartApp,
   stopApp as apiStopApp,
   uninstallApp as apiUninstallApp,
-  updateApp as apiUpdateApp,
   type ApiMessage,
   type AppUpdateStatus,
   type CatalogItem,
@@ -344,17 +343,6 @@ export class DashboardService {
         })
       )
     ).pipe(tap(() => this.loadLabStatus().subscribe()));
-  }
-
-  updateApp(id: string): Observable<ApiMessage> {
-    return from(unwrap(apiUpdateApp({ throwOnError: false, path: { id } }))).pipe(
-      tap(() => {
-        // Drop stale cache locally; next loadUpdates(true) refreshes from API.
-        this.updates.update((list) =>
-          list.map((a) => (a.id === id ? { ...a, updateAvailable: false, images: a.images ?? [] } : a))
-        );
-      })
-    );
   }
 
   widgetConfig(type: string): Record<string, unknown> {

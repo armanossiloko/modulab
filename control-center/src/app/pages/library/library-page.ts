@@ -1,9 +1,10 @@
-import { Component, HostListener, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, HostListener, OnInit, effect, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { CatalogItem, RecipeField } from '../../api/generated';
 import { canOpenApp, ipAppUrl, openAppUrl } from '../../core/app-links';
 import { formatRelease, statusLabel, statusTone } from '../../core/app-status';
+import { AppTasks } from '../../core/services/app-tasks';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { CatalogMark } from '../../shared/catalog-mark';
 import { Icon } from '../../shared/icon';
@@ -119,17 +120,20 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
               @if (releaseLine(app); as release) {
                 <p class="library-release" title="Installed version and image build date">{{ release }}</p>
               }
+              @if (liveTask(app.id); as job) {
+                <p class="library-live" [class.is-error]="job.status === 'error'">{{ job.latest }}</p>
+              }
             </div>
             <div class="library-actions">
               @if (hasUpdate(app.id)) {
                 <button
                   type="button"
                   class="btn btn--primary"
-                  [disabled]="busyId() === app.id"
+                  [disabled]="tasks.runningId() !== null"
                   (click)="update(app)"
                 >
                   <app-icon name="download" [size]="14" />
-                  {{ busyId() === app.id ? 'Updating…' : 'Update' }}
+                  {{ tasks.runningId() === app.id ? 'Updating…' : 'Update' }}
                 </button>
               }
               @if (app.status === 'available' && app.installable !== false) {
@@ -322,6 +326,16 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
       letter-spacing: 0.01em;
       color: var(--text-muted);
     }
+    .library-live {
+      margin: 0.28rem 0 0;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+    .library-live.is-error {
+      color: var(--negative);
+    }
     .library-actions {
       display: flex;
       flex-wrap: wrap;
@@ -390,6 +404,7 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
 })
 export class LibraryPage implements OnInit {
   private readonly dash = inject(DashboardService);
+  readonly tasks = inject(AppTasks);
   readonly query = signal('');
   readonly view = signal<LibraryView>(readView());
   readonly error = signal<string | null>(null);
@@ -405,6 +420,9 @@ export class LibraryPage implements OnInit {
   readonly statusLabel = statusLabel;
   readonly tone = statusTone;
   readonly canOpen = canOpenApp;
+  private readonly syncApps = effect(() => {
+    this.apps.set(libraryApps(this.dash.catalog()));
+  });
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -464,6 +482,11 @@ export class LibraryPage implements OnInit {
 
   hasUpdate(id: string): boolean {
     return this.dash.updateAvailable(id);
+  }
+
+  liveTask(id: string) {
+    const task = this.tasks.task();
+    return task?.id === id ? task : null;
   }
 
   ipUrl(app: CatalogItem): string | null {
@@ -572,18 +595,9 @@ export class LibraryPage implements OnInit {
   }
 
   update(app: CatalogItem): void {
+    if (this.tasks.runningId()) return;
     if (!confirm(`Pull and recreate ${app.name}?`)) return;
-    this.busyId.set(app.id);
-    this.dash.updateApp(app.id).subscribe({
-      next: () => {
-        this.busyId.set(null);
-        this.refresh();
-      },
-      error: (err: Error) => {
-        this.busyId.set(null);
-        alert(err.message);
-      },
-    });
+    void this.tasks.updateApp(app.id, app.name);
   }
 
   uninstall(app: CatalogItem): void {
