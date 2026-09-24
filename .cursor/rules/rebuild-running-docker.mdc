@@ -1,0 +1,28 @@
+---
+description: Rebuild and recreate running Docker containers after code changes
+alwaysApply: true
+---
+
+# Rebuild running Docker containers
+
+When you change code that a running container is serving, rebuild and recreate that container before you finish. The user looks at the running app, not the files on disk.
+
+## Before you finish
+
+1. See what is running: `docker ps`.
+2. If a container's image or Compose project is the app you just edited, rebuild it and recreate it.
+3. Wait until the new container is up. Then say it was rebuilt. Do not tell the user to refresh a stale container.
+
+If nothing relevant is running, skip the rebuild.
+
+## Modulab Control Center
+
+A local checkout serves `http://localhost:8888` from `ghcr.io/armanossiloko/modulab:local` (`docker-compose.control-center.yml`). UI and API are baked into that image.
+
+From the `modulab` repo:
+
+```bash
+docker compose -f docker-compose.control-center.yml up -d --build
+```
+
+`python3 scripts/lab.py start control-center` is the same rebuild when run on the host.
