@@ -8,6 +8,7 @@ const APP_LOGOS = new Set([
   'immich',
   'it-tools',
   'jellyfin',
+  'mediacms',
   'n8n',
   'picoshare',
   'pihole',

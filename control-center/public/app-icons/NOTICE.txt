@@ -1,3 +1,8 @@
 App icons in this folder are from homarr-labs/dashboard-icons
 https://github.com/homarr-labs/dashboard-icons
 Licensed under the Apache License, Version 2.0.
+
+mediacms.png is the official MediaCMS portal mark (white "Media", green "CMS"),
+taken from mediacms-io/mediacms static/favicons and recolored for the dark catalog tile.
+https://github.com/mediacms-io/mediacms
+MediaCMS is licensed under the GNU Affero General Public License v3.
