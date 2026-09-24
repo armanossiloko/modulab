@@ -1,0 +1,24 @@
+---
+description: Bundle a catalog app icon when adding a Library recipe, if one exists
+globs: catalog/**/recipe.json
+alwaysApply: false
+---
+
+# Catalog app icon
+
+When you add `catalog/<id>/recipe.json`, ship a logo in the same change if a suitable icon can be found. The Library falls back to a letter only when no logo exists.
+
+## Checklist
+
+1. Search [homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons) (Apache-2.0; see `control-center/public/app-icons/NOTICE.txt`) for the product. Prefer the PNG whose name matches the recipe `id` (`png/<id>.png`). A well-known alias is fine (`stirling-pdf`, `futo-notes`).
+2. Save it as `control-center/public/app-icons/<id>.png`. `<id>` must equal the recipe `id`.
+3. Add that `id` to `APP_LOGOS` in `control-center/src/app/shared/catalog-mark.ts`. The mark URL is `app-icons/${id}.png`.
+
+```typescript
+const APP_LOGOS = new Set([
+  'jellyfin',
+  'mediacms', // only after public/app-icons/mediacms.png exists
+]);
+```
+
+Do not add the id to `APP_LOGOS` without the file. Do not draw a placeholder or copy a different product’s mark. If dashboard-icons has no matching logo, leave the letter fallback and say so in the change summary.
