@@ -9,6 +9,14 @@
 #   docker compose up -d
 #   open http://localhost:8888 → Settings → Lab → set Host IP → Library
 #
+# Cloudflare tunnel (same file; hostname routes and Access stay in the dashboard):
+#   Zero Trust → Networks → Tunnels → Cloudflared → name modulab-800-01
+#   export CLOUDFLARE_TUNNEL_TOKEN='<token after --token>'
+#   docker compose --profile cloudflare up -d
+#   Public Hostname HTTP: home → http://127.0.0.1:8888
+#   Same pattern for other apps (immich → :2283, jellyfin → :8096, …). Skip Postgres.
+#   Access → Applications → Self-hosted → that hostname → one-time PIN
+#
 # Windows (PowerShell):
 #   $env:MODULAB_HOST_ROOT = (Resolve-Path "$HOME\modulab-data").Path
 
@@ -35,3 +43,13 @@ services:
     volumes:
       - ${MODULAB_HOST_ROOT}:/lab
       - /var/run/docker.sock:/var/run/docker.sock
+
+  # Host network so the connector reaches app ports on 127.0.0.1.
+  # Started only with: docker compose --profile cloudflare up -d
+  cloudflared:
+    profiles: ["cloudflare"]
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}

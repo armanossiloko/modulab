@@ -117,6 +117,7 @@ Details: [pihole/LOCAL-DNS.md](pihole/LOCAL-DNS.md).
 | `MODULAB_TAG` | No | Image tag (default `latest`) |
 | `MODULAB_PUBLISH_IP` | No | Interface for published ports (default `0.0.0.0`) |
 | `HOME_PORT` | No | Control Center host port (default `8888`) |
+| `CLOUDFLARE_TUNNEL_TOKEN` | No | Tunnel token from Zero Trust. Used when you start the `cloudflare` profile |
 | `MODULAB_ROOT` | Set by compose | State path **inside** the container (`/lab`) |
 | `MODULAB_KIT` | Set by image | Read-only kit inside the image (`/opt/modulab`) |
 
@@ -136,7 +137,19 @@ Public packages can be pulled without login.
 
 ### Trust model
 
-Anyone who can open Control Center can install/start/stop apps. **Do not expose port 8888 to the public internet** — keep it on your LAN (or behind your own auth/VPN).
+Anyone who can open Control Center can install/start/stop apps. **Do not expose port 8888 to the public internet** — keep it on your LAN, or publish it through the Cloudflare tunnel profile below (Zero Trust Access in front of each hostname).
+
+### Optional: Cloudflare tunnel
+
+The connector is in [`compose.yaml`](compose.yaml). Create the tunnel in [Zero Trust](https://one.dash.cloudflare.com/) → **Networks** → **Tunnels** → **Cloudflared**, name it `modulab-800-01`, and copy the token (the value after `--token`).
+
+```bash
+export MODULAB_HOST_ROOT="$HOME/modulab-data"
+export CLOUDFLARE_TUNNEL_TOKEN='paste-token-here'
+docker compose --profile cloudflare up -d
+```
+
+`cloudflared` uses the host network so it can reach `127.0.0.1`. In that tunnel, add **Public Hostname** routes (HTTP): `home` → `127.0.0.1:8888`, then the same for each running app (`immich` → `127.0.0.1:2283`, `jellyfin` → `127.0.0.1:8096`, and so on). Leave Postgres off. Under **Access** → **Applications** → **Self-hosted**, require a login (one-time PIN) for each hostname.
 
 ### Troubleshooting (first install)
 

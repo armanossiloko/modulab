@@ -49,6 +49,7 @@ jobs:
           echo "=== compose.yaml (appliance bootstrap) ==="
           mkdir -p /tmp/modulab-data
           MODULAB_HOST_ROOT=/tmp/modulab-data docker compose -f compose.yaml config >/dev/null
+          MODULAB_HOST_ROOT=/tmp/modulab-data CLOUDFLARE_TUNNEL_TOKEN=ci docker compose -f compose.yaml --profile cloudflare config >/dev/null
           python3 -m py_compile scripts/seed-lab-state.py
           python3 scripts/seed-lab-state.py
         env:
