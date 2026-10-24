@@ -1,14 +1,14 @@
 services:
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: jellyfin/jellyfin:${JELLYFIN_TAG:-latest}
     container_name: jellyfin
     # Do not set user: 1000:1000 here — Docker Desktop (Windows/macOS) bind mounts
     # ignore Unix ownership and Jellyfin then crash-loops on /config. On Linux you can
     # add docker-compose.jellyfin.override.yml with user: "1000:1000" if desired.
     network_mode: "bridge"
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8096:8096"
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8920:8920"
+      - "${JELLYFIN_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8096:8096"
+      - "${JELLYFIN_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8920:8920"
     volumes:
       - ${MODULAB_HOST_ROOT:-.}/data/jellyfin/config:/config
       - ${MODULAB_HOST_ROOT:-.}/data/jellyfin/cache:/cache

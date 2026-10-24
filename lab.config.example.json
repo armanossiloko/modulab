@@ -1,17 +1,20 @@
 {
-  "_comment": "Only hand-edited config (or via Control Center Lab Settings). Run: python3 scripts/lab.py render-config. Secrets: \"$secret:filename\" under secrets/.",
+  "_comment": "Only hand-edited config (or via Control Center Lab Settings). Run: python3 scripts/lab.py render-config. \"$generate\" becomes a random secret on first render. Secrets: \"$secret:filename\" under secrets/.",
   "lab": {
     "domain": "network.lan",
     "hostIp": "",
     "timezone": "Europe/Berlin",
     "postgresUser": "modulab",
-    "postgresPassword": "modulab",
+    "postgresPassword": "$generate",
     "postgresDb": "modulab",
-    "piholePassword": "modulab",
-    "picoshareAdminSecret": "modulab",
-    "futoNotesPassword": "modulab",
-    "searxngSecret": "modulab",
-    "mediacmsAdminPassword": "modulab"
+    "piholePassword": "$generate",
+    "picoshareAdminSecret": "$generate",
+    "futoNotesPassword": "$generate",
+    "searxngSecret": "$generate",
+    "mediacmsAdminPassword": "$generate",
+    "mediacmsSecretKey": "$generate",
+    "enableLanHttps": true,
+    "protectedApps": []
   },
   "caddy": {
     "ENABLE_LAN_PROXY": true

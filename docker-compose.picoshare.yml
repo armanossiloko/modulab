@@ -1,9 +1,9 @@
 services:
   picoshare:
-    image: mtlynch/picoshare:latest
+    image: mtlynch/picoshare:${PICOSHARE_TAG:-latest}
     container_name: picoshare
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:${PORT:-4001}:${PORT:-4001}/tcp"
+      - "${PICOSHARE_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:${PORT:-4001}:${PORT:-4001}/tcp"
     command: -db /data/store.db
     volumes:
       - ${MODULAB_HOST_ROOT:-.}/data/picoshare:/data
@@ -12,3 +12,9 @@ services:
       PS_SHARED_SECRET: ${PS_SHARED_SECRET:?Set picoshareAdminSecret in lab.config.json}
       PS_BEHIND_PROXY: ${PS_BEHIND_PROXY:-false}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:$${PORT:-4001}/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

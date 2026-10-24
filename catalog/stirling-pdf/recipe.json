@@ -32,6 +32,22 @@
       "type": "string",
       "default": "en_GB",
       "required": false
+    },
+    {
+      "key": "STIRLING_PDF_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest-fat",
+      "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/stirling-pdf"
+  ],
+  "backup": {
+    "exclude": [
+      "data/stirling-pdf/logs",
+      "data/stirling-pdf/tessdata"
+    ]
+  }
 }

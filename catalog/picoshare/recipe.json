@@ -32,6 +32,19 @@
       "type": "boolean",
       "default": false,
       "required": false
+    },
+    {
+      "key": "PICOSHARE_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest",
+      "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/picoshare"
+  ],
+  "backup": {
+    "stop": true
+  }
 }

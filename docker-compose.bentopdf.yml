@@ -1,9 +1,15 @@
 services:
   bentopdf:
-    image: ghcr.io/alam00000/bentopdf-simple:latest
+    image: ghcr.io/alam00000/bentopdf-simple:${BENTOPDF_TAG:-latest}
     container_name: bentopdf
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8084:8080"
+      - "${BENTOPDF_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8084:8080"
     environment:
       DISABLE_IPV6: ${DISABLE_IPV6:-false}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

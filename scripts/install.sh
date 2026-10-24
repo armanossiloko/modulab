@@ -13,27 +13,25 @@ source "${_scripts}/common.sh"
 
 id="${1:?Usage: bash scripts/install.sh <recipe-id> [json-config]}"
 config_json="${2:-{}}"
-recipe="${root}/catalog/${id}/recipe.json"
-
-if [[ ! -f "$recipe" ]]; then
-  echo "Unknown recipe '${id}'. Expected ${recipe}" >&2
+if ! MODULAB_ROOT="$root" python3 "${root}/scripts/lab_catalog.py" ids | tr -d '\r' | grep -qx "$id"; then
+  echo "Unknown recipe '${id}'. Expected catalog/${id}/recipe.json or catalog.local/${id}/recipe.json" >&2
   exit 1
 fi
 
-MODULAB_ROOT="$root" RECIPE_ID="$id" CONFIG_JSON="$config_json" python3 - <<'PY'
+MODULAB_ROOT="$root" RECIPE_ID="$id" CONFIG_JSON="$config_json" SCRIPTS_DIR="${root}/scripts" python3 - <<'PY'
 import json
 import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, os.environ["SCRIPTS_DIR"])
+import lab_catalog
 
 root = Path(os.environ["MODULAB_ROOT"])
 recipe_id = os.environ["RECIPE_ID"]
 config_path = root / "lab.config.json"
 example = root / "lab.config.example.json"
-recipes = {}
-for path in (root / "catalog").glob("*/recipe.json"):
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(data, dict) and data.get("id"):
-        recipes[data["id"]] = data
+recipes = lab_catalog.recipes_by_id(root)
 
 recipe = recipes.get(recipe_id)
 if not recipe:

@@ -13,13 +13,18 @@ false: no-op
 
 Upgrade behavior: kit-managed paths (catalog, scripts, compose templates) are
 refreshed from the image so new recipes appear after image upgrades. Never
-overwrites lab.config.json, .env, data/, secrets/, or media/.
+overwrites lab.config.json, .env, data/, secrets/, media/, backups/ or catalog.local/.
+
+Recipes and compose templates that an older kit shipped but this kit no longer does
+are removed (tracked in .modulab-kit-manifest.json, so user files are never touched).
 """
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -31,6 +36,8 @@ PRESERVE_NAMES = frozenset(
         "data",
         "secrets",
         "media",
+        "backups",
+        "catalog.local",
         ".git",
         ".modulab-seeded",
     }
@@ -109,6 +116,76 @@ def sync_compose_files(kit: Path, lab: Path) -> None:
         shutil.copy2(path, lab / path.name)
 
 
+MANIFEST = ".modulab-kit-manifest.json"
+
+# Apps removed from Modulab before the manifest existed: (recipe id, compose file).
+RETIRED = [("seerr", "docker-compose.seerr.yml")]
+
+
+def kit_files(kit: Path) -> set[str]:
+    """Kit-managed recipe folders and compose templates, relative to the lab root."""
+    files = {f"catalog/{p.name}" for p in (kit / "catalog").iterdir() if p.is_dir()} if (kit / "catalog").is_dir() else set()
+    files |= {p.name for p in kit.glob("docker-compose*.yml") if not p.name.endswith(".override.yml")}
+    return files
+
+
+def stop_retired_stack(lab: Path, compose: Path) -> None:
+    """Best effort: bring a retired stack down while its compose file still exists."""
+    if not compose.is_file() or shutil.which("docker") is None:
+        return
+    args = ["docker", "compose", "--project-directory", str(lab)]
+    if (lab / ".env").is_file():
+        args += ["--env-file", str(lab / ".env")]
+    subprocess.run(args + ["-f", str(compose), "down"], capture_output=True, timeout=120)
+
+
+def disable_in_config(lab: Path, recipe_id: str) -> None:
+    config = lab / "lab.config.json"
+    if not config.is_file():
+        return
+    data = json.loads(config.read_text(encoding="utf-8"))
+    enabled = data.get("enabled")
+    if isinstance(enabled, list) and recipe_id in enabled:
+        data["enabled"] = [x for x in enabled if x != recipe_id]
+        config.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        print(f"seed: disabled retired app {recipe_id}", flush=True)
+
+
+def remove_kit_path(lab: Path, rel: str) -> None:
+    path = lab / rel
+    if rel.startswith("docker-compose."):
+        recipe_id = rel.removeprefix("docker-compose.").removesuffix(".yml")
+        disable_in_config(lab, recipe_id)
+        stop_retired_stack(lab, path)
+    elif rel.startswith("catalog/"):
+        disable_in_config(lab, rel.removeprefix("catalog/"))
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.is_file():
+        path.unlink()
+    else:
+        return
+    print(f"seed: removed {rel} (no longer shipped)", flush=True)
+
+
+def prune_stale(lab: Path, kit: Path) -> None:
+    current = kit_files(kit)
+    manifest = lab / MANIFEST
+    previous: set[str] = set()
+    if manifest.is_file():
+        try:
+            previous = set(json.loads(manifest.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            previous = set()
+    stale = previous - current
+    for recipe_id, compose in RETIRED:
+        stale |= {f"catalog/{recipe_id}", compose} - current
+    # Compose files first so their stacks can still be brought down.
+    for rel in sorted(stale, key=lambda r: not r.startswith("docker-compose.")):
+        remove_kit_path(lab, rel)
+    manifest.write_text(json.dumps(sorted(current), indent=2) + "\n", encoding="utf-8")
+
+
 def ensure_config(lab: Path, kit: Path) -> None:
     config = lab / "lab.config.json"
     if config.is_file():
@@ -152,6 +229,7 @@ def main() -> int:
                 copy_file(src, dst, overwrite=True)
 
     sync_compose_files(kit, lab)
+    prune_stale(lab, kit)
 
     # Optional kit extras (control-center defaults for dashboard seed helpers).
     defaults = kit / "control-center" / "defaults"

@@ -12,10 +12,8 @@ source "${_scripts}/common.sh"
 update_stack() {
   local name="$1"
   shift
-  local compose="${root}/docker-compose.${name}.yml"
-
-  if [[ ! -f "$compose" ]]; then
-    echo "skip ${name}: no ${compose}" >&2
+  if [[ -z "$(stack_compose_file "$name")" ]]; then
+    echo "skip ${name}: no compose file" >&2
     return 0
   fi
 
@@ -23,6 +21,15 @@ update_stack() {
   ensure_modulab_network
 
   echo "Updating ${name} (pull + up)..." >&2
+
+  # Remember the running images so the update can be rolled back (rollback.sh).
+  local running
+  running="$(stack_compose "$name" ps -q 2>/dev/null | tr -d '\r' || true)"
+  if [[ -n "$running" && "$name" != control-center ]]; then
+    # shellcheck disable=SC2086
+    MODULAB_ROOT="$root" python3 "${root}/scripts/rollback_images.py" record "$name" $running \
+      || echo "warning: could not record a rollback point for ${name}" >&2
+  fi
 
   case "$name" in
     caddy)
@@ -63,6 +70,10 @@ update_stack() {
       stack_compose "$name" up -d "$@"
       ;;
   esac
+
+  if [[ -n "$running" && "$name" != control-center ]]; then
+    MODULAB_ROOT="$root" python3 "${root}/scripts/rollback_images.py" finalize "$name" || true
+  fi
 }
 
 name="${1:?Usage: bash scripts/update.sh <stack>|all}"
@@ -76,9 +87,8 @@ if [[ "$name" == all ]]; then
   exit 0
 fi
 
-compose="${root}/docker-compose.${name}.yml"
-if [[ ! -f "$compose" ]]; then
-  echo "Unknown stack '${name}'. No ${compose}" >&2
+if [[ -z "$(stack_compose_file "$name")" ]]; then
+  echo "Unknown stack '${name}'. No docker-compose.${name}.yml or catalog.local/${name}/" >&2
   echo "Usage: bash scripts/update.sh <stack>|all" >&2
   exit 1
 fi

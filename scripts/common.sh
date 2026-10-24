@@ -167,6 +167,17 @@ ensure_modulab_network() {
   fi
 }
 
+# Compose file for a stack: docker-compose.<id>.yml at the lab root, or a user app's
+# catalog.local/<id>/docker-compose.yml. Prints nothing when the stack is unknown.
+stack_compose_file() {
+  local name="$1"
+  if [[ -f "${root}/docker-compose.${name}.yml" ]]; then
+    printf '%s\n' "${root}/docker-compose.${name}.yml"
+    return 0
+  fi
+  MODULAB_ROOT="$root" python3 "${root}/scripts/lab_catalog.py" compose-file "$name" | tr -d '\r'
+}
+
 stack_compose() {
   local name="$1"
   shift
@@ -182,7 +193,13 @@ stack_compose() {
     immich_compose "$@"
     return
   fi
-  local files=(-f "${root}/docker-compose.${name}.yml")
+  local compose
+  compose="$(stack_compose_file "$name")"
+  if [[ -z "$compose" ]]; then
+    echo "Unknown stack '${name}'" >&2
+    return 1
+  fi
+  local files=(-f "$compose")
   append_stack_override "$name" files
   docker_compose "${files[@]}" "$@"
 }
@@ -296,8 +313,20 @@ refresh_edge_stacks() {
   fi
   if stack_is_enabled caddy || container_exists caddy; then
     echo "Refreshing Caddy (LAN proxy)..." >&2
-    caddy_compose up -d --force-recreate || echo "warning: Caddy refresh failed" >&2
+    caddy_reload || echo "warning: Caddy refresh failed" >&2
   fi
+}
+
+# Apply new routes without dropping every LAN hostname: `up -d` recreates Caddy only when its
+# compose config changed (e.g. LAN HTTPS toggled); otherwise reload the config in place.
+caddy_reload() {
+  caddy_compose up -d || return 1
+  if docker exec caddy sh -c \
+    'cat /etc/caddy/Caddyfile /etc/caddy/proxy.caddy > /tmp/Caddyfile && caddy reload --config /tmp/Caddyfile' \
+    >/dev/null 2>&1; then
+    return 0
+  fi
+  caddy_compose up -d --force-recreate
 }
 
 stack_down() {
@@ -306,9 +335,12 @@ stack_down() {
   case "$name" in
     caddy) caddy_compose down "$@" ;;
     pihole) pihole_compose down "$@" ;;
+    immich) immich_compose down "$@" ;;
     *)
-      if [[ -f "${root}/docker-compose.${name}.yml" ]]; then
-        local files=(-f "${root}/docker-compose.${name}.yml")
+      local compose
+      compose="$(stack_compose_file "$name")"
+      if [[ -n "$compose" ]]; then
+        local files=(-f "$compose")
         append_stack_override "$name" files
         docker_compose "${files[@]}" down "$@"
       fi
@@ -353,37 +385,7 @@ PY
 
 # Print dependency stack ids for a recipe (recursive, unique, deps before dependents).
 recipe_depends() {
-  local id="$1"
-  MODULAB_ROOT="$root" RECIPE_ID="$id" python3 - <<'PY'
-import json
-import os
-from pathlib import Path
-
-root = Path(os.environ["MODULAB_ROOT"])
-target = os.environ["RECIPE_ID"]
-recipes = {}
-for path in (root / "catalog").glob("*/recipe.json"):
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(data, dict) and data.get("id"):
-        recipes[data["id"]] = data
-
-ordered: list[str] = []
-seen: set[str] = set()
-
-def walk(rid: str) -> None:
-    if rid in seen:
-        return
-    seen.add(rid)
-    recipe = recipes.get(rid) or {}
-    for dep in recipe.get("dependsOn") or []:
-        if isinstance(dep, str):
-            walk(dep)
-    if rid != target:
-        ordered.append(rid)
-
-walk(target)
-print("\n".join(ordered))
-PY
+  MODULAB_ROOT="$root" python3 "${root}/scripts/lab_catalog.py" depends "$1"
 }
 
 lab_control_center_url() {

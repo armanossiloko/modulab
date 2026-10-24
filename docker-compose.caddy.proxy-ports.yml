@@ -1,6 +1,6 @@
 # Merged when ENABLE_LAN_PROXY=true (see scripts/common.sh).
 # Host networking so reverse_proxy can reach apps bound to 127.0.0.1 on Linux.
-# Listens on host :80 for http://*.<domain> from the LAN.
+# Listens on host :80 (and :443 with LAN HTTPS) for *.<domain> from the LAN.
 
 services:
   caddy:

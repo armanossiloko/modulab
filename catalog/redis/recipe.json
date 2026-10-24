@@ -11,5 +11,6 @@
   "proxy": null,
   "dns": [],
   "defaults": {},
-  "fields": []
+  "fields": [],
+  "data": []
 }

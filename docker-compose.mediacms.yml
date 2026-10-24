@@ -5,11 +5,11 @@
 
 services:
   mediacms:
-    image: mediacms/mediacms:latest
+    image: mediacms/mediacms:${MEDIACMS_TAG:-latest}
     container_name: mediacms
     restart: unless-stopped
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8088:80"
+      - "${MEDIACMS_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8088:80"
     environment:
       FRONTEND_HOST: ${MEDIACMS_FRONTEND_HOST:-http://localhost:8088}
       PORTAL_NAME: ${MEDIACMS_PORTAL_NAME:-MediaCMS}

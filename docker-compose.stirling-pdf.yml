@@ -1,9 +1,9 @@
 services:
   stirling-pdf:
-    image: stirlingtools/stirling-pdf:latest-fat
+    image: stirlingtools/stirling-pdf:${STIRLING_PDF_TAG:-latest-fat}
     container_name: stirling-pdf
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8082:8080"
+      - "${STIRLING_PDF_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8082:8080"
     volumes:
       - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/tessdata:/usr/share/tessdata
       - ${MODULAB_HOST_ROOT:-.}/data/stirling-pdf/configs:/configs

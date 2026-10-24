@@ -2,11 +2,11 @@
 services:
   searxng:
     # Pinned: some :latest tags have broken on boot (e.g. KeyError default_doi_resolver).
-    image: docker.io/searxng/searxng:2026.5.31-7159b8aed
+    image: docker.io/searxng/searxng:${SEARXNG_TAG:-2026.5.31-7159b8aed}
     container_name: searxng
     restart: unless-stopped
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:${SEARXNG_PORT:-8080}:8080"
+      - "${SEARXNG_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:${SEARXNG_PORT:-8080}:8080"
     volumes:
       - ${MODULAB_HOST_ROOT:-.}/data/searxng:/etc/searxng
       - ${MODULAB_HOST_ROOT:-.}/searxng/settings.yml.template:/tmp/searxng-settings.yml.template:ro
@@ -47,3 +47,9 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

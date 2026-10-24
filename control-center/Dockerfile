@@ -39,7 +39,7 @@ LABEL org.opencontainers.image.title="Modulab Control Center" \
       org.opencontainers.image.version="${MODULAB_VERSION}" \
       org.opencontainers.image.created="${MODULAB_BUILT_AT}"
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends bash ca-certificates python3 \
+    && apt-get install -y --no-install-recommends bash ca-certificates python3 tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=dockercli /usr/local/bin/docker /usr/local/bin/docker

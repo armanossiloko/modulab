@@ -22,6 +22,14 @@
       "type": "string",
       "fromLab": "timezone",
       "required": false
+    },
+    {
+      "key": "IT_TOOLS_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest",
+      "required": false
     }
-  ]
+  ],
+  "data": []
 }

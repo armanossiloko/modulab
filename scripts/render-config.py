@@ -6,18 +6,25 @@ Hand-edit lab.config.json only. Do not edit generated .env.
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
+import secrets
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import lab_catalog  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "lab.config.json"
-CATALOG = ROOT / "catalog"
 SECRETS_DIR = ROOT / "secrets"
+
+# lab.config.example.json ships this instead of a shared default password.
+GENERATE_PLACEHOLDER = "$generate"
 ENV_PATH = ROOT / ".env"
 BOOTSTRAP_PATH = ROOT / "postgres" / "bootstrap.sql"
 
@@ -165,14 +172,44 @@ def stringify(value: Any) -> str:
 
 
 def load_recipes() -> dict[str, dict[str, Any]]:
-    recipes: dict[str, dict[str, Any]] = {}
-    if not CATALOG.is_dir():
-        return recipes
-    for path in sorted(CATALOG.glob("*/recipe.json")):
-        data = load_json(path)
-        if isinstance(data, dict) and data.get("id"):
-            recipes[str(data["id"])] = data
-    return recipes
+    return lab_catalog.recipes_by_id(ROOT)
+
+
+def new_secret() -> str:
+    """URL/.env-safe random secret (matches Control Center's LabConfigStore.NewSecret)."""
+    raw = base64.b64encode(secrets.token_bytes(18)).decode("ascii")
+    return raw.replace("+", "x").replace("/", "y").rstrip("=")
+
+
+def resolve_generated_secrets(config: dict[str, Any]) -> bool:
+    """Replace "$generate" placeholders in the lab section with random secrets. True if changed."""
+    lab = config.get("lab")
+    if not isinstance(lab, dict):
+        return False
+    changed = False
+    for key, value in list(lab.items()):
+        if value == GENERATE_PLACEHOLDER:
+            lab[key] = new_secret()
+            changed = True
+    return changed
+
+
+def docker_desktop() -> bool:
+    """Docker Desktop (Windows/macOS) cannot reach loopback-only ports from Caddy the Linux way."""
+    try:
+        out = subprocess.check_output(
+            ["docker", "info", "--format", "{{.OperatingSystem}}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        ).strip()
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out == "Docker Desktop"
+
+
+def env_prefix(recipe_id: str) -> str:
+    return re.sub(r"[^A-Z0-9]", "_", recipe_id.upper())
 
 
 def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -256,6 +293,10 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
         for sk, sv in section.items():
             env[sk] = sv
 
+    # MediaCMS used to ship one shared Django SECRET_KEY; prefer the lab's generated one.
+    if lab.get("mediacmsSecretKey") and env.get("MEDIACMS_SECRET_KEY") in (None, "modulab-mediacms-secret-key"):
+        env["MEDIACMS_SECRET_KEY"] = lab["mediacmsSecretKey"]
+
     # Lab-level aliases win for shared infra
     env["TZ"] = timezone
     env["POSTGRES_USER"] = pg_user
@@ -275,17 +316,35 @@ def flat_env(config: dict[str, Any], recipes: dict[str, dict[str, Any]]) -> dict
     # When LAN proxy is on, prefer *.domain URLs for apps that advertise a public base URL.
     lan = env.get("ENABLE_LAN_PROXY")
     lan_on = lan is True or str(lan).lower() == "true"
+
+    # LAN HTTPS: Caddy issues certificates from its internal CA. HTTP keeps working
+    # (no forced redirect) so devices without the root certificate are not locked out.
+    https_on = lan_on and lab.get("enableLanHttps") is True
+    scheme = "https" if https_on else "http"
+    env["ENABLE_LAN_HTTPS"] = https_on
+    env["CADDY_AUTO_HTTPS"] = "disable_redirects" if https_on else "off"
+
     if lan_on:
         env["PS_BEHIND_PROXY"] = True
         if env.get("SEARXNG_BASE_URL") in ("http://localhost:8080/", "http://127.0.0.1:8080/"):
-            env["SEARXNG_BASE_URL"] = f"http://searxng.{domain}/"
+            env["SEARXNG_BASE_URL"] = f"{scheme}://searxng.{domain}/"
+        if https_on and env.get("WEBHOOK_URL") == f"http://n8n.{domain}/":
+            env["WEBHOOK_URL"] = f"https://n8n.{domain}/"
+
+    # Apps behind the Control Center login (Caddy forward_auth) only listen on loopback,
+    # so http://<host-ip>:<port> cannot skip the login. Docker Desktop's Caddy reaches
+    # apps through host.docker.internal, which needs the LAN binding — leave those alone.
+    protected = [x for x in (lab.get("protectedApps") or []) if isinstance(x, str)]
+    if lan_on and protected and not docker_desktop():
+        for recipe_id in protected:
+            env[f"{env_prefix(recipe_id)}_PUBLISH_IP"] = "127.0.0.1"
 
     # MediaCMS absolute media URLs follow MEDIACMS_FRONTEND_HOST. Leave a custom value alone.
     default_media_frontend = "http://localhost:8088"
     media_frontend = str(env.get("MEDIACMS_FRONTEND_HOST") or default_media_frontend)
     if media_frontend in (default_media_frontend, "http://localhost", "http://127.0.0.1:8088"):
         if lan_on:
-            env["MEDIACMS_FRONTEND_HOST"] = f"http://mediacms.{domain}"
+            env["MEDIACMS_FRONTEND_HOST"] = f"{scheme}://mediacms.{domain}"
         else:
             host_ip = str(env.get("MODULAB_HOST_IP") or "")
             if host_ip and host_ip not in ("127.0.0.1", "localhost"):
@@ -352,6 +411,13 @@ def render(config_path: Path) -> None:
     config = load_json(config_path)
     if not isinstance(config, dict):
         raise SystemExit("lab.config.json: root must be an object")
+
+    # First render after copying the example: give every secret a random value, once.
+    if resolve_generated_secrets(config):
+        tmp = config_path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+        tmp.replace(config_path)
+        print("Generated random lab secrets in lab.config.json", file=sys.stderr)
 
     recipes = load_recipes()
     env = flat_env(config, recipes)

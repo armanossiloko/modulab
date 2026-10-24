@@ -8,10 +8,16 @@
   "installable": false,
   "core": true,
   "dependsOn": [],
-  "proxy": { "host": "home", "port": 8888 },
-  "dns": ["home"],
+  "proxy": {
+    "host": "home",
+    "port": 8888
+  },
+  "dns": [
+    "home"
+  ],
   "defaults": {
     "HOME_PORT": 8888
   },
-  "fields": []
+  "fields": [],
+  "data": []
 }

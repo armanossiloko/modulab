@@ -41,9 +41,9 @@ Next:
   3. python3 scripts/lab.py start all
   4. Open http://${host_ip}:8888  (or http://home.network.lan if clients use ${host_ip} as DNS via optional Pi-hole)
 
-Default credentials are modulab / modulab (see lab.config.example.json).
+Lab secrets (Postgres, Pi-hole, app passwords) were generated randomly — see lab.config.json.
 Base stack: control-center + postgres + caddy. Redis and Pi-hole are optional.
-Anyone who can open Control Center can install/start/stop — keep :8888 on the LAN only.
+The first visit to Control Center asks you to set an admin password.
 
 Cross-platform CLI: python3 scripts/lab.py start all
 

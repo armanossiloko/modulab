@@ -9,7 +9,10 @@
   "core": true,
   "dependsOn": [],
   "proxy": null,
-  "dns": ["postgres"],
+  "dns": [
+    "postgres"
+  ],
   "defaults": {},
-  "fields": []
+  "fields": [],
+  "data": []
 }

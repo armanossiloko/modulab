@@ -1,7 +1,13 @@
 services:
   it-tools:
-    image: corentinth/it-tools:latest
+    image: corentinth/it-tools:${IT_TOOLS_TAG:-latest}
     container_name: it-tools
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:8083:80"
+      - "${IT_TOOLS_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:8083:80"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

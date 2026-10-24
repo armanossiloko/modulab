@@ -6,12 +6,21 @@
   "compose": "docker-compose.immich.yml",
   "port": 2283,
   "installable": true,
-  "dependsOn": ["postgres"],
-  "preferShared": ["redis"],
+  "dependsOn": [
+    "postgres"
+  ],
+  "preferShared": [
+    "redis"
+  ],
   "database": "immich",
   "databaseNeedsVector": true,
-  "proxy": { "host": "immich", "port": 2283 },
-  "dns": ["immich"],
+  "proxy": {
+    "host": "immich",
+    "port": 2283
+  },
+  "dns": [
+    "immich"
+  ],
   "defaults": {
     "IMMICH_VERSION": "v3",
     "IMMICH_DB_NAME": "immich",
@@ -33,5 +42,14 @@
       "default": "v3",
       "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/immich"
+  ],
+  "backup": {
+    "exclude": [
+      "data/immich/library",
+      "data/immich/redis"
+    ]
+  }
 }

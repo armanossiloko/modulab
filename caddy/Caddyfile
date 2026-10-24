@@ -1,7 +1,16 @@
 # Optional LAN reverse proxy (ENABLE_LAN_PROXY). Control Center serves the home UI.
+#
+# CADDY_AUTO_HTTPS comes from the generated .env:
+#   off                plain HTTP only (default)
+#   disable_redirects  LAN HTTPS on: https://<app>.<domain> with certificates from Caddy's
+#                      internal CA, while http:// keeps working (no forced redirect).
+# Devices trust the CA after installing its root certificate
+# (Control Center → Settings → Lab → Download certificate).
 
 {
-	auto_https off
+	auto_https {$CADDY_AUTO_HTTPS:off}
+	local_certs
+	skip_install_trust
 }
 
 :80 {

@@ -10,6 +10,8 @@ services:
       ENABLE_LAN_PROXY: ${ENABLE_LAN_PROXY:-false}
       UPSTREAM_HOST: ${UPSTREAM_HOST:-127.0.0.1}
       HOME_PORT: ${HOME_PORT:-8888}
+      # off = HTTP only; disable_redirects = LAN HTTPS from Caddy's internal CA (see caddy/Caddyfile).
+      CADDY_AUTO_HTTPS: ${CADDY_AUTO_HTTPS:-off}
     command:
       - sh
       - -c

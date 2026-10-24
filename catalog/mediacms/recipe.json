@@ -6,17 +6,24 @@
   "compose": "docker-compose.mediacms.yml",
   "port": 8088,
   "installable": true,
-  "dependsOn": ["postgres", "redis"],
+  "dependsOn": [
+    "postgres",
+    "redis"
+  ],
   "database": "mediacms",
-  "proxy": { "host": "mediacms", "port": 8088 },
-  "dns": ["mediacms"],
+  "proxy": {
+    "host": "mediacms",
+    "port": 8088
+  },
+  "dns": [
+    "mediacms"
+  ],
   "defaults": {
     "MEDIACMS_DB_NAME": "mediacms",
     "MEDIACMS_FRONTEND_HOST": "http://localhost:8088",
     "MEDIACMS_PORTAL_NAME": "MediaCMS",
     "MEDIACMS_ADMIN_USER": "admin",
-    "MEDIACMS_ADMIN_EMAIL": "admin@localhost",
-    "MEDIACMS_SECRET_KEY": "modulab-mediacms-secret-key"
+    "MEDIACMS_ADMIN_EMAIL": "admin@localhost"
   },
   "fields": [
     {
@@ -39,6 +46,22 @@
       "type": "string",
       "fromLab": "timezone",
       "required": false
+    },
+    {
+      "key": "MEDIACMS_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest",
+      "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/mediacms"
+  ],
+  "backup": {
+    "exclude": [
+      "data/mediacms/media_files",
+      "data/mediacms/logs"
+    ]
+  }
 }

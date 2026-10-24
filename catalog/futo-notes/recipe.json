@@ -7,8 +7,14 @@
   "port": 3005,
   "installable": true,
   "dependsOn": [],
-  "proxy": { "host": "notes", "port": 3005 },
-  "dns": ["notes", "futo-notes"],
+  "proxy": {
+    "host": "notes",
+    "port": 3005
+  },
+  "dns": [
+    "notes",
+    "futo-notes"
+  ],
   "defaults": {
     "FUTO_NOTES_PORT": 3005,
     "FUTO_NOTES_IMAGE": "futotech/notes-server:stable",
@@ -37,5 +43,11 @@
       "default": "futotech/notes-server:stable",
       "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/futo-notes"
+  ],
+  "backup": {
+    "stop": true
+  }
 }

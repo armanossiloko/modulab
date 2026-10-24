@@ -12,10 +12,8 @@ source "${_scripts}/common.sh"
 stop_stack() {
   local name="$1"
   shift
-  local compose="${root}/docker-compose.${name}.yml"
-
-  if [[ ! -f "$compose" ]]; then
-    echo "skip ${name}: no ${compose}" >&2
+  if [[ -z "$(stack_compose_file "$name")" ]]; then
+    echo "skip ${name}: no compose file" >&2
     return 0
   fi
 
@@ -34,9 +32,8 @@ if [[ "$name" == all ]]; then
   exit 0
 fi
 
-compose="${root}/docker-compose.${name}.yml"
-if [[ ! -f "$compose" ]]; then
-  echo "Unknown stack '${name}'. No ${compose}" >&2
+if [[ -z "$(stack_compose_file "$name")" ]]; then
+  echo "Unknown stack '${name}'. No docker-compose.${name}.yml or catalog.local/${name}/" >&2
   echo "Usage: bash scripts/stop.sh <stack>|all" >&2
   echo "Default stacks: ${MODULAB_STACKS[*]} (+ pihole)" >&2
   exit 1

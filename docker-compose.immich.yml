@@ -18,7 +18,7 @@ services:
       REDIS_HOSTNAME: ${REDIS_HOSTNAME:-redis}
       TZ: ${TZ:-UTC}
     ports:
-      - "${MODULAB_PUBLISH_IP:-0.0.0.0}:2283:2283"
+      - "${IMMICH_PUBLISH_IP:-${MODULAB_PUBLISH_IP:-0.0.0.0}}:2283:2283"
     networks:
       - modulab
     depends_on: []

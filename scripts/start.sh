@@ -14,24 +14,20 @@ source "${_scripts}/common.sh"
 start_stack() {
   local name="$1"
   shift
-  local compose="${root}/docker-compose.${name}.yml"
-
-  if [[ ! -f "$compose" ]]; then
-    echo "skip ${name}: no ${compose}" >&2
+  if [[ -z "$(stack_compose_file "$name")" ]]; then
+    echo "skip ${name}: no compose file" >&2
     return 0
   fi
 
   require_lab_env
   ensure_modulab_network
 
-  if [[ -f "${root}/catalog/${name}/recipe.json" ]]; then
-    local dep
-    while IFS= read -r dep; do
-      [[ -z "$dep" ]] && continue
-      echo "dependency: ensuring ${dep} (required by ${name})..." >&2
-      start_stack "$dep"
-    done < <(recipe_depends "$name" | tr -d '\r')
-  fi
+  local dep
+  while IFS= read -r dep; do
+    [[ -z "$dep" ]] && continue
+    echo "dependency: ensuring ${dep} (required by ${name})..." >&2
+    start_stack "$dep"
+  done < <(recipe_depends "$name" | tr -d '\r')
 
   echo "Starting ${name}..." >&2
 
@@ -71,9 +67,14 @@ start_stack() {
     control-center)
       python3 "${root}/scripts/generate-edge.py"
       bash "${_scripts}/ensure-wwwroot.sh"
+      # Running inside Control Center (/lab) while it is up: never recreate ourselves. The
+      # appliance has no Dockerfile to build from, and Caddy's dependsOn lands here.
+      if [[ "${root}" == "/lab" || "${root}" == "/lab/" ]] \
+        && docker ps --format '{{.Names}}' 2>/dev/null | grep -qx control-center; then
+        echo "control-center already running — skip recreate" >&2
       # Docker Desktop + Control Center: avoid rebuild/recreate loops when already up
       # (Compose cannot docker-build with a Windows host path from inside the container).
-      if docker_desktop && [[ "${root}" == "/lab" || "${root}" == "/lab/" ]]; then
+      elif docker_desktop && [[ "${root}" == "/lab" || "${root}" == "/lab/" ]]; then
         if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx control-center; then
           echo "control-center already running — skip recreate" >&2
         elif docker image inspect modulab-control-center >/dev/null 2>&1; then
@@ -138,9 +139,8 @@ if [[ "$name" == all ]]; then
   exit 0
 fi
 
-compose="${root}/docker-compose.${name}.yml"
-if [[ ! -f "$compose" ]]; then
-  echo "Unknown stack '${name}'. No ${compose}" >&2
+if [[ -z "$(stack_compose_file "$name")" ]]; then
+  echo "Unknown stack '${name}'. No docker-compose.${name}.yml or catalog.local/${name}/" >&2
   echo "Usage: bash scripts/start.sh <stack>|all" >&2
   echo "Default stacks: ${MODULAB_STACKS[*]} (+ pihole)" >&2
   exit 1

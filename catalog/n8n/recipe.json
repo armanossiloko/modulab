@@ -6,10 +6,17 @@
   "compose": "docker-compose.n8n.yml",
   "port": 5678,
   "installable": true,
-  "dependsOn": ["postgres"],
+  "dependsOn": [
+    "postgres"
+  ],
   "database": "n8n",
-  "proxy": { "host": "n8n", "port": 5678 },
-  "dns": ["n8n"],
+  "proxy": {
+    "host": "n8n",
+    "port": 5678
+  },
+  "dns": [
+    "n8n"
+  ],
   "defaults": {
     "N8N_PROTOCOL": "http",
     "N8N_SECURE_COOKIE": false,
@@ -22,6 +29,17 @@
       "type": "string",
       "default": "http",
       "required": false
+    },
+    {
+      "key": "N8N_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest",
+      "required": false
     }
+  ],
+  "data": [
+    "data/n8n",
+    "data/n8n-local-files"
   ]
 }

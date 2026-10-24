@@ -22,6 +22,22 @@
       "type": "string",
       "fromLab": "timezone",
       "required": false
+    },
+    {
+      "key": "JELLYFIN_TAG",
+      "label": "Image tag (pin a version to control updates)",
+      "type": "string",
+      "default": "latest",
+      "required": false
     }
-  ]
+  ],
+  "data": [
+    "data/jellyfin"
+  ],
+  "backup": {
+    "exclude": [
+      "data/jellyfin/cache"
+    ],
+    "stop": true
+  }
 }

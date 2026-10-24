@@ -7,7 +7,9 @@
   "port": null,
   "installable": true,
   "core": true,
-  "dependsOn": ["control-center"],
+  "dependsOn": [
+    "control-center"
+  ],
   "proxy": null,
   "dns": [],
   "defaults": {
@@ -23,5 +25,8 @@
       "default": true,
       "required": false
     }
+  ],
+  "data": [
+    "data/caddy"
   ]
 }
