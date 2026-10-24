@@ -256,7 +256,6 @@ With **LAN proxy** on, Caddy listens on host port **80** and routes `http://<lab
 | **8080** | SearXNG |
 | **8096** / **8920** | Jellyfin |
 | **5678** | n8n |
-| **5055** | Seerr |
 | **4001** | PicoShare |
 | **3005** | FUTO Notes |
 | **2283** | Immich |
@@ -325,7 +324,7 @@ control-center/
 | **Redis** | `docker-compose.redis.yml` | Optional shared cache |
 | **Immich** | `docker-compose.immich.yml` (+ `.immich.redis.yml` sidecar) | Photos |
 | **MediaCMS** | `docker-compose.mediacms.yml` | Video and media portal |
-| Apps | `docker-compose.<name>.yml` | Jellyfin, n8n, Seerr, tools, … |
+| Apps | `docker-compose.<name>.yml` | Jellyfin, n8n, tools, … |
 
 **Shared Postgres only** — apps get DB names via recipes. Redis may be shared or app-local.
 

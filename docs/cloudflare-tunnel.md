@@ -67,7 +67,6 @@ Use these when the container is running. Service type is always **HTTP**.
 | `jellyfin` | Jellyfin | `127.0.0.1:8096` |
 | `immich` | Immich | `127.0.0.1:2283` |
 | `n8n` | n8n | `127.0.0.1:5678` |
-| `seerr` | Seerr | `127.0.0.1:5055` |
 | `it-tools` | IT-Tools | `127.0.0.1:8083` |
 | `stirling` | Stirling PDF | `127.0.0.1:8082` |
 | `bentopdf` | BentoPDF | `127.0.0.1:8084` |

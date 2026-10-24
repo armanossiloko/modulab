@@ -14,7 +14,6 @@ MODULAB_STACKS=(
   redis
   jellyfin
   n8n
-  seerr
   it-tools
   stirling-pdf
   bentopdf
@@ -440,7 +439,6 @@ print_stack_url() {
   case "$name" in
     jellyfin) echo "Jellyfin: $(lab_url jellyfin)" ;;
     n8n) echo "n8n: $(lab_url n8n)" ;;
-    seerr) echo "Seerr: $(lab_url seerr)" ;;
     it-tools) echo "IT-Tools: $(lab_url it-tools)" ;;
     stirling-pdf) echo "Stirling PDF: $(lab_url stirling)" ;;
     bentopdf) echo "BentoPDF: $(lab_url bentopdf)" ;;

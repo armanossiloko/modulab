@@ -68,17 +68,6 @@
       }
     },
     {
-      "label": "docker-compose: seerr up",
-      "type": "shell",
-      "command": "python3 scripts/lab.py start seerr",
-      "problemMatcher": [],
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
       "label": "docker-compose: it-tools up",
       "type": "shell",
       "command": "python3 scripts/lab.py start it-tools",
@@ -236,17 +225,6 @@
       "label": "docker-compose: n8n down",
       "type": "shell",
       "command": "python3 scripts/lab.py stop n8n",
-      "problemMatcher": [],
-      "group": "none",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "docker-compose: seerr down",
-      "type": "shell",
-      "command": "python3 scripts/lab.py stop seerr",
       "problemMatcher": [],
       "group": "none",
       "presentation": {

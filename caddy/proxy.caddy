@@ -49,10 +49,6 @@ http://searxng.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8080
 }
 
-http://seerr.{$LOCAL_DOMAIN} {
-	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:5055
-}
-
 http://stirling.{$LOCAL_DOMAIN} {
 	reverse_proxy {$UPSTREAM_HOST:127.0.0.1}:8082
 }

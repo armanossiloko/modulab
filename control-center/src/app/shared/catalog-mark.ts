@@ -15,7 +15,6 @@ const APP_LOGOS = new Set([
   'postgres',
   'redis',
   'searxng',
-  'seerr',
   'stirling-pdf',
 ]);
 

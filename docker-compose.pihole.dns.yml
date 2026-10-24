@@ -19,5 +19,4 @@ services:
         ${MODULAB_HOST_IP} pihole.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} postgres.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} searxng.${PIHOLE_LOCAL_DOMAIN}
-        ${MODULAB_HOST_IP} seerr.${PIHOLE_LOCAL_DOMAIN}
         ${MODULAB_HOST_IP} stirling.${PIHOLE_LOCAL_DOMAIN}

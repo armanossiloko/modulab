@@ -191,7 +191,7 @@
     "media": {
       "enabled": true,
       "title": "Media",
-      "emptyHint": "Install Jellyfin, Immich, or Seerr from the Library."
+      "emptyHint": "Install Jellyfin, Immich, or other apps from the Library."
     },
     "clock": {
       "enabled": true

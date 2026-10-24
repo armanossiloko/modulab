@@ -86,7 +86,7 @@ import { NowWidget } from './now-widget';
           <app-calendar-widget class="fills" [config]="config" />
         }
         @case ('media') {
-          <p class="empty-note">Install Jellyfin, Immich, or Seerr from the Library.</p>
+          <p class="empty-note">Install Jellyfin, Immich, or other apps from the Library.</p>
         }
         @default {
           <app-placeholder-widget [type]="type" />

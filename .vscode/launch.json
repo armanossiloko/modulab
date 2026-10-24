@@ -78,24 +78,6 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
-      "name": "Seerr up",
-      "type": "docker",
-      "request": "launch",
-      "preLaunchTask": "docker-compose: seerr up",
-      "dockerComposeFile": "${workspaceFolder}/docker-compose.seerr.yml"
-    },
-    {
-      "name": "Seerr down",
-      "type": "node",
-      "request": "launch",
-      "preLaunchTask": "docker-compose: seerr down",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "process.exit(0)"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
-    },
-    {
       "name": "IT-Tools up",
       "type": "docker",
       "request": "launch",

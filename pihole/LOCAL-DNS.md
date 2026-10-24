@@ -25,7 +25,6 @@ With **`ENABLE_LAN_PROXY=true`**, start scripts automatically:
 | http://home.network.lan | Control Center |
 | http://jellyfin.network.lan | Jellyfin |
 | http://n8n.network.lan | n8n |
-| http://seerr.network.lan | Seerr |
 | http://it-tools.network.lan | IT-Tools |
 | http://stirling.network.lan | Stirling PDF |
 | http://bentopdf.network.lan | BentoPDF |
@@ -65,7 +64,6 @@ python3 scripts/lab.py start caddy
 |-------|-----------------|-----|
 | `jellyfin` | Jellyfin | http://127.0.0.1:8096 |
 | `n8n` | n8n | http://127.0.0.1:5678 |
-| `seerr` | Seerr | http://127.0.0.1:5055 |
 | `it-tools` | IT-Tools | http://127.0.0.1:8083 |
 | `stirling` | Stirling PDF | http://127.0.0.1:8082 |
 | `bentopdf` | BentoPDF | http://127.0.0.1:8084 |
