@@ -54,7 +54,7 @@ For a site you open in a browser, add the hostname the same way, then require a 
 2. Use the same hostname (`https://home.<your-domain>` for Control Center).
 3. Require a login. One-time PIN is enough.
 
-Control Center is subdomain `home`, service URL `127.0.0.1:8888`. Anyone who can open it can install and stop apps, so keep Access on that hostname.
+Control Center is subdomain `home`, service URL `127.0.0.1:8888`. It has its own admin login, but whoever signs in controls the whole lab, so keep Access on that hostname too.
 
 ## Hostnames
 

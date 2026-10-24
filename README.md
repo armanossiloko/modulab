@@ -61,10 +61,11 @@ docker compose up -d
 
 1. Wait until the container is healthy (`docker compose ps`). First pull can take a few minutes.
 2. Open **http://localhost:8888** (or `http://<this-PC-LAN-IP>:8888` from another device).
-3. Go to **Settings → Lab**.
-4. Set **Host IP** to this machine’s LAN address (not `127.0.0.1`). Example: `192.168.1.50`.
-5. Optionally set domain, timezone, passwords, LAN reverse proxy (Caddy), or enable Pi-hole.
-6. Click **Save**.
+3. **Set an admin password.** The first visit asks for one; every later visit needs it.
+4. Go to **Settings → Lab**.
+5. Set **Host IP** to this machine’s LAN address (not `127.0.0.1`). Example: `192.168.1.50`.
+6. Optionally set domain, timezone, passwords, LAN reverse proxy (Caddy), LAN HTTPS, or enable Pi-hole.
+7. Click **Save**.
 
 Until Host IP is set, a banner appears and **Library → Install** stays disabled.
 
@@ -81,7 +82,8 @@ Dependencies start automatically. MediaCMS also starts shared Redis. Immich uses
 | Step | What happens |
 |------|----------------|
 | Pull image | `ghcr.io/armanossiloko/modulab:latest` |
-| Seed state | Copies catalog, scripts, and compose templates into `MODULAB_HOST_ROOT` |
+| Seed state | Copies catalog, scripts, and compose templates into `MODULAB_HOST_ROOT`; removes recipes a newer image no longer ships |
+| Secrets | `"$generate"` values in the example config become random passwords (Postgres, Pi-hole, app secrets) |
 | Base stacks | Starts **Postgres** + **Caddy** (default). Redis and Pi-hole stay off until you enable them |
 | Control Center | Serves UI + API on port **8888** |
 
@@ -137,7 +139,7 @@ Public packages can be pulled without login.
 
 ### Trust model
 
-Anyone who can open Control Center can install/start/stop apps. **Do not expose port 8888 to the public internet** — keep it on your LAN, or publish it through the Cloudflare tunnel profile below (Zero Trust Access in front of each hostname).
+Control Center requires the admin password (set on first visit). It holds the Docker socket, so whoever signs in effectively controls this machine. Keep port 8888 on your LAN; for remote access use the Cloudflare tunnel profile below with Zero Trust Access in front of each hostname. Details: [Security](#security).
 
 ### Optional: Cloudflare tunnel
 
@@ -160,6 +162,7 @@ Each app is a public hostname on that tunnel (no further Compose change). Walkth
 | Library Install disabled | Set Host IP under **Settings → Lab** and Save |
 | Port 80 already in use | Turn off LAN proxy in Settings → Lab, or free host port 80 |
 | Port 53 conflict | Leave Pi-hole disabled, or free DNS on your Host IP |
+| Forgot the admin password | Delete `data/control-center/auth.json` in the state folder and reload — you are asked for a new one |
 
 ---
 
@@ -190,18 +193,72 @@ python3 scripts/lab.py start control-center
 
 Or use root `docker-compose.control-center.yml` (`build:` + optional `MODULAB_SEED=auto` so a full checkout is not overwritten by the kit).
 
+Tests (CI runs all three):
+
+```bash
+dotnet test control-center/tests/Modulab.ControlCenter.Tests     # API + services (no Docker needed)
+python3 -m unittest discover -s scripts/tests -p "test_*.py"      # render/edge/backup/restore/seed scripts
+cd control-center && npm test                                     # UI (Vitest)
+python3 scripts/validate-catalog.py                               # recipe sanity checks
+```
+
 ---
 
-## Default credentials
+## Security
 
-Example secrets default to **`modulab`** (change in Settings → Lab or `lab.config.json`):
+**Control Center login.** One admin password, set on first visit (PBKDF2-hashed in `data/control-center/auth.json`). Sessions are signed cookies; changing the password, or **Settings → Security → Sign out other sessions**, invalidates every other session. Repeated wrong passwords lock the client out for a few minutes. To reset a forgotten password, delete `auth.json` and reload.
 
-| What | Value |
+**Lab secrets.** New installs get random passwords for Postgres, Pi-hole, PicoShare, FUTO Notes, SearXNG and MediaCMS (`"$generate"` in `lab.config.example.json` → random on first render). Older installs that still use the shared `modulab` default see a warning in **Settings → Lab**. **Generate a new Postgres password** rotates the database role and restarts the apps that use it. Look up app passwords in `lab.config.json` (`lab.*`).
+
+| What | Where |
 |------|--------|
-| Postgres user / password / DB | `modulab` / `modulab` / `modulab` |
-| Pi-hole admin password | `modulab` |
-| PicoShare / FUTO Notes / SearXNG | see `lab.config.example.json` |
-| MediaCMS admin | `admin` / `modulab` (`lab.mediacmsAdminPassword`) |
+| Postgres user / password / DB | `lab.postgresUser` / `lab.postgresPassword` / `lab.postgresDb` |
+| Pi-hole admin password | `lab.piholePassword` |
+| PicoShare / FUTO Notes / SearXNG | `lab.picoshareAdminSecret` / `lab.futoNotesPassword` / `lab.searxngSecret` |
+| MediaCMS admin | `admin` / `lab.mediacmsAdminPassword` |
+
+**Login gate for apps.** In **Library**, the lock button on an app puts the Control Center login in front of its LAN hostname (Caddy `forward_auth`). Sign in once on `home.<domain>` and every protected app opens. On Linux the protected app's port is also bound to `127.0.0.1`, so `http://<host-ip>:<port>` cannot skip the login (Docker Desktop keeps the LAN binding — Caddy needs it there). Leave apps with their own phone/TV clients (Jellyfin, Immich) unprotected; they have their own logins.
+
+**LAN HTTPS.** With the LAN proxy on, **Settings → Lab → LAN HTTPS** serves `https://<app>.<domain>` with certificates from Caddy's internal CA (port 443). HTTP keeps working. Each device trusts the CA once: **Download certificate** in the same section, then install it as a trusted root.
+
+## Backups, restore and rollback
+
+**Backups** run nightly (default 03:30, lab timezone) and on demand (**Settings → Backups → Back up now**, or `python3 scripts/lab.py backup`). Each one lands in `backups/<YYYYmmdd-HHMMSS>/`:
+
+| File | Contents |
+|------|----------|
+| `postgres/<db>.dump` | `pg_dump -Fc` of every database on the shared Postgres, plus `globals.sql` (roles) |
+| `apps/<id>.tar.gz` | each enabled app's data folder (recipe `data`, minus caches); SQLite apps are stopped briefly |
+| `config.tar.gz` | `lab.config.json`, `secrets/`, dashboard, Control Center login/settings, `catalog.local/`, compose overrides |
+
+The newest 7 are kept (configurable). Media libraries (`media/`, Immich photos, MediaCMS uploads) are **not** copied locally — they are usually too big.
+
+**Offsite copy.** Set a [restic](https://restic.net) repository (another disk, SFTP, S3, B2…) and password under **Settings → Backups**. After every backup the newest one is uploaded (encrypted, deduplicated) and old snapshots are pruned. Add media folders as **extra paths** to protect photos and videos offsite. Keep the restic password somewhere else too.
+
+**Restore.** **Settings → Backups → Restore…** (or `python3 scripts/lab.py restore <id> --app jellyfin --config`). Chosen apps are stopped, their data folders and database are restored, and they start again. Everything replaced is moved to `data/.pre-restore/<timestamp>/` first.
+
+**Rollback.** Updating an app first records the images it was running. **Library → ↶ (Roll back)** returns to them (`python3 scripts/lab.py rollback <id>`). To stop following `latest`, pin a version with the app's **Image tag** field (**Library → Configure**).
+
+**Uninstall** keeps data by default; tick **Also delete its data** to remove its data folder, volumes and database.
+
+## Monitoring and alerts
+
+**System** (sidebar) shows host CPU, memory and load with a two-hour trend, disk usage for the lab, backup and media folders, every container's state, health, CPU, memory and restart count, and recent events. **Logs** (Library or System) tails an app's containers live.
+
+Control Center checks every minute and records an event when an enabled app stops, keeps restarting or fails its health check, when a disk passes the threshold (default 90 %), and when a backup fails. Configure **Settings → Alerts** to push these to [ntfy](https://ntfy.sh) (phone notifications) or any webhook. Everything runs inside Control Center: no Prometheus, no extra containers.
+
+## Adding your own apps
+
+**Library → Add app** takes a name, port, optional LAN hostname and a Docker Compose file. It is checked (`docker compose config`, container naming, bind mounts) and saved to `catalog.local/<id>/` in the state folder, which image updates never touch. From then on it installs, starts, updates, rolls back, backs up (`data/<id>`), shows logs and gets a LAN hostname like any built-in app.
+
+Rules of thumb for the compose file:
+
+- `container_name: <id>` (or `<id>-<service>`), so Control Center can track it.
+- Mount data under `${MODULAB_HOST_ROOT}/data/<id>/…`, not `./…` — Compose runs from inside Control Center.
+- Publish ports as `"${MODULAB_PUBLISH_IP:-0.0.0.0}:<port>:<container-port>"`.
+- Lab values (`${TZ}`, `${POSTGRES_PASSWORD}`, …) come from the generated `.env`. Join the external `modulab` network to reach `postgres` or `redis`.
+
+To customise a **built-in** app instead, add `docker-compose.<id>.override.yml` next to its compose file (kept across updates), e.g. to mount a NAS share into Jellyfin or pass `/dev/dri` for hardware transcoding. Contributing a recipe to this repo: see [catalog/README.md](catalog/README.md).
 
 ## Base stack vs optional edge
 
@@ -250,6 +307,7 @@ With **LAN proxy** on, Caddy listens on host port **80** and routes `http://<lab
 |------|---------|
 | **8888** | Control Center |
 | **80** | Caddy (hostname routes) |
+| **443** | Caddy (LAN HTTPS, if enabled) |
 | **8083** | IT-Tools |
 | **8084** | BentoPDF |
 | **8082** | Stirling PDF |
@@ -297,6 +355,10 @@ python3 scripts/lab.py stop jellyfin
 python3 scripts/lab.py render-config
 python3 scripts/lab.py refresh-edge
 python3 scripts/lab.py update <stack>
+python3 scripts/lab.py rollback <stack>
+python3 scripts/lab.py backup
+python3 scripts/lab.py restore <backup-id> [--config] [--app <id>]
+python3 scripts/lab.py validate-catalog
 ```
 
 ## Control Center layout
@@ -304,7 +366,8 @@ python3 scripts/lab.py update <stack>
 ```text
 control-center/
   src/                                  # Angular SPA
-  src-backend/Modulab.ControlCenter/    # API + SPA host (.NET)
+  src-backend/Modulab.ControlCenter/    # API + SPA host (.NET): Endpoints/, Apps/, Auth/, Backups/, Monitoring/, …
+  tests/Modulab.ControlCenter.Tests/    # xUnit: services + HTTP API against a temp lab
   defaults/                             # tracked dashboard templates
   Dockerfile                            # publishes ghcr.io/.../modulab (API + kit)
 ```
@@ -334,6 +397,9 @@ control-center/
 |------|---------|
 | `data/` | Runtime volumes (MediaCMS uploads under `data/mediacms/media_files`) |
 | `media/` | Jellyfin library |
+| `backups/` | Local backups (`backups/<id>/`) |
+| `catalog.local/` | Your own apps (Library → Add app) |
+| `data/control-center/` | Admin login, backup/alert settings, events, rollback points |
 | `secrets/` | Optional secret files |
 | `lab.config.json`, `.env` | Local config |
 
