@@ -15,7 +15,7 @@ node_modules/
 data/
 media/
 .data/
-backups/
+/backups/
 # User-defined apps (Library → Add app) live in the state folder, not the repo.
 catalog.local/
 .modulab-kit-manifest.json
