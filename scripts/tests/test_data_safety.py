@@ -112,7 +112,8 @@ class RollbackTagTests(unittest.TestCase):
 
 class SeedTests(unittest.TestCase):
     def _kit(self, lab: TempLab, recipes: list[str]) -> Path:
-        kit = lab.root.parent / (lab.root.name + "-kit")
+        # Inside the temp lab so it is cleaned up with it; seeding never scans this folder.
+        kit = lab.root / ".kit"
         for rid in recipes:
             (kit / "catalog" / rid).mkdir(parents=True, exist_ok=True)
             (kit / "catalog" / rid / "recipe.json").write_text(json.dumps({"id": rid}), encoding="utf-8")
