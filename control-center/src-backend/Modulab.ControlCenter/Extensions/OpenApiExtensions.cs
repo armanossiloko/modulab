@@ -31,12 +31,11 @@ public static class OpenApiExtensions
         return app;
     }
 
-    public static RouteHandlerBuilder ProducesApiMessage(
-        this RouteHandlerBuilder builder,
-        params int[] statusCodes)
-    {
-        foreach (var code in statusCodes)
-            builder.Produces<ApiMessage>(code);
-        return builder;
-    }
+    /// <summary>True while the build runs the app to emit openapi.json (no ports, no background work).</summary>
+    public static bool IsDocumentGeneration() =>
+        string.Equals(
+            Environment.GetEnvironmentVariable("DOTNET_GenerateOpenApiDocuments"),
+            "true",
+            StringComparison.OrdinalIgnoreCase)
+        || AppDomain.CurrentDomain.FriendlyName.Contains("GetDocument", StringComparison.OrdinalIgnoreCase);
 }
