@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Observable, from, tap, map } from 'rxjs';
 import {
+  getAppConfig,
   getCatalog,
   getDashboard,
   getHackerNewsFeed,
@@ -11,11 +12,14 @@ import {
   getWeather,
   installApp as apiInstallApp,
   putDashboard,
+  putAppConfig,
   putLabSettings,
+  setAppProtection,
   startApp as apiStartApp,
   stopApp as apiStopApp,
   uninstallApp as apiUninstallApp,
   type ApiMessage,
+  type AppConfigResponse,
   type AppUpdateStatus,
   type CatalogItem,
   type CatalogResponse,
@@ -26,7 +30,7 @@ import {
   type UpdatesResponse,
   type WeatherResponse,
 } from '../../api/generated';
-import { apiErrorMessage } from '../../api/configure-lab-api';
+import { unwrap } from './api';
 import {
   buildDashboardTree,
   collectDescendantIds,
@@ -34,14 +38,6 @@ import {
   resetPagesFromLayout,
 } from './layout-migrate';
 import { DashboardBoard, DashboardDocument, PageItem } from '../models/dashboard';
-
-async function unwrap<T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>): Promise<T> {
-  const result = await promise;
-  if (result.error != null || result.data === undefined) {
-    throw new Error(apiErrorMessage(result.error, `Request failed (${result.response?.status ?? '?'})`));
-  }
-  return result.data;
-}
 
 function newBoardId(title: string): string {
   const slug = title
@@ -308,8 +304,20 @@ export class DashboardService {
     return from(unwrap(apiStopApp({ throwOnError: false, path: { id } })));
   }
 
-  uninstallApp(id: string): Observable<ApiMessage> {
-    return from(unwrap(apiUninstallApp({ throwOnError: false, path: { id } })));
+  uninstallApp(id: string, purge = false): Observable<ApiMessage> {
+    return from(unwrap(apiUninstallApp({ throwOnError: false, path: { id }, query: purge ? { purge: true } : undefined })));
+  }
+
+  appConfig(id: string): Observable<AppConfigResponse> {
+    return from(unwrap(getAppConfig({ throwOnError: false, path: { id } })));
+  }
+
+  saveAppConfig(id: string, config: Record<string, unknown>): Observable<AppConfigResponse> {
+    return from(unwrap(putAppConfig({ throwOnError: false, path: { id }, body: { config } })));
+  }
+
+  setProtected(id: string, on: boolean): Observable<ApiMessage> {
+    return from(unwrap(setAppProtection({ throwOnError: false, path: { id }, body: { protected: on } })));
   }
 
   installApp(id: string, config: Record<string, unknown>): Observable<ApiMessage> {

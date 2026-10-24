@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetAppData, GetAppErrors, GetAppResponses, GetAppUpdatesData, GetAppUpdatesErrors, GetAppUpdatesResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetLabSettingsData, GetLabSettingsErrors, GetLabSettingsResponses, GetLabStatusData, GetLabStatusResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetUpdatesData, GetUpdatesErrors, GetUpdatesResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, PutLabSettingsData, PutLabSettingsErrors, PutLabSettingsResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses, UpdateAppData, UpdateAppErrors, UpdateAppResponses } from './types.gen';
+import type { ChangePasswordData, ChangePasswordErrors, ChangePasswordResponses, CreateCustomAppData, CreateCustomAppErrors, CreateCustomAppResponses, DeleteBackupData, DeleteBackupErrors, DeleteBackupResponses, DeleteCustomAppData, DeleteCustomAppErrors, DeleteCustomAppResponses, DismissAppTaskData, DismissAppTaskErrors, DismissAppTaskResponses, GetAppConfigData, GetAppConfigErrors, GetAppConfigResponses, GetAppData, GetAppErrors, GetAppLogsData, GetAppLogsErrors, GetAppLogsResponses, GetAppResponses, GetAppTaskData, GetAppTaskResponses, GetAppUpdatesData, GetAppUpdatesErrors, GetAppUpdatesResponses, GetAuthStatusData, GetAuthStatusResponses, GetBackupsData, GetBackupsResponses, GetCaCertificateData, GetCaCertificateErrors, GetCaCertificateResponses, GetCatalogData, GetCatalogErrors, GetCatalogResponses, GetContainersData, GetContainersErrors, GetContainersResponses, GetCustomAppData, GetCustomAppErrors, GetCustomAppResponses, GetDashboardData, GetDashboardErrors, GetDashboardResponses, GetEventsData, GetEventsResponses, GetHackerNewsFeedData, GetHackerNewsFeedErrors, GetHackerNewsFeedResponses, GetHealthData, GetHealthResponses, GetLabSettingsData, GetLabSettingsErrors, GetLabSettingsResponses, GetLabStatusData, GetLabStatusResponses, GetNotificationSettingsData, GetNotificationSettingsResponses, GetRedditFeedData, GetRedditFeedErrors, GetRedditFeedResponses, GetSystemMetricsData, GetSystemMetricsResponses, GetUpdatesData, GetUpdatesErrors, GetUpdatesResponses, GetWeatherData, GetWeatherErrors, GetWeatherResponses, ImportBookmarksData, ImportBookmarksErrors, ImportBookmarksResponses, InstallAppData, InstallAppErrors, InstallAppResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutEverywhereData, LogoutEverywhereResponses, LogoutResponses, PutAppConfigData, PutAppConfigErrors, PutAppConfigResponses, PutBackupSettingsData, PutBackupSettingsErrors, PutBackupSettingsResponses, PutDashboardData, PutDashboardErrors, PutDashboardResponses, PutLabSettingsData, PutLabSettingsErrors, PutLabSettingsResponses, PutNotificationSettingsData, PutNotificationSettingsErrors, PutNotificationSettingsResponses, ReplaceBookmarksData, ReplaceBookmarksErrors, ReplaceBookmarksResponses, RestoreBackupData, RestoreBackupErrors, RestoreBackupResponses, RollbackAppData, RollbackAppErrors, RollbackAppResponses, RunBackupData, RunBackupErrors, RunBackupResponses, SetAppProtectionData, SetAppProtectionErrors, SetAppProtectionResponses, SetupAuthData, SetupAuthErrors, SetupAuthResponses, StartAppData, StartAppErrors, StartAppResponses, StopAppData, StopAppErrors, StopAppResponses, TestNotificationData, TestNotificationErrors, TestNotificationResponses, UninstallAppData, UninstallAppErrors, UninstallAppResponses, UpdateAppData, UpdateAppErrors, UpdateAppResponses, UpdateControlCenterData, UpdateControlCenterErrors, UpdateControlCenterResponses, UpdateCustomAppData, UpdateCustomAppErrors, UpdateCustomAppResponses, ValidateCustomAppData, ValidateCustomAppErrors, ValidateCustomAppResponses, VerifySessionData, VerifySessionResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,7 +18,69 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
+export const getRedditFeed = <ThrowOnError extends boolean = false>(options?: Options<GetRedditFeedData, ThrowOnError>): RequestResult<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError> => (options?.client ?? client).get<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError>({ url: '/api/feeds/reddit', ...options });
+
+export const getHackerNewsFeed = <ThrowOnError extends boolean = false>(options?: Options<GetHackerNewsFeedData, ThrowOnError>): RequestResult<GetHackerNewsFeedResponses, GetHackerNewsFeedErrors, ThrowOnError> => (options?.client ?? client).get<GetHackerNewsFeedResponses, GetHackerNewsFeedErrors, ThrowOnError>({ url: '/api/feeds/hn', ...options });
+
+export const getWeather = <ThrowOnError extends boolean = false>(options?: Options<GetWeatherData, ThrowOnError>): RequestResult<GetWeatherResponses, GetWeatherErrors, ThrowOnError> => (options?.client ?? client).get<GetWeatherResponses, GetWeatherErrors, ThrowOnError>({ url: '/api/weather', ...options });
+
 export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
+
+export const updateControlCenter = <ThrowOnError extends boolean = false>(options?: Options<UpdateControlCenterData, ThrowOnError>): RequestResult<UpdateControlCenterResponses, UpdateControlCenterErrors, ThrowOnError> => (options?.client ?? client).post<UpdateControlCenterResponses, UpdateControlCenterErrors, ThrowOnError>({ url: '/api/system/update', ...options });
+
+export const getSystemMetrics = <ThrowOnError extends boolean = false>(options?: Options<GetSystemMetricsData, ThrowOnError>): RequestResult<GetSystemMetricsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetSystemMetricsResponses, unknown, ThrowOnError>({ url: '/api/system/metrics', ...options });
+
+export const getContainers = <ThrowOnError extends boolean = false>(options?: Options<GetContainersData, ThrowOnError>): RequestResult<GetContainersResponses, GetContainersErrors, ThrowOnError> => (options?.client ?? client).get<GetContainersResponses, GetContainersErrors, ThrowOnError>({ url: '/api/system/containers', ...options });
+
+export const getEvents = <ThrowOnError extends boolean = false>(options?: Options<GetEventsData, ThrowOnError>): RequestResult<GetEventsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetEventsResponses, unknown, ThrowOnError>({ url: '/api/system/events', ...options });
+
+export const getNotificationSettings = <ThrowOnError extends boolean = false>(options?: Options<GetNotificationSettingsData, ThrowOnError>): RequestResult<GetNotificationSettingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetNotificationSettingsResponses, unknown, ThrowOnError>({ url: '/api/system/notifications', ...options });
+
+export const putNotificationSettings = <ThrowOnError extends boolean = false>(options?: Options<PutNotificationSettingsData, ThrowOnError>): RequestResult<PutNotificationSettingsResponses, PutNotificationSettingsErrors, ThrowOnError> => (options?.client ?? client).put<PutNotificationSettingsResponses, PutNotificationSettingsErrors, ThrowOnError>({
+    url: '/api/system/notifications',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const testNotification = <ThrowOnError extends boolean = false>(options?: Options<TestNotificationData, ThrowOnError>): RequestResult<TestNotificationResponses, TestNotificationErrors, ThrowOnError> => (options?.client ?? client).post<TestNotificationResponses, TestNotificationErrors, ThrowOnError>({ url: '/api/system/notifications/test', ...options });
+
+export const getAuthStatus = <ThrowOnError extends boolean = false>(options?: Options<GetAuthStatusData, ThrowOnError>): RequestResult<GetAuthStatusResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAuthStatusResponses, unknown, ThrowOnError>({ url: '/api/auth/status', ...options });
+
+export const setupAuth = <ThrowOnError extends boolean = false>(options?: Options<SetupAuthData, ThrowOnError>): RequestResult<SetupAuthResponses, SetupAuthErrors, ThrowOnError> => (options?.client ?? client).post<SetupAuthResponses, SetupAuthErrors, ThrowOnError>({
+    url: '/api/auth/setup',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const login = <ThrowOnError extends boolean = false>(options?: Options<LoginData, ThrowOnError>): RequestResult<LoginResponses, LoginErrors, ThrowOnError> => (options?.client ?? client).post<LoginResponses, LoginErrors, ThrowOnError>({
+    url: '/api/auth/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>): RequestResult<LogoutResponses, unknown, ThrowOnError> => (options?.client ?? client).post<LogoutResponses, unknown, ThrowOnError>({ url: '/api/auth/logout', ...options });
+
+export const logoutEverywhere = <ThrowOnError extends boolean = false>(options?: Options<LogoutEverywhereData, ThrowOnError>): RequestResult<LogoutEverywhereResponses, unknown, ThrowOnError> => (options?.client ?? client).post<LogoutEverywhereResponses, unknown, ThrowOnError>({ url: '/api/auth/logout-all', ...options });
+
+export const changePassword = <ThrowOnError extends boolean = false>(options?: Options<ChangePasswordData, ThrowOnError>): RequestResult<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError> => (options?.client ?? client).post<ChangePasswordResponses, ChangePasswordErrors, ThrowOnError>({
+    url: '/api/auth/password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const verifySession = <ThrowOnError extends boolean = false>(options?: Options<VerifySessionData, ThrowOnError>): RequestResult<VerifySessionResponses, unknown, ThrowOnError> => (options?.client ?? client).get<VerifySessionResponses, unknown, ThrowOnError>({ url: '/api/auth/verify', ...options });
 
 export const getLabStatus = <ThrowOnError extends boolean = false>(options?: Options<GetLabStatusData, ThrowOnError>): RequestResult<GetLabStatusResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetLabStatusResponses, unknown, ThrowOnError>({ url: '/api/lab/status', ...options });
 
@@ -33,11 +95,7 @@ export const putLabSettings = <ThrowOnError extends boolean = false>(options?: O
     }
 });
 
-export const getRedditFeed = <ThrowOnError extends boolean = false>(options?: Options<GetRedditFeedData, ThrowOnError>): RequestResult<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError> => (options?.client ?? client).get<GetRedditFeedResponses, GetRedditFeedErrors, ThrowOnError>({ url: '/api/feeds/reddit', ...options });
-
-export const getHackerNewsFeed = <ThrowOnError extends boolean = false>(options?: Options<GetHackerNewsFeedData, ThrowOnError>): RequestResult<GetHackerNewsFeedResponses, GetHackerNewsFeedErrors, ThrowOnError> => (options?.client ?? client).get<GetHackerNewsFeedResponses, GetHackerNewsFeedErrors, ThrowOnError>({ url: '/api/feeds/hn', ...options });
-
-export const getWeather = <ThrowOnError extends boolean = false>(options?: Options<GetWeatherData, ThrowOnError>): RequestResult<GetWeatherResponses, GetWeatherErrors, ThrowOnError> => (options?.client ?? client).get<GetWeatherResponses, GetWeatherErrors, ThrowOnError>({ url: '/api/weather', ...options });
+export const getCaCertificate = <ThrowOnError extends boolean = false>(options?: Options<GetCaCertificateData, ThrowOnError>): RequestResult<GetCaCertificateResponses, GetCaCertificateErrors, ThrowOnError> => (options?.client ?? client).get<GetCaCertificateResponses, GetCaCertificateErrors, ThrowOnError>({ url: '/api/lab/ca.crt', ...options });
 
 export const getCatalog = <ThrowOnError extends boolean = false>(options?: Options<GetCatalogData, ThrowOnError>): RequestResult<GetCatalogResponses, GetCatalogErrors, ThrowOnError> => (options?.client ?? client).get<GetCatalogResponses, GetCatalogErrors, ThrowOnError>({ url: '/api/catalog', ...options });
 
@@ -58,11 +116,94 @@ export const startApp = <ThrowOnError extends boolean = false>(options: Options<
 
 export const stopApp = <ThrowOnError extends boolean = false>(options: Options<StopAppData, ThrowOnError>): RequestResult<StopAppResponses, StopAppErrors, ThrowOnError> => (options.client ?? client).post<StopAppResponses, StopAppErrors, ThrowOnError>({ url: '/api/apps/{id}/stop', ...options });
 
+export const getAppConfig = <ThrowOnError extends boolean = false>(options: Options<GetAppConfigData, ThrowOnError>): RequestResult<GetAppConfigResponses, GetAppConfigErrors, ThrowOnError> => (options.client ?? client).get<GetAppConfigResponses, GetAppConfigErrors, ThrowOnError>({ url: '/api/apps/{id}/config', ...options });
+
+export const putAppConfig = <ThrowOnError extends boolean = false>(options: Options<PutAppConfigData, ThrowOnError>): RequestResult<PutAppConfigResponses, PutAppConfigErrors, ThrowOnError> => (options.client ?? client).put<PutAppConfigResponses, PutAppConfigErrors, ThrowOnError>({
+    url: '/api/apps/{id}/config',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const setAppProtection = <ThrowOnError extends boolean = false>(options: Options<SetAppProtectionData, ThrowOnError>): RequestResult<SetAppProtectionResponses, SetAppProtectionErrors, ThrowOnError> => (options.client ?? client).put<SetAppProtectionResponses, SetAppProtectionErrors, ThrowOnError>({
+    url: '/api/apps/{id}/protection',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getAppLogs = <ThrowOnError extends boolean = false>(options: Options<GetAppLogsData, ThrowOnError>): RequestResult<GetAppLogsResponses, GetAppLogsErrors, ThrowOnError> => (options.client ?? client).get<GetAppLogsResponses, GetAppLogsErrors, ThrowOnError>({ url: '/api/apps/{id}/logs', ...options });
+
 export const getUpdates = <ThrowOnError extends boolean = false>(options?: Options<GetUpdatesData, ThrowOnError>): RequestResult<GetUpdatesResponses, GetUpdatesErrors, ThrowOnError> => (options?.client ?? client).get<GetUpdatesResponses, GetUpdatesErrors, ThrowOnError>({ url: '/api/updates', ...options });
 
 export const getAppUpdates = <ThrowOnError extends boolean = false>(options: Options<GetAppUpdatesData, ThrowOnError>): RequestResult<GetAppUpdatesResponses, GetAppUpdatesErrors, ThrowOnError> => (options.client ?? client).get<GetAppUpdatesResponses, GetAppUpdatesErrors, ThrowOnError>({ url: '/api/apps/{id}/updates', ...options });
 
 export const updateApp = <ThrowOnError extends boolean = false>(options: Options<UpdateAppData, ThrowOnError>): RequestResult<UpdateAppResponses, UpdateAppErrors, ThrowOnError> => (options.client ?? client).post<UpdateAppResponses, UpdateAppErrors, ThrowOnError>({ url: '/api/apps/{id}/update', ...options });
+
+export const rollbackApp = <ThrowOnError extends boolean = false>(options: Options<RollbackAppData, ThrowOnError>): RequestResult<RollbackAppResponses, RollbackAppErrors, ThrowOnError> => (options.client ?? client).post<RollbackAppResponses, RollbackAppErrors, ThrowOnError>({ url: '/api/apps/{id}/rollback', ...options });
+
+export const dismissAppTask = <ThrowOnError extends boolean = false>(options?: Options<DismissAppTaskData, ThrowOnError>): RequestResult<DismissAppTaskResponses, DismissAppTaskErrors, ThrowOnError> => (options?.client ?? client).delete<DismissAppTaskResponses, DismissAppTaskErrors, ThrowOnError>({ url: '/api/tasks', ...options });
+
+export const getAppTask = <ThrowOnError extends boolean = false>(options?: Options<GetAppTaskData, ThrowOnError>): RequestResult<GetAppTaskResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetAppTaskResponses, unknown, ThrowOnError>({ url: '/api/tasks', ...options });
+
+export const deleteCustomApp = <ThrowOnError extends boolean = false>(options: Options<DeleteCustomAppData, ThrowOnError>): RequestResult<DeleteCustomAppResponses, DeleteCustomAppErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCustomAppResponses, DeleteCustomAppErrors, ThrowOnError>({ url: '/api/custom-apps/{id}', ...options });
+
+export const getCustomApp = <ThrowOnError extends boolean = false>(options: Options<GetCustomAppData, ThrowOnError>): RequestResult<GetCustomAppResponses, GetCustomAppErrors, ThrowOnError> => (options.client ?? client).get<GetCustomAppResponses, GetCustomAppErrors, ThrowOnError>({ url: '/api/custom-apps/{id}', ...options });
+
+export const updateCustomApp = <ThrowOnError extends boolean = false>(options: Options<UpdateCustomAppData, ThrowOnError>): RequestResult<UpdateCustomAppResponses, UpdateCustomAppErrors, ThrowOnError> => (options.client ?? client).put<UpdateCustomAppResponses, UpdateCustomAppErrors, ThrowOnError>({
+    url: '/api/custom-apps/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const validateCustomApp = <ThrowOnError extends boolean = false>(options?: Options<ValidateCustomAppData, ThrowOnError>): RequestResult<ValidateCustomAppResponses, ValidateCustomAppErrors, ThrowOnError> => (options?.client ?? client).post<ValidateCustomAppResponses, ValidateCustomAppErrors, ThrowOnError>({
+    url: '/api/custom-apps/validate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const createCustomApp = <ThrowOnError extends boolean = false>(options?: Options<CreateCustomAppData, ThrowOnError>): RequestResult<CreateCustomAppResponses, CreateCustomAppErrors, ThrowOnError> => (options?.client ?? client).post<CreateCustomAppResponses, CreateCustomAppErrors, ThrowOnError>({
+    url: '/api/custom-apps',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const getBackups = <ThrowOnError extends boolean = false>(options?: Options<GetBackupsData, ThrowOnError>): RequestResult<GetBackupsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetBackupsResponses, unknown, ThrowOnError>({ url: '/api/backups', ...options });
+
+export const runBackup = <ThrowOnError extends boolean = false>(options?: Options<RunBackupData, ThrowOnError>): RequestResult<RunBackupResponses, RunBackupErrors, ThrowOnError> => (options?.client ?? client).post<RunBackupResponses, RunBackupErrors, ThrowOnError>({ url: '/api/backups', ...options });
+
+export const putBackupSettings = <ThrowOnError extends boolean = false>(options?: Options<PutBackupSettingsData, ThrowOnError>): RequestResult<PutBackupSettingsResponses, PutBackupSettingsErrors, ThrowOnError> => (options?.client ?? client).put<PutBackupSettingsResponses, PutBackupSettingsErrors, ThrowOnError>({
+    url: '/api/backups/settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const restoreBackup = <ThrowOnError extends boolean = false>(options: Options<RestoreBackupData, ThrowOnError>): RequestResult<RestoreBackupResponses, RestoreBackupErrors, ThrowOnError> => (options.client ?? client).post<RestoreBackupResponses, RestoreBackupErrors, ThrowOnError>({
+    url: '/api/backups/{id}/restore',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteBackup = <ThrowOnError extends boolean = false>(options: Options<DeleteBackupData, ThrowOnError>): RequestResult<DeleteBackupResponses, DeleteBackupErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBackupResponses, DeleteBackupErrors, ThrowOnError>({ url: '/api/backups/{id}', ...options });
 
 export const importBookmarks = <ThrowOnError extends boolean = false>(options?: Options<ImportBookmarksData, ThrowOnError>): RequestResult<ImportBookmarksResponses, ImportBookmarksErrors, ThrowOnError> => (options?.client ?? client).post<ImportBookmarksResponses, ImportBookmarksErrors, ThrowOnError>({
     url: '/api/dashboard/bookmarks',

@@ -24,6 +24,16 @@ const PATHS = {
   bookmark: 'M6 4h12v16l-6-4-6 4z',
   folder: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
   subfolder: 'M5 4v10a2 2 0 0 0 2 2h12M15 12l4 4-4 4',
+  lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
+  unlock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 7.5-2',
+  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10',
+  activity: 'M3 12h4l3-8 4 16 3-8h4',
+  terminal: 'M4 5h16v14H4zM8 10l3 2-3 2M13 15h3',
+  undo: 'M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3',
+  sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+  archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
+  shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+  bell: 'M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0',
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -5,8 +5,15 @@ import { AppTasks } from '../../core/services/app-tasks';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardDocument } from '../../core/models/dashboard';
 import { Icon } from '../../shared/icon';
+import { BackupSettings } from './backup-settings';
+import { NotificationSettings } from './notification-settings';
+import { SecuritySettings } from './security-settings';
 
-type SettingsSection = 'general' | 'sidebar' | 'lab';
+type SettingsSection = 'general' | 'sidebar' | 'lab' | 'security' | 'backups' | 'notifications';
+
+const SECTIONS: SettingsSection[] = ['general', 'sidebar', 'lab', 'security', 'backups', 'notifications'];
+/** Sections with their own Save buttons (not the page header one). */
+const SELF_SAVING: SettingsSection[] = ['security', 'backups', 'notifications'];
 
 const COLOR_TOKEN_HEX: Record<string, string> = {
   productivity: '#5b9bd9',
@@ -24,7 +31,7 @@ function toColorInput(value?: string): string {
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, RouterLink, Icon],
+  imports: [FormsModule, RouterLink, Icon, SecuritySettings, BackupSettings, NotificationSettings],
   template: `
     <section class="settings">
       <header class="page-header">
@@ -36,19 +43,44 @@ function toColorInput(value?: string): string {
             <a routerLink="/settings/sidebar" class="tab" [class.is-active]="section() === 'sidebar'"
               >Shortcuts</a
             >
+            <a routerLink="/settings/security" class="tab" [class.is-active]="section() === 'security'">Security</a>
+            <a routerLink="/settings/backups" class="tab" [class.is-active]="section() === 'backups'">Backups</a>
+            <a routerLink="/settings/notifications" class="tab" [class.is-active]="section() === 'notifications'"
+              >Alerts</a
+            >
           </nav>
         </div>
-        <div class="page-header__actions">
-          <button type="button" class="btn btn--solid" [disabled]="!dirty()" (click)="save()">
-            Save
-          </button>
-        </div>
+        @if (!selfSaving()) {
+          <div class="page-header__actions">
+            <button type="button" class="btn btn--solid" [disabled]="!dirty()" (click)="save()">
+              Save
+            </button>
+          </div>
+        }
       </header>
 
-      @if (error()) {
+      @if (section() === 'security') {
+        <app-security-settings />
+      } @else if (section() === 'backups') {
+        <app-backup-settings />
+      } @else if (section() === 'notifications') {
+        <app-notification-settings />
+      } @else if (error()) {
         <p class="empty-note">{{ error() }}</p>
       } @else if (section() === 'lab') {
         <div class="lab">
+          @if (weakSecrets().length) {
+            <p class="banner banner--warn" role="alert">
+              <app-icon name="shield" />
+              <span>
+                Some lab passwords still use the old shared default <code>modulab</code>
+                ({{ weakSecrets().join(', ') }}). Anyone who knows Modulab knows them.
+                @if (weakSecrets().includes('postgresPassword')) {
+                  <button type="button" class="btn btn--sm" (click)="rotatePostgres()">Generate a new Postgres password</button>
+                }
+              </span>
+            </p>
+          }
           <section class="section">
             <div class="section__head section__head--end">
               <div>
@@ -137,6 +169,18 @@ function toColorInput(value?: string): string {
               </label>
               <label class="switch">
                 <span class="switch__text">
+                  LAN HTTPS
+                  <small>Also serve https:// names with certificates from Caddy's own CA.</small>
+                </span>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="labDraft.enableLanHttps"
+                  [disabled]="!labDraft.enableLanProxy"
+                  (ngModelChange)="markDirty()"
+                />
+              </label>
+              <label class="switch">
+                <span class="switch__text">
                   Pi-hole DNS
                   <small>Resolve those names for devices on the LAN.</small>
                 </span>
@@ -147,6 +191,20 @@ function toColorInput(value?: string): string {
                 />
               </label>
             </div>
+            @if (labDraft.enableLanProxy && labDraft.enableLanHttps) {
+              <p class="cert-note">
+                Browsers warn about https:// names until a device trusts the lab certificate.
+                @if (caAvailable()) {
+                  <a class="btn btn--sm" href="/api/lab/ca.crt" download="modulab-root-ca.crt">
+                    <app-icon name="download" [size]="13" />
+                    Download certificate
+                  </a>
+                  Install it as a trusted root on each device (on phones: Settings → Security → Install certificate).
+                } @else {
+                  Save, then open any https:// app link once — the certificate appears here afterwards.
+                }
+              </p>
+            }
           </section>
 
           <section class="section">
@@ -154,8 +212,8 @@ function toColorInput(value?: string): string {
               <div>
                 <h2 class="section__title">Postgres</h2>
                 <p class="section__desc">
-                  Shared database used by apps that need one. This does not migrate data that is
-                  already stored.
+                  Shared database used by apps that need one. Changing the password updates the database role and
+                  restarts the apps that use it.
                 </p>
               </div>
             </div>
@@ -567,6 +625,32 @@ function toColorInput(value?: string): string {
     .lab-suggest strong {
       font-weight: 650;
     }
+    .banner--warn {
+      align-items: flex-start;
+      border-color: var(--negative-border);
+      background: linear-gradient(90deg, var(--negative-soft), transparent 85%), var(--widget);
+    }
+    .banner--warn > app-icon {
+      color: var(--negative);
+    }
+    .banner--warn span {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .banner code {
+      font-family: var(--mono);
+    }
+    .cert-note {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: var(--space-3) 0 0;
+      font-size: var(--fs-sm);
+      color: var(--text-dim);
+    }
     .lab-switches {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -606,7 +690,11 @@ export class SettingsPage implements OnInit {
     piholePassword: 'modulab',
     enableLanProxy: true,
     enablePihole: false,
+    enableLanHttps: false,
   };
+  readonly caAvailable = signal(false);
+  readonly weakSecrets = signal<string[]>([]);
+  readonly selfSaving = () => SELF_SAVING.includes(this.section());
   accent = '#d9a441';
   searchEngine = 'https://duckduckgo.com/?q=%s';
   readonly dirty = signal(false);
@@ -620,10 +708,8 @@ export class SettingsPage implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
-      const section = params.get('section');
-      if (section === 'sidebar') this.section.set('sidebar');
-      else if (section === 'lab') this.section.set('lab');
-      else this.section.set('general');
+      const section = params.get('section') as SettingsSection | null;
+      this.section.set(section && SECTIONS.includes(section) ? section : 'general');
     });
 
     this.dash.load().subscribe({
@@ -650,7 +736,9 @@ export class SettingsPage implements OnInit {
           piholePassword: s.piholePassword ?? 'modulab',
           enableLanProxy: s.enableLanProxy ?? true,
           enablePihole: s.enablePihole ?? false,
+          enableLanHttps: s.enableLanHttps ?? false,
         };
+        this.caAvailable.set(s.caCertificateAvailable ?? false);
         this.cdr.markForCheck();
       },
       error: () => {
@@ -658,7 +746,10 @@ export class SettingsPage implements OnInit {
       },
     });
     this.dash.loadLabStatus().subscribe({
-      next: (st) => this.labSuggested.set(st.suggestedHostIp ?? null),
+      next: (st) => {
+        this.labSuggested.set(st.suggestedHostIp ?? null);
+        this.weakSecrets.set(st.weakSecrets ?? []);
+      },
       error: () => undefined,
     });
   }
@@ -845,6 +936,18 @@ export class SettingsPage implements OnInit {
     this.markDirty();
   }
 
+  /** Replace the shared default with a random password; saving rotates the role and restarts apps. */
+  rotatePostgres(): void {
+    if (!confirm('Change the Postgres password now? Apps that use Postgres restart briefly.')) return;
+    const bytes = crypto.getRandomValues(new Uint8Array(18));
+    this.labDraft.postgresPassword = btoa(String.fromCharCode(...bytes))
+      .replace(/\+/g, 'x')
+      .replace(/\//g, 'y')
+      .replace(/=+$/, '');
+    this.markDirty();
+    this.save();
+  }
+
   updateControlCenter(): void {
     void this.tasks.updateControlCenter();
   }
@@ -862,9 +965,14 @@ export class SettingsPage implements OnInit {
           piholePassword: this.labDraft.piholePassword,
           enableLanProxy: this.labDraft.enableLanProxy,
           enablePihole: this.labDraft.enablePihole,
+          enableLanHttps: this.labDraft.enableLanHttps,
         })
         .subscribe({
-          next: () => this.dirty.set(false),
+          next: (s) => {
+            this.dirty.set(false);
+            this.caAvailable.set(s.caCertificateAvailable ?? false);
+            this.dash.loadLabStatus().subscribe({ next: (st) => this.weakSecrets.set(st.weakSecrets ?? []) });
+          },
           error: (err: Error) => alert(err.message),
         });
       return;

@@ -18,6 +18,8 @@ export class AppTasks {
   readonly task = signal<AppTask | null>(null);
   readonly logOpen = signal(false);
   readonly clock = signal(Date.now());
+  /** Bumped whenever a task finishes, so pages can reload (backups list, catalog). */
+  readonly settled = signal(0);
   private timer: number | null = null;
   private downSince: number | null = null;
   private reloadTimer: number | null = null;
@@ -75,6 +77,23 @@ export class AppTasks {
   }
 
   async updateApp(id: string, name: string): Promise<void> {
+    await this.run(`/api/apps/${encodeURIComponent(id)}/update`, { id, name, action: 'update' });
+  }
+
+  async rollbackApp(id: string, name: string): Promise<void> {
+    await this.run(`/api/apps/${encodeURIComponent(id)}/rollback`, { id, name, action: 'rollback' });
+  }
+
+  async backup(): Promise<void> {
+    await this.run('/api/backups', { id: 'backup', name: 'Backup', action: 'backup' });
+  }
+
+  async restore(backupId: string, body: { apps: string[]; config: boolean }): Promise<void> {
+    await this.run(`/api/backups/${encodeURIComponent(backupId)}/restore`, { id: 'restore', name: 'Restore', action: 'restore' }, body);
+  }
+
+  /** POST an endpoint that starts a lab task (202) or reports the busy one (409), then follow it. */
+  private async run(url: string, start: Pick<AppTask, 'id' | 'name' | 'action'>, body?: unknown): Promise<void> {
     if (this.runningId()) {
       this.logOpen.set(true);
       return;
@@ -82,9 +101,7 @@ export class AppTasks {
 
     this.logOpen.set(false);
     this.task.set({
-      id,
-      name,
-      action: 'update',
+      ...start,
       status: 'running',
       latest: 'Starting…',
       lines: [],
@@ -93,18 +110,22 @@ export class AppTasks {
     });
 
     try {
-      const res = await fetch(`/api/apps/${encodeURIComponent(id)}/update`, { method: 'POST' });
-      const body = (await res.json()) as { current?: AppTask; message?: string };
-      if (body.current) {
-        const next = normalize(body.current);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      const payload = (await res.json()) as { current?: AppTask; message?: string };
+      if (payload.current) {
+        const next = normalize(payload.current);
         this.task.set(next);
         if (next.status === 'running') this.follow();
         else this.settle(next.status);
         return;
       }
-      this.fail(body.message || `Update failed (${res.status})`);
+      this.fail(payload.message || `Request failed (${res.status})`);
     } catch (err) {
-      this.fail(err instanceof Error ? err.message : 'Update failed');
+      this.fail(err instanceof Error ? err.message : 'Request failed');
     }
   }
 
@@ -187,6 +208,7 @@ export class AppTasks {
 
   private settle(status: AppTask['status']): void {
     if (status === 'error') this.logOpen.set(true);
+    this.settled.update((n) => n + 1);
     this.dash.loadCatalog().subscribe({ error: () => undefined });
     this.dash.loadUpdates(true).subscribe({ error: () => undefined });
   }
@@ -196,9 +218,9 @@ export class AppTasks {
     this.task.set({
       id: current?.id ?? '',
       name: current?.name ?? 'App',
-      action: 'update',
+      action: current?.action ?? 'update',
       status: 'error',
-      latest: 'Update failed',
+      latest: 'Failed',
       lines: current?.lines ?? [],
       error: message,
       startedAt: current?.startedAt ?? new Date().toISOString(),
@@ -214,4 +236,20 @@ function normalize(task: AppTask): AppTask {
     lines: Array.isArray(task.lines) ? task.lines : [],
     error: task.error ?? null,
   };
+}
+
+/** Task dock headline for a task in its current state. */
+export function taskTitle(task: AppTask): string {
+  const running = task.status === 'running';
+  const ok = task.status === 'ok';
+  switch (task.action) {
+    case 'backup':
+      return running ? 'Backing up the lab' : ok ? 'Backup finished' : 'Backup failed';
+    case 'restore':
+      return running ? 'Restoring from backup' : ok ? 'Restore finished' : 'Restore failed';
+    case 'rollback':
+      return running ? `Rolling back ${task.name}` : ok ? `${task.name} rolled back` : `Couldn't roll back ${task.name}`;
+    default:
+      return running ? `Updating ${task.name}` : ok ? `${task.name} updated` : `Couldn't update ${task.name}`;
+  }
 }

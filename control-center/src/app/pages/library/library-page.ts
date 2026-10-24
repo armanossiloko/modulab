@@ -1,13 +1,15 @@
 import { Component, HostListener, OnInit, effect, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { CatalogItem, RecipeField } from '../../api/generated';
+import { Observable, forkJoin } from 'rxjs';
+import { CatalogItem, RecipeField, deleteCustomApp } from '../../api/generated';
 import { canOpenApp, ipAppUrl, openAppUrl } from '../../core/app-links';
 import { formatRelease, statusLabel, statusTone } from '../../core/app-status';
 import { AppTasks } from '../../core/services/app-tasks';
 import { DashboardService } from '../../core/services/dashboard.service';
+import { AppLogsDialog } from '../../shared/app-logs-dialog';
 import { CatalogMark } from '../../shared/catalog-mark';
 import { Icon } from '../../shared/icon';
+import { CustomAppDialog } from './custom-app-dialog';
 
 const CATEGORY_COLORS: Record<string, string> = {
   productivity: 'var(--cat-productivity)',
@@ -34,7 +36,7 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
 
 @Component({
   selector: 'app-library-page',
-  imports: [FormsModule, Icon, CatalogMark],
+  imports: [FormsModule, Icon, CatalogMark, AppLogsDialog, CustomAppDialog],
   template: `
     <header class="page-header">
       <div class="page-header__titles">
@@ -47,6 +49,10 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
         </p>
       </div>
       <div class="page-header__actions">
+        <button type="button" class="btn" (click)="customDialog.set({ id: null })">
+          <app-icon name="plus" [size]="14" />
+          Add app
+        </button>
         <div class="view-switch" role="group" aria-label="Library layout">
           <button
             type="button"
@@ -110,8 +116,19 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
                 @if (hasUpdate(app.id)) {
                   <span class="badge badge--accent badge--plain">update</span>
                 }
+                @if (app.health === 'unhealthy') {
+                  <span class="badge badge--negative" title="Failing its health check">unhealthy</span>
+                }
                 @if (app.core) {
                   <span class="badge badge--plain">core</span>
+                }
+                @if (app.custom) {
+                  <span class="badge badge--plain">custom</span>
+                }
+                @if (app.protected) {
+                  <span class="badge badge--plain" title="Requires the Control Center login on its LAN hostname">
+                    <app-icon name="lock" [size]="11" /> login
+                  </span>
                 }
               </div>
               @if (app.description) {
@@ -181,6 +198,78 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
                   </a>
                 }
               }
+              <span class="tool-row">
+                @if (app.status === 'running' || app.status === 'stopped') {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost"
+                    title="Logs"
+                    [attr.aria-label]="'Logs for ' + app.name"
+                    (click)="logsFor.set(app)"
+                  >
+                    <app-icon name="terminal" [size]="15" />
+                  </button>
+                }
+                @if (app.enabled && app.fields.length && !app.core) {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost"
+                    title="Configure"
+                    [attr.aria-label]="'Configure ' + app.name"
+                    (click)="configure(app)"
+                  >
+                    <app-icon name="sliders" [size]="15" />
+                  </button>
+                }
+                @if (app.canProtect && app.enabled) {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost"
+                    [class.is-active]="app.protected"
+                    [title]="app.protected ? 'Login required on its LAN hostname — click to remove' : 'Require the Control Center login on its LAN hostname'"
+                    [attr.aria-pressed]="app.protected"
+                    [attr.aria-label]="'Require login for ' + app.name"
+                    [disabled]="busyId() === app.id"
+                    (click)="toggleProtect(app)"
+                  >
+                    <app-icon [name]="app.protected ? 'lock' : 'unlock'" [size]="15" />
+                  </button>
+                }
+                @if (app.hasRollback) {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost"
+                    title="Roll back to the version before the last update"
+                    [attr.aria-label]="'Roll back ' + app.name"
+                    [disabled]="tasks.runningId() !== null"
+                    (click)="rollback(app)"
+                  >
+                    <app-icon name="undo" [size]="15" />
+                  </button>
+                }
+                @if (app.custom) {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost"
+                    title="Edit app definition"
+                    [attr.aria-label]="'Edit ' + app.name"
+                    (click)="customDialog.set({ id: app.id })"
+                  >
+                    <app-icon name="edit" [size]="15" />
+                  </button>
+                }
+                @if (app.custom && app.status === 'available') {
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--ghost icon-btn--danger"
+                    title="Remove from Library"
+                    [attr.aria-label]="'Remove ' + app.name + ' from the Library'"
+                    (click)="deleteCustom(app)"
+                  >
+                    <app-icon name="trash" [size]="15" />
+                  </button>
+                }
+              </span>
               @if (
                 !app.core &&
                 (app.status === 'stopped' ||
@@ -217,7 +306,7 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
               [color]="categoryColor(app.category)"
             />
             <div>
-              <h2 id="install-title" class="overlay-title">Install {{ app.name }}</h2>
+              <h2 id="install-title" class="overlay-title">{{ installMode() === 'configure' ? 'Configure' : 'Install' }} {{ app.name }}</h2>
               @if (app.description) {
                 <p class="page-subtitle">{{ app.description }}</p>
               }
@@ -225,6 +314,9 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
           </div>
         </header>
         <div class="overlay-body">
+          @if (installMode() === 'configure') {
+            <p class="modal-note">Saving recreates the container with the new values.</p>
+          }
           @if (app.fields.length === 0) {
             <p class="modal-note">No extra options — install with recipe defaults?</p>
           } @else {
@@ -263,10 +355,43 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
             [disabled]="busyId() === app.id"
             (click)="confirmInstall()"
           >
-            {{ busyId() === app.id ? 'Installing…' : 'Install' }}
+            {{ busyId() === app.id ? (installMode() === 'configure' ? 'Saving…' : 'Installing…') : installMode() === 'configure' ? 'Save' : 'Install' }}
           </button>
         </footer>
       </div>
+    }
+
+    @if (removing(); as app) {
+      <div class="overlay" (click)="removing.set(null)"></div>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-title">
+        <header class="overlay-head">
+          <h2 id="remove-title" class="overlay-title">Uninstall {{ app.name }}?</h2>
+        </header>
+        <div class="overlay-body field-list">
+          <p class="modal-note">Its containers stop and it leaves the dashboard.</p>
+          <label class="switch">
+            <span class="switch__text">
+              Also delete its data
+              <small>Removes its data folder{{ app.dependsOn.includes('postgres') ? ', its database' : '' }} and volumes. This cannot be undone — back up first if unsure.</small>
+            </span>
+            <input type="checkbox" [(ngModel)]="purge" />
+          </label>
+        </div>
+        <footer class="overlay-foot">
+          <button type="button" class="btn btn--lg" (click)="removing.set(null)">Cancel</button>
+          <button type="button" class="btn btn--lg" [class.btn--danger]="purge" [class.btn--solid]="!purge" [disabled]="busyId() === app.id" (click)="confirmUninstall(app)">
+            {{ purge ? 'Uninstall and delete data' : 'Uninstall' }}
+          </button>
+        </footer>
+      </div>
+    }
+
+    @if (logsFor(); as app) {
+      <app-logs-dialog [appId]="app.id" [name]="app.name" (closed)="logsFor.set(null)" />
+    }
+
+    @if (customDialog(); as dlg) {
+      <app-custom-app-dialog [editId]="dlg.id" [domain]="domain()" (closed)="customClosed($event)" />
     }
   `,
   styles: `
@@ -344,6 +469,19 @@ function libraryApps(apps: CatalogItem[]): CatalogItem[] {
       gap: 0.4rem;
       flex: 0 0 auto;
     }
+    .tool-row {
+      display: inline-flex;
+      gap: 0.1rem;
+    }
+    .tool-row:empty {
+      display: none;
+    }
+    .icon-btn.is-active {
+      color: var(--accent);
+    }
+    .badge app-icon {
+      vertical-align: -1px;
+    }
     .view-switch {
       display: inline-flex;
       gap: 0.25rem;
@@ -411,6 +549,12 @@ export class LibraryPage implements OnInit {
   readonly apps = signal<CatalogItem[]>([]);
   readonly busyId = signal<string | null>(null);
   readonly installing = signal<CatalogItem | null>(null);
+  readonly installMode = signal<'install' | 'configure'>('install');
+  readonly removing = signal<CatalogItem | null>(null);
+  readonly logsFor = signal<CatalogItem | null>(null);
+  readonly customDialog = signal<{ id: string | null } | null>(null);
+  readonly domain = computed(() => this.dash.labStatus()?.domain ?? 'network.lan');
+  purge = false;
   installDraft: Record<string, string | boolean> = {};
   readonly setupBlocked = computed(() => this.dash.labStatus()?.needsHostIp === true);
   readonly runningCount = computed(() => this.apps().filter((a) => a.status === 'running').length);
@@ -427,6 +571,7 @@ export class LibraryPage implements OnInit {
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.installing()) this.cancelInstall();
+    this.removing.set(null);
   }
 
   setView(next: LibraryView): void {
@@ -510,6 +655,7 @@ export class LibraryPage implements OnInit {
 
   beginInstall(app: CatalogItem): void {
     if (this.setupBlocked()) return;
+    this.installMode.set('install');
     this.installDraft = {};
     for (const field of app.fields || []) {
       this.installDraft[field.key || ''] = this.defaultFieldValue(field);
@@ -554,7 +700,11 @@ export class LibraryPage implements OnInit {
     }
 
     this.busyId.set(app.id);
-    this.dash.installApp(app.id, { ...this.installDraft }).subscribe({
+    const request: Observable<unknown> =
+      this.installMode() === 'configure'
+        ? this.dash.saveAppConfig(app.id, { ...this.installDraft })
+        : this.dash.installApp(app.id, { ...this.installDraft });
+    request.subscribe({
       next: () => {
         this.busyId.set(null);
         this.cancelInstall();
@@ -601,10 +751,77 @@ export class LibraryPage implements OnInit {
   }
 
   uninstall(app: CatalogItem): void {
-    if (!confirm(`Uninstall ${app.name}?\n\nContainers will stop. Data volumes are kept.`)) return;
-    this.dash.uninstallApp(app.id).subscribe({
-      next: () => this.refresh(),
+    this.purge = false;
+    this.removing.set(app);
+  }
+
+  confirmUninstall(app: CatalogItem): void {
+    if (this.purge && !confirm(`Delete all of ${app.name}'s data? This cannot be undone.`)) return;
+    this.busyId.set(app.id);
+    this.dash.uninstallApp(app.id, this.purge).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.removing.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+      },
+    });
+  }
+
+  configure(app: CatalogItem): void {
+    this.dash.appConfig(app.id).subscribe({
+      next: (cfg) => {
+        this.installDraft = {};
+        for (const field of app.fields || []) {
+          const key = field.key || '';
+          const value = cfg.values?.[key] as unknown;
+          this.installDraft[key] =
+            field.type === 'boolean' ? value === true || value === 'true' : value == null ? '' : String(value);
+        }
+        this.installMode.set('configure');
+        this.installing.set(app);
+      },
       error: (err: Error) => alert(err.message),
     });
+  }
+
+  toggleProtect(app: CatalogItem): void {
+    const on = !app.protected;
+    const note = on
+      ? `Require the Control Center login before ${app.name} opens on its LAN hostname?\n\nApps with their own phone/TV clients may stop working for those clients.`
+      : `Remove the login requirement from ${app.name}?`;
+    if (!confirm(note)) return;
+    this.busyId.set(app.id);
+    this.dash.setProtected(app.id, on).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.refresh();
+      },
+      error: (err: Error) => {
+        this.busyId.set(null);
+        alert(err.message);
+      },
+    });
+  }
+
+  rollback(app: CatalogItem): void {
+    if (this.tasks.runningId()) return;
+    if (!confirm(`Roll ${app.name} back to the images it ran before the last update?`)) return;
+    void this.tasks.rollbackApp(app.id, app.name);
+  }
+
+  async deleteCustom(app: CatalogItem): Promise<void> {
+    if (!confirm(`Remove ${app.name} from the Library? Its data folder is kept.`)) return;
+    const res = await deleteCustomApp({ throwOnError: false, path: { id: app.id } });
+    if (res.error) alert((res.error as { message?: string }).message ?? 'Could not remove the app');
+    this.refresh();
+  }
+
+  customClosed(saved: boolean): void {
+    this.customDialog.set(null);
+    if (saved) this.refresh();
   }
 }

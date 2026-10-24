@@ -27,6 +27,15 @@
       >
         <app-icon name="refresh" />
       </button>
+      <button
+        type="button"
+        class="icon-btn icon-btn--lg"
+        title="Sign out"
+        aria-label="Sign out"
+        (click)="signOut()"
+      >
+        <app-icon name="logout" />
+      </button>
     </header>
 
     <div class="page-body">
@@ -59,15 +68,9 @@
           </span>
           <div class="task-dock__copy">
             <p id="task-dock-title" class="task-dock__title">
-              @if (job.status === 'running') {
-                Updating {{ job.name }}
-                @if (elapsed()) {
-                  <span class="task-dock__time">{{ elapsed() }}</span>
-                }
-              } @else if (job.status === 'ok') {
-                {{ job.name }} updated
-              } @else {
-                Couldn't update {{ job.name }}
+              {{ title(job) }}
+              @if (job.status === 'running' && elapsed()) {
+                <span class="task-dock__time">{{ elapsed() }}</span>
               }
             </p>
             <p class="task-dock__latest">{{ job.latest }}</p>

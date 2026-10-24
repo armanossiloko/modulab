@@ -8,11 +8,106 @@ export type ApiMessage = {
     message: string;
 };
 
+export type AppConfigResponse = {
+    id: string;
+    fields: Array<RecipeField>;
+    values: {
+        [key: string]: unknown;
+    };
+};
+
+export type AppLogsResponse = {
+    id: string;
+    containers: Array<ContainerLogs>;
+};
+
+export type AppProtectionUpdate = {
+    protected: boolean;
+};
+
+export type AppTaskDto = {
+    id: string;
+    name: string;
+    action: string;
+    status: string;
+    latest: string;
+    lines: Array<string>;
+    error: null | string;
+    startedAt: string;
+};
+
+export type AppTaskSnapshot = {
+    current: null | AppTaskDto;
+};
+
 export type AppUpdateStatus = {
     id: string;
     name: string;
     updateAvailable: boolean;
     images: Array<ImageUpdateStatus>;
+};
+
+export type AuthSetupRequest = {
+    password: string;
+};
+
+export type AuthStatusResponse = {
+    configured: boolean;
+    authenticated: boolean;
+    username: null | string;
+};
+
+export type BackupInfo = {
+    id: string;
+    createdAt: string;
+    sizeBytes: number | string;
+    databases: Array<string>;
+    apps: Array<string>;
+    hasConfig: boolean;
+    trigger: string;
+};
+
+export type BackupListResponse = {
+    backups: Array<BackupInfo>;
+    settings: BackupSettingsResponse;
+    lastRun: null | BackupRunStatus;
+    nextRun: null | string;
+};
+
+export type BackupRunStatus = {
+    at: string;
+    status: string;
+    backupId: null | string;
+    message: null | string;
+    resticStatus: null | string;
+};
+
+export type BackupSettingsResponse = {
+    enabled: boolean;
+    time: string;
+    keep: number | string;
+    resticRepository: null | string;
+    resticPasswordSet: boolean;
+    resticEnv: {
+        [key: string]: string;
+    };
+    resticExtraPaths: Array<string>;
+    resticKeepDaily: number | string;
+    resticKeepWeekly: number | string;
+};
+
+export type BackupSettingsUpdate = {
+    enabled: null | boolean;
+    time: null | string;
+    keep: null | number | string;
+    resticRepository: null | string;
+    resticPassword: null | string;
+    resticEnv: null | {
+        [key: string]: string;
+    };
+    resticExtraPaths: null | Array<string>;
+    resticKeepDaily: null | number | string;
+    resticKeepWeekly: null | number | string;
 };
 
 export type BookmarkGroupDto = {
@@ -44,10 +139,90 @@ export type CatalogItem = {
     status: string;
     version?: null | string;
     releasedAt?: null | string;
+    custom?: boolean;
+    protected?: boolean;
+    canProtect?: boolean;
+    hasRollback?: boolean;
+    health?: null | string;
 };
 
 export type CatalogResponse = {
     apps: Array<CatalogItem>;
+};
+
+export type ChangePasswordRequest = {
+    currentPassword: string;
+    newPassword: string;
+};
+
+export type ContainerLogs = {
+    name: string;
+    state: string;
+    lines: Array<LogLine>;
+};
+
+export type ContainerRow = {
+    name: string;
+    appId: null | string;
+    state: string;
+    status: string;
+    health: null | string;
+    image: string;
+    cpuPercent: null | number | string;
+    memoryBytes: null | number | string;
+    memoryLimitBytes: null | number | string;
+    restartCount: number | string;
+};
+
+export type ContainersResponse = {
+    containers: Array<ContainerRow>;
+    sampledAt: string;
+};
+
+export type CustomAppRequest = {
+    id: string;
+    name: string;
+    description: null | string;
+    category: null | string;
+    port: null | number | string;
+    proxyHost: null | string;
+    proxyPort: null | number | string;
+    compose: string;
+    dataPaths: null | Array<string>;
+    fields: null | Array<RecipeField>;
+    defaults: null | {
+        [key: string]: unknown;
+    };
+};
+
+export type CustomAppResponse = {
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    port: null | number | string;
+    proxyHost: null | string;
+    proxyPort: null | number | string;
+    compose: string;
+    dataPaths: Array<string>;
+    fields: Array<RecipeField>;
+};
+
+export type CustomAppValidation = {
+    ok: boolean;
+    errors: Array<string>;
+    warnings: Array<string>;
+};
+
+export type DiskUsage = {
+    label: string;
+    path: string;
+    usedBytes: number | string;
+    totalBytes: number | string;
+};
+
+export type EventsResponse = {
+    events: Array<LabEvent>;
 };
 
 export type FeedItem = {
@@ -72,6 +247,17 @@ export type FeedResponse = {
 export type HealthResponse = {
     status: string;
     labRoot: string;
+};
+
+export type HostMetrics = {
+    cpuPercent: number | string;
+    cpuCount: number | string;
+    memoryUsedBytes: number | string;
+    memoryTotalBytes: number | string;
+    load1: number | string;
+    load5: number | string;
+    load15: number | string;
+    uptimeSeconds: number | string;
 };
 
 export type ImageUpdateStatus = {
@@ -99,6 +285,15 @@ export type JsonElement = unknown;
 
 export type JsonNode = unknown;
 
+export type LabEvent = {
+    id: string;
+    at: string;
+    level: string;
+    kind: string;
+    source: string;
+    message: string;
+};
+
 export type LabSettingsResponse = {
     hostIp: string;
     domain: string;
@@ -109,6 +304,8 @@ export type LabSettingsResponse = {
     piholePassword: string;
     enableLanProxy: boolean;
     enablePihole: boolean;
+    enableLanHttps?: boolean;
+    caCertificateAvailable?: boolean;
 };
 
 export type LabSettingsUpdate = {
@@ -121,6 +318,7 @@ export type LabSettingsUpdate = {
     piholePassword: null | string;
     enableLanProxy: null | boolean;
     enablePihole: null | boolean;
+    enableLanHttps?: null | boolean;
 };
 
 export type LabStatusResponse = {
@@ -130,6 +328,32 @@ export type LabStatusResponse = {
     hostIp: null | string;
     suggestedHostIp: null | string;
     domain: string;
+    lanHttps?: boolean;
+    weakSecrets?: null | Array<string>;
+};
+
+export type LogLine = {
+    time: null | string;
+    text: string;
+};
+
+export type LoginRequest = {
+    password: string;
+    remember: null | boolean;
+};
+
+export type MetricPoint = {
+    at: string;
+    cpu: number | string;
+    memory: number | string;
+};
+
+export type NotificationSettings = {
+    ntfyUrl: null | string;
+    ntfyToken: null | string;
+    webhookUrl: null | string;
+    diskThresholdPercent: number | string;
+    notifyOnRecovery: boolean;
 };
 
 export type RecipeField = {
@@ -146,6 +370,17 @@ export type ReplaceBookmarksRequest = {
     showInstalledApps: null | boolean;
 };
 
+export type RestoreRequest = {
+    apps: null | Array<string>;
+    config: null | boolean;
+};
+
+export type SystemMetricsResponse = {
+    host: null | HostMetrics;
+    disks: Array<DiskUsage>;
+    history: Array<MetricPoint>;
+};
+
 export type UpdatesResponse = {
     apps: Array<AppUpdateStatus>;
     checkedAt: string;
@@ -160,88 +395,6 @@ export type WeatherResponse = {
     windKmh: number | string;
     humidity: number | string;
 };
-
-export type GetHealthData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/health';
-};
-
-export type GetHealthResponses = {
-    /**
-     * OK
-     */
-    200: HealthResponse;
-};
-
-export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
-
-export type GetLabStatusData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/lab/status';
-};
-
-export type GetLabStatusResponses = {
-    /**
-     * OK
-     */
-    200: LabStatusResponse;
-};
-
-export type GetLabStatusResponse = GetLabStatusResponses[keyof GetLabStatusResponses];
-
-export type GetLabSettingsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/lab/settings';
-};
-
-export type GetLabSettingsErrors = {
-    /**
-     * Internal Server Error
-     */
-    500: ApiMessage;
-};
-
-export type GetLabSettingsError = GetLabSettingsErrors[keyof GetLabSettingsErrors];
-
-export type GetLabSettingsResponses = {
-    /**
-     * OK
-     */
-    200: LabSettingsResponse;
-};
-
-export type GetLabSettingsResponse = GetLabSettingsResponses[keyof GetLabSettingsResponses];
-
-export type PutLabSettingsData = {
-    body?: null | LabSettingsUpdate;
-    path?: never;
-    query?: never;
-    url: '/api/lab/settings';
-};
-
-export type PutLabSettingsErrors = {
-    /**
-     * Bad Request
-     */
-    400: ApiMessage;
-};
-
-export type PutLabSettingsError = PutLabSettingsErrors[keyof PutLabSettingsErrors];
-
-export type PutLabSettingsResponses = {
-    /**
-     * OK
-     */
-    200: LabSettingsResponse;
-};
-
-export type PutLabSettingsResponse = PutLabSettingsResponses[keyof PutLabSettingsResponses];
 
 export type GetRedditFeedData = {
     body?: never;
@@ -331,6 +484,422 @@ export type GetWeatherResponses = {
 
 export type GetWeatherResponse = GetWeatherResponses[keyof GetWeatherResponses];
 
+export type GetHealthData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/health';
+};
+
+export type GetHealthResponses = {
+    /**
+     * OK
+     */
+    200: HealthResponse;
+};
+
+export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type UpdateControlCenterData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/update';
+};
+
+export type UpdateControlCenterErrors = {
+    /**
+     * Conflict
+     */
+    409: AppTaskSnapshot;
+};
+
+export type UpdateControlCenterError = UpdateControlCenterErrors[keyof UpdateControlCenterErrors];
+
+export type UpdateControlCenterResponses = {
+    /**
+     * Accepted
+     */
+    202: AppTaskSnapshot;
+};
+
+export type UpdateControlCenterResponse = UpdateControlCenterResponses[keyof UpdateControlCenterResponses];
+
+export type GetSystemMetricsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        history?: number | string;
+    };
+    url: '/api/system/metrics';
+};
+
+export type GetSystemMetricsResponses = {
+    /**
+     * OK
+     */
+    200: SystemMetricsResponse;
+};
+
+export type GetSystemMetricsResponse = GetSystemMetricsResponses[keyof GetSystemMetricsResponses];
+
+export type GetContainersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/containers';
+};
+
+export type GetContainersErrors = {
+    /**
+     * Bad Gateway
+     */
+    502: ApiMessage;
+};
+
+export type GetContainersError = GetContainersErrors[keyof GetContainersErrors];
+
+export type GetContainersResponses = {
+    /**
+     * OK
+     */
+    200: ContainersResponse;
+};
+
+export type GetContainersResponse = GetContainersResponses[keyof GetContainersResponses];
+
+export type GetEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number | string;
+    };
+    url: '/api/system/events';
+};
+
+export type GetEventsResponses = {
+    /**
+     * OK
+     */
+    200: EventsResponse;
+};
+
+export type GetEventsResponse = GetEventsResponses[keyof GetEventsResponses];
+
+export type GetNotificationSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/notifications';
+};
+
+export type GetNotificationSettingsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationSettings;
+};
+
+export type GetNotificationSettingsResponse = GetNotificationSettingsResponses[keyof GetNotificationSettingsResponses];
+
+export type PutNotificationSettingsData = {
+    body?: null | NotificationSettings;
+    path?: never;
+    query?: never;
+    url: '/api/system/notifications';
+};
+
+export type PutNotificationSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+};
+
+export type PutNotificationSettingsError = PutNotificationSettingsErrors[keyof PutNotificationSettingsErrors];
+
+export type PutNotificationSettingsResponses = {
+    /**
+     * OK
+     */
+    200: NotificationSettings;
+};
+
+export type PutNotificationSettingsResponse = PutNotificationSettingsResponses[keyof PutNotificationSettingsResponses];
+
+export type TestNotificationData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/system/notifications/test';
+};
+
+export type TestNotificationErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Bad Gateway
+     */
+    502: ApiMessage;
+};
+
+export type TestNotificationError = TestNotificationErrors[keyof TestNotificationErrors];
+
+export type TestNotificationResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type TestNotificationResponse = TestNotificationResponses[keyof TestNotificationResponses];
+
+export type GetAuthStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/status';
+};
+
+export type GetAuthStatusResponses = {
+    /**
+     * OK
+     */
+    200: AuthStatusResponse;
+};
+
+export type GetAuthStatusResponse = GetAuthStatusResponses[keyof GetAuthStatusResponses];
+
+export type SetupAuthData = {
+    body?: null | AuthSetupRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/setup';
+};
+
+export type SetupAuthErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Conflict
+     */
+    409: ApiMessage;
+};
+
+export type SetupAuthError = SetupAuthErrors[keyof SetupAuthErrors];
+
+export type SetupAuthResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type SetupAuthResponse = SetupAuthResponses[keyof SetupAuthResponses];
+
+export type LoginData = {
+    body?: null | LoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/login';
+};
+
+export type LoginErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ApiMessage;
+    /**
+     * Conflict
+     */
+    409: ApiMessage;
+    /**
+     * Too Many Requests
+     */
+    429: ApiMessage;
+};
+
+export type LoginError = LoginErrors[keyof LoginErrors];
+
+export type LoginResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type LoginResponse = LoginResponses[keyof LoginResponses];
+
+export type LogoutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout';
+};
+
+export type LogoutResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
+
+export type LogoutEverywhereData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout-all';
+};
+
+export type LogoutEverywhereResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type LogoutEverywhereResponse = LogoutEverywhereResponses[keyof LogoutEverywhereResponses];
+
+export type ChangePasswordData = {
+    body?: null | ChangePasswordRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/password';
+};
+
+export type ChangePasswordErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Forbidden
+     */
+    403: ApiMessage;
+};
+
+export type ChangePasswordError = ChangePasswordErrors[keyof ChangePasswordErrors];
+
+export type ChangePasswordResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type ChangePasswordResponse = ChangePasswordResponses[keyof ChangePasswordResponses];
+
+export type VerifySessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/verify';
+};
+
+export type VerifySessionResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type VerifySessionResponse = VerifySessionResponses[keyof VerifySessionResponses];
+
+export type GetLabStatusData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/lab/status';
+};
+
+export type GetLabStatusResponses = {
+    /**
+     * OK
+     */
+    200: LabStatusResponse;
+};
+
+export type GetLabStatusResponse = GetLabStatusResponses[keyof GetLabStatusResponses];
+
+export type GetLabSettingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/lab/settings';
+};
+
+export type GetLabSettingsErrors = {
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type GetLabSettingsError = GetLabSettingsErrors[keyof GetLabSettingsErrors];
+
+export type GetLabSettingsResponses = {
+    /**
+     * OK
+     */
+    200: LabSettingsResponse;
+};
+
+export type GetLabSettingsResponse = GetLabSettingsResponses[keyof GetLabSettingsResponses];
+
+export type PutLabSettingsData = {
+    body?: null | LabSettingsUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/lab/settings';
+};
+
+export type PutLabSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+};
+
+export type PutLabSettingsError = PutLabSettingsErrors[keyof PutLabSettingsErrors];
+
+export type PutLabSettingsResponses = {
+    /**
+     * OK
+     */
+    200: LabSettingsResponse;
+};
+
+export type PutLabSettingsResponse = PutLabSettingsResponses[keyof PutLabSettingsResponses];
+
+export type GetCaCertificateData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/lab/ca.crt';
+};
+
+export type GetCaCertificateErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+};
+
+export type GetCaCertificateError = GetCaCertificateErrors[keyof GetCaCertificateErrors];
+
+export type GetCaCertificateResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
 export type GetCatalogData = {
     body?: never;
     path?: never;
@@ -361,7 +930,9 @@ export type UninstallAppData = {
     path: {
         id: string;
     };
-    query?: never;
+    query?: {
+        purge?: boolean;
+    };
     url: '/api/apps/{id}';
 };
 
@@ -515,6 +1086,133 @@ export type StopAppResponses = {
 
 export type StopAppResponse = StopAppResponses[keyof StopAppResponses];
 
+export type GetAppConfigData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/apps/{id}/config';
+};
+
+export type GetAppConfigErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+};
+
+export type GetAppConfigError = GetAppConfigErrors[keyof GetAppConfigErrors];
+
+export type GetAppConfigResponses = {
+    /**
+     * OK
+     */
+    200: AppConfigResponse;
+};
+
+export type GetAppConfigResponse = GetAppConfigResponses[keyof GetAppConfigResponses];
+
+export type PutAppConfigData = {
+    body?: null | InstallRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/apps/{id}/config';
+};
+
+export type PutAppConfigErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type PutAppConfigError = PutAppConfigErrors[keyof PutAppConfigErrors];
+
+export type PutAppConfigResponses = {
+    /**
+     * OK
+     */
+    200: AppConfigResponse;
+};
+
+export type PutAppConfigResponse = PutAppConfigResponses[keyof PutAppConfigResponses];
+
+export type SetAppProtectionData = {
+    body?: null | AppProtectionUpdate;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/apps/{id}/protection';
+};
+
+export type SetAppProtectionErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Internal Server Error
+     */
+    500: ApiMessage;
+};
+
+export type SetAppProtectionError = SetAppProtectionErrors[keyof SetAppProtectionErrors];
+
+export type SetAppProtectionResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type SetAppProtectionResponse = SetAppProtectionResponses[keyof SetAppProtectionResponses];
+
+export type GetAppLogsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: {
+        tail?: number | string;
+        since?: string;
+    };
+    url: '/api/apps/{id}/logs';
+};
+
+export type GetAppLogsErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+};
+
+export type GetAppLogsError = GetAppLogsErrors[keyof GetAppLogsErrors];
+
+export type GetAppLogsResponses = {
+    /**
+     * OK
+     */
+    200: AppLogsResponse;
+};
+
+export type GetAppLogsResponse = GetAppLogsResponses[keyof GetAppLogsResponses];
+
 export type GetUpdatesData = {
     body?: never;
     path?: never;
@@ -547,9 +1245,7 @@ export type GetAppUpdatesData = {
     path: {
         id: string;
     };
-    query?: {
-        refresh?: boolean;
-    };
+    query?: never;
     url: '/api/apps/{id}/updates';
 };
 
@@ -590,6 +1286,10 @@ export type UpdateAppErrors = {
      */
     404: ApiMessage;
     /**
+     * Conflict
+     */
+    409: AppTaskSnapshot;
+    /**
      * Internal Server Error
      */
     500: ApiMessage;
@@ -599,12 +1299,361 @@ export type UpdateAppError = UpdateAppErrors[keyof UpdateAppErrors];
 
 export type UpdateAppResponses = {
     /**
+     * Accepted
+     */
+    202: AppTaskSnapshot;
+};
+
+export type UpdateAppResponse = UpdateAppResponses[keyof UpdateAppResponses];
+
+export type RollbackAppData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/apps/{id}/rollback';
+};
+
+export type RollbackAppErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Conflict
+     */
+    409: AppTaskSnapshot;
+};
+
+export type RollbackAppError = RollbackAppErrors[keyof RollbackAppErrors];
+
+export type RollbackAppResponses = {
+    /**
+     * Accepted
+     */
+    202: AppTaskSnapshot;
+};
+
+export type RollbackAppResponse = RollbackAppResponses[keyof RollbackAppResponses];
+
+export type DismissAppTaskData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/tasks';
+};
+
+export type DismissAppTaskErrors = {
+    /**
+     * Conflict
+     */
+    409: ApiMessage;
+};
+
+export type DismissAppTaskError = DismissAppTaskErrors[keyof DismissAppTaskErrors];
+
+export type DismissAppTaskResponses = {
+    /**
+     * OK
+     */
+    200: AppTaskSnapshot;
+};
+
+export type DismissAppTaskResponse = DismissAppTaskResponses[keyof DismissAppTaskResponses];
+
+export type GetAppTaskData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/tasks';
+};
+
+export type GetAppTaskResponses = {
+    /**
+     * OK
+     */
+    200: AppTaskSnapshot;
+};
+
+export type GetAppTaskResponse = GetAppTaskResponses[keyof GetAppTaskResponses];
+
+export type DeleteCustomAppData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/custom-apps/{id}';
+};
+
+export type DeleteCustomAppErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Conflict
+     */
+    409: ApiMessage;
+};
+
+export type DeleteCustomAppError = DeleteCustomAppErrors[keyof DeleteCustomAppErrors];
+
+export type DeleteCustomAppResponses = {
+    /**
      * OK
      */
     200: ApiMessage;
 };
 
-export type UpdateAppResponse = UpdateAppResponses[keyof UpdateAppResponses];
+export type DeleteCustomAppResponse = DeleteCustomAppResponses[keyof DeleteCustomAppResponses];
+
+export type GetCustomAppData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/custom-apps/{id}';
+};
+
+export type GetCustomAppErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+};
+
+export type GetCustomAppError = GetCustomAppErrors[keyof GetCustomAppErrors];
+
+export type GetCustomAppResponses = {
+    /**
+     * OK
+     */
+    200: CustomAppResponse;
+};
+
+export type GetCustomAppResponse = GetCustomAppResponses[keyof GetCustomAppResponses];
+
+export type UpdateCustomAppData = {
+    body?: null | CustomAppRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/custom-apps/{id}';
+};
+
+export type UpdateCustomAppErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Unprocessable Entity
+     */
+    422: CustomAppValidation;
+};
+
+export type UpdateCustomAppError = UpdateCustomAppErrors[keyof UpdateCustomAppErrors];
+
+export type UpdateCustomAppResponses = {
+    /**
+     * OK
+     */
+    200: CustomAppResponse;
+};
+
+export type UpdateCustomAppResponse = UpdateCustomAppResponses[keyof UpdateCustomAppResponses];
+
+export type ValidateCustomAppData = {
+    body?: null | CustomAppRequest;
+    path?: never;
+    query?: {
+        update?: boolean;
+    };
+    url: '/api/custom-apps/validate';
+};
+
+export type ValidateCustomAppErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+};
+
+export type ValidateCustomAppError = ValidateCustomAppErrors[keyof ValidateCustomAppErrors];
+
+export type ValidateCustomAppResponses = {
+    /**
+     * OK
+     */
+    200: CustomAppValidation;
+};
+
+export type ValidateCustomAppResponse = ValidateCustomAppResponses[keyof ValidateCustomAppResponses];
+
+export type CreateCustomAppData = {
+    body?: null | CustomAppRequest;
+    path?: never;
+    query?: never;
+    url: '/api/custom-apps';
+};
+
+export type CreateCustomAppErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Unprocessable Entity
+     */
+    422: CustomAppValidation;
+};
+
+export type CreateCustomAppError = CreateCustomAppErrors[keyof CreateCustomAppErrors];
+
+export type CreateCustomAppResponses = {
+    /**
+     * Created
+     */
+    201: CustomAppResponse;
+};
+
+export type CreateCustomAppResponse = CreateCustomAppResponses[keyof CreateCustomAppResponses];
+
+export type GetBackupsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/backups';
+};
+
+export type GetBackupsResponses = {
+    /**
+     * OK
+     */
+    200: BackupListResponse;
+};
+
+export type GetBackupsResponse = GetBackupsResponses[keyof GetBackupsResponses];
+
+export type RunBackupData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/backups';
+};
+
+export type RunBackupErrors = {
+    /**
+     * Conflict
+     */
+    409: AppTaskSnapshot;
+};
+
+export type RunBackupError = RunBackupErrors[keyof RunBackupErrors];
+
+export type RunBackupResponses = {
+    /**
+     * Accepted
+     */
+    202: AppTaskSnapshot;
+};
+
+export type RunBackupResponse = RunBackupResponses[keyof RunBackupResponses];
+
+export type PutBackupSettingsData = {
+    body?: null | BackupSettingsUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/backups/settings';
+};
+
+export type PutBackupSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+};
+
+export type PutBackupSettingsError = PutBackupSettingsErrors[keyof PutBackupSettingsErrors];
+
+export type PutBackupSettingsResponses = {
+    /**
+     * OK
+     */
+    200: BackupSettingsResponse;
+};
+
+export type PutBackupSettingsResponse = PutBackupSettingsResponses[keyof PutBackupSettingsResponses];
+
+export type RestoreBackupData = {
+    body?: null | RestoreRequest;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/backups/{id}/restore';
+};
+
+export type RestoreBackupErrors = {
+    /**
+     * Bad Request
+     */
+    400: ApiMessage;
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+    /**
+     * Conflict
+     */
+    409: AppTaskSnapshot;
+};
+
+export type RestoreBackupError = RestoreBackupErrors[keyof RestoreBackupErrors];
+
+export type RestoreBackupResponses = {
+    /**
+     * Accepted
+     */
+    202: AppTaskSnapshot;
+};
+
+export type RestoreBackupResponse = RestoreBackupResponses[keyof RestoreBackupResponses];
+
+export type DeleteBackupData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/backups/{id}';
+};
+
+export type DeleteBackupErrors = {
+    /**
+     * Not Found
+     */
+    404: ApiMessage;
+};
+
+export type DeleteBackupError = DeleteBackupErrors[keyof DeleteBackupErrors];
+
+export type DeleteBackupResponses = {
+    /**
+     * OK
+     */
+    200: ApiMessage;
+};
+
+export type DeleteBackupResponse = DeleteBackupResponses[keyof DeleteBackupResponses];
 
 export type ImportBookmarksData = {
     body?: null | ImportBookmarksRequest;
@@ -672,10 +1721,6 @@ export type GetDashboardData = {
 };
 
 export type GetDashboardErrors = {
-    /**
-     * Not Found
-     */
-    404: ApiMessage;
     /**
      * Internal Server Error
      */

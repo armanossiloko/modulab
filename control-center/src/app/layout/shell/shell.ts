@@ -1,7 +1,8 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
-import { AppTasks } from '../../core/services/app-tasks';
+import { AppTasks, taskTitle } from '../../core/services/app-tasks';
+import { AuthService } from '../../core/services/auth';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { Icon } from '../../shared/icon';
 import { CommandPalette } from '../command-palette/command-palette';
@@ -16,6 +17,9 @@ import { Sidebar } from '../sidebar/sidebar';
 export class Shell implements OnInit {
   readonly dash = inject(DashboardService);
   readonly tasks = inject(AppTasks);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  readonly title = taskTitle;
   readonly elapsed = computed(() => {
     this.tasks.clock();
     const task = this.tasks.task();
@@ -69,6 +73,14 @@ export class Shell implements OnInit {
     forkJoin([this.dash.load(), this.dash.loadCatalog()])
       .pipe(finalize(() => this.refreshing.set(false)))
       .subscribe({ error: () => undefined });
+  }
+
+  async signOut(): Promise<void> {
+    try {
+      await this.auth.logout();
+    } finally {
+      void this.router.navigate(['/login']);
+    }
   }
 
   startResize(event: PointerEvent): void {
