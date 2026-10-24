@@ -78,7 +78,7 @@ jobs:
         run: >
           dotnet publish control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj
           -c Release -r linux-x64 -p:PublishAot=true -p:OpenApiGenerateDocuments=false
-          -p:OpenApiGenerateDocumentsOnBuild=false -p:WarningsAsErrors="IL2026;IL3050;IL2104;IL3053"
+          -p:OpenApiGenerateDocumentsOnBuild=false -warnaserror:IL2026,IL3050,IL2104,IL3053
           -o /tmp/aot
 
   ui:
