@@ -8,6 +8,7 @@
     "prebuild": "npm run generate:api",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "test": "ng test --watch=false",
     "publish": "bash ../scripts/publish-ui.sh"
   },
   "private": true,
@@ -29,7 +30,9 @@
     "@angular/compiler-cli": "^21.2.0",
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "^0.99.0",
+    "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.12"
   }
 }

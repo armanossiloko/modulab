@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/control-center/">
     <Project Path="control-center/src-backend/Modulab.ControlCenter/Modulab.ControlCenter.csproj" />
+    <Project Path="control-center/tests/Modulab.ControlCenter.Tests/Modulab.ControlCenter.Tests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="lab.config.example.json" />
